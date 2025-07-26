@@ -1,0 +1,115 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# virtualenv
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+conda-env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# data
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.npz
+*.npy
+datasets/
+# data/
+logs/
+outputs/
+results/
+isaacrobocasa.egg-info/
+
+# model
+*.pth
+*.pt
+*.ckpt
+*.pb
+# *.onnx
+# models/
+checkpoints/
+policy/trained_models/
+
+# temp
+*.tmp
+*.temp
+*.log
+*.out
+*.err
+*.prof
+.DS_Store
+Thumbs.db
+
+# config
+*.cfg
+config.json
+launch_tmp.json
+
+# video and image
+*.mp4
+*.avi
+*.mov
+*.gif
+*.png
+*.jpg
+*.jpeg
+*.tiff
+*.bmp
+recordings/
+videos/
+images/
+
+# Isaac Sim
+# *.usd
+# *.usda
+# *.usdc
+cache/
+nucleus_cache/
+omni_cache/
+/assets
+
+.vscode/
+policy/skrl/task_config/default.yml
+
+# third party
+third_party/*
+!third_party/lw_skrl/
+!third_party/lw_skrl/**
+

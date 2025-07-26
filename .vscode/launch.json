@@ -1,0 +1,98 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "train_rl",
+            "type": "python",
+            "request": "launch",
+            "args": [
+                "--task_config=default", // policy/skrl/task_config/default.yml
+                "--headless",
+                "--enable_camera" 
+            ],
+            "program": "${workspaceFolder}/lwlab/scripts/rl/train.py",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "teleop-pandaomron",
+            "type": "python",
+            "request": "launch",
+            "args": [
+                "--task_config=pandaomron" , // data_collection/teleop/task_config/default.yml
+            ],
+            "program": "${workspaceFolder}/lwlab/scripts/teleop/teleop_main.py",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "teleop-g1-hand",
+            "type": "python",
+            "request": "launch",
+            "args": [
+                "--task_config=g1-hand" , // data_collection/teleop/task_config/default.yml
+            ],
+            "program": "${workspaceFolder}/lwlab/scripts/teleop/teleop_main.py",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "replay",
+            "type": "debugpy",
+            "request": "launch",
+            "args": [
+                "--num_envs=1",
+                "--dataset_file=datasets/dataset.hdf5",
+                "--width=480",
+                "--height=480",
+                "--enable_cameras",
+                "--device=cpu"
+            ],
+            "program": "${workspaceFolder}/lwlab/scripts/teleop/replay_demos.py",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "replay_action_action",
+            "type": "debugpy",
+            "request": "launch",
+            "args": [
+                "--num_envs=1",
+                "--dataset_file=datasets/dataset.hdf5",
+                "--width=480",
+                "--height=480",
+                "--replay_mode=action",
+                "--enable_cameras",
+                "--device=cpu"
+            ],
+            "program": "${workspaceFolder}/lwlab/scripts/teleop/replay_action_demo.py",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "replay_action_joint_target",
+            "type": "debugpy",
+            "request": "launch",
+            "args": [
+                "--num_envs=1",
+                "--dataset_file=datasets/dataset.hdf5",
+                "--width=480",
+                "--height=480",
+                "--replay_mode=joint_target",
+                "--enable_cameras",
+                "--device=cpu"
+            ],
+            "program": "${workspaceFolder}/lwlab/scripts/teleop/replay_action_demo.py",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+    ]
+}

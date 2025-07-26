@@ -1,0 +1,17 @@
+[build-system]
+requires = [
+    "setuptools>=42",
+    "wheel"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lwlab"
+version = "0.1.0"
+description = "Isaac Lab based Benchmark for Robotics"
+dependencies = [
+    "grpcio>1.73",
+    "protobuf>6",
+    "mediapy",
+    "tqdm"
+]

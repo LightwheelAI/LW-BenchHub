@@ -1,0 +1,48 @@
+type: vector
+urdf_path: urdf/unitree_dex3_right.urdf
+
+# Target refers to the retargeting target, which is the robot hand
+target_joint_names: 
+  [
+    "right_hand_thumb_0_joint",
+    "right_hand_thumb_1_joint",
+    "right_hand_thumb_2_joint",
+    "right_hand_index_0_joint",
+    "right_hand_index_1_joint",
+    "right_hand_middle_0_joint",
+    "right_hand_middle_1_joint",
+  ]
+wrist_link_name: None
+target_origin_link_names: ["base_link_thumb","base_link_index","base_link_middle"]
+target_task_link_names: ["thumb_tip", "index_tip", "middle_tip"]
+target_link_human_indices: [[0, 0, 0], [4, 9, 14]]
+
+scaling_factor: 2.5
+
+# A smaller alpha means stronger filtering, i.e. more smooth but also larger latency
+low_pass_alpha: 0.2
+
+# type: dexpilot
+# urdf_path: urdf/unitree_dex3_right.urdf
+# wrist_link_name: "right_hand_palm_link"
+
+
+# # Target refers to the retargeting target, which is the robot hand
+# target_joint_names: 
+#   [
+#     "right_hand_thumb_0_joint",
+#     "right_hand_thumb_1_joint",
+#     "right_hand_thumb_2_joint",
+#     "right_hand_index_0_joint",
+#     "right_hand_index_1_joint",
+#     "right_hand_middle_0_joint",
+#     "right_hand_middle_1_joint",
+#   ]
+# finger_tip_link_names: [
+#   "thumb_tip",
+#   "index_tip", 
+#   "middle_tip",]
+
+# low_pass_alpha: 0.8
+# project_dist: 0.01
+# escape_dist: 0.015

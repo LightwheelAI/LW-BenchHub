@@ -1,0 +1,544 @@
+# Copyright 2025 Lightwheel Team
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import gymnasium as gym
+import importlib
+import inspect
+import os
+import enum
+import yaml
+from pathlib import Path
+
+from isaaclab.utils.configclass import configclass
+from isaaclab.envs import DirectRLEnvCfg, ManagerBasedRLEnvCfg
+import omni.ui as ui
+
+
+class ExecuteMode(enum.Enum):
+    """The mode to execute the task."""
+
+    TRAIN = 0
+    EVAL = 1
+    TELEOP = 2
+    EVAL_JOINT_TARGETS = 3
+
+
+import numpy as np
+import torch
+import math
+EPS = np.finfo(float).eps * 4.0
+
+
+def quat2mat(quaternion):
+    """
+    Converts given quaternion to matrix.
+
+    Args:
+        quaternion (np.array): (x,y,z,w) vec4 float angles
+
+    Returns:
+        np.array: 3x3 rotation matrix
+    """
+    # awkward semantics for use with numba
+    inds = np.array([3, 0, 1, 2])
+    q = np.asarray(quaternion).copy().astype(np.float32)[inds]
+
+    n = np.dot(q, q)
+    if n < EPS:
+        return np.identity(3)
+    q *= math.sqrt(2.0 / n)
+    q2 = np.outer(q, q)
+    return np.array(
+        [
+            [1.0 - q2[2, 2] - q2[3, 3], q2[1, 2] - q2[3, 0], q2[1, 3] + q2[2, 0]],
+            [q2[1, 2] + q2[3, 0], 1.0 - q2[1, 1] - q2[3, 3], q2[2, 3] - q2[1, 0]],
+            [q2[1, 3] - q2[2, 0], q2[2, 3] + q2[1, 0], 1.0 - q2[1, 1] - q2[2, 2]],
+        ]
+    )
+
+
+def load_robocasa_cfg_cls_from_registry(cfg_type: str, cfg_name: str, entry_point_key: str) -> dict | object:
+    """Load default configuration given its entry point from the gym registry.
+
+    This function loads the configuration object from the gym registry for the given task name.
+    It supports both YAML and Python configuration files.
+
+    It expects the configuration to be registered in the gym registry as:
+
+    .. code-block:: python
+
+        gym.register(
+            id="My-Awesome-Task-v0",
+            ...
+            kwargs={"env_entry_point_cfg": "path.to.config:ConfigClass"},
+        )
+
+    The parsed configuration object for above example can be obtained as:
+
+    .. code-block:: python
+
+        from isaaclab_tasks.utils.parse_cfg import load_cfg_from_registry
+
+        cfg = load_cfg_from_registry("My-Awesome-Task-v0", "env_entry_point_cfg")
+
+    Args:
+        cfg_name: The name of the environment.
+        entry_point_key: The entry point key to resolve the configuration file.
+
+    Returns:
+        The parsed configuration object. If the entry point is a YAML file, it is parsed into a dictionary.
+        If the entry point is a Python class, it is instantiated and returned.
+
+    Raises:
+        ValueError: If the entry point key is not available in the gym registry for the task.
+    """
+    # obtain the configuration entry point
+    if not cfg_name:
+        return None
+    assert cfg_type in ["scene", "task", "robot"]
+    cfg_name = f"Robocasa-{cfg_type.capitalize()}-{cfg_name}"
+    cfg_entry_point = gym.spec(cfg_name).kwargs.get(entry_point_key)
+    # check if entry point exists
+    if cfg_entry_point is None:
+        raise ValueError(
+            f"Could not find configuration for the environment: '{cfg_name}'."
+            f" Please check that the gym registry has the entry point: '{entry_point_key}'."
+        )
+    # parse the default config file
+    if isinstance(cfg_entry_point, str) and cfg_entry_point.endswith(".yaml"):
+        if os.path.exists(cfg_entry_point):
+            # absolute path for the config file
+            config_file = cfg_entry_point
+        else:
+            # resolve path to the module location
+            mod_name, file_name = cfg_entry_point.split(":")
+            mod_path = os.path.dirname(importlib.import_module(mod_name).__file__)
+            # obtain the configuration file path
+            config_file = os.path.join(mod_path, file_name)
+        # load the configuration
+        print(f"[INFO]: Parsing configuration from: {config_file}")
+        with open(config_file, encoding="utf-8") as f:
+            cfg = yaml.full_load(f)
+    else:
+        if callable(cfg_entry_point):
+            # resolve path to the module location
+            mod_path = inspect.getfile(cfg_entry_point)
+            # load the configuration
+            cfg_cls = cfg_entry_point()
+        elif isinstance(cfg_entry_point, str):
+            # resolve path to the module location
+            mod_name, attr_name = cfg_entry_point.split(":")
+            mod = importlib.import_module(mod_name)
+            cfg_cls = getattr(mod, attr_name)
+
+        else:
+            cfg_cls = cfg_entry_point
+        cfg = cfg_cls
+        # load the configuration
+        print(f"[INFO]: Parsing configuration from: {cfg_entry_point}")
+    return cfg
+
+
+def parse_env_cfg(
+    scene_name: str,
+    robot_name: str,
+    task_name: str,
+    robot_scale: float,
+    execute_mode: ExecuteMode,
+    device: str = "cuda:0", num_envs: int | None = None, use_fabric: bool | None = None,
+    replay_cfgs: dict | None = None,
+    first_person_view: bool = False,
+    enable_cameras: bool = False
+) -> ManagerBasedRLEnvCfg | DirectRLEnvCfg:
+    """Parse configuration for an environment and override based on inputs.
+
+    Args:
+        task_name: The name of the environment.
+        device: The device to run the simulation on. Defaults to "cuda:0".
+        num_envs: Number of environments to create. Defaults to None, in which case it is left unchanged.
+        use_fabric: Whether to enable/disable fabric interface. If false, all read/write operations go through USD.
+            This slows down the simulation but allows seeing the changes in the USD through the USD stage.
+            Defaults to None, in which case it is left unchanged.
+
+    Returns:
+        The parsed configuration object.
+
+    Raises:
+        RuntimeError: If the configuration for the task is not a class. We assume users always use a class for the
+            environment configuration.
+    """
+    # import_all_inits(os.path.join(ISAAC_ROBOCASA_ROOT, './tasks/_APIs'))
+    from isaaclab_tasks.utils import import_packages
+    # The blacklist is used to prevent importing configs from sub-packages
+    _BLACKLIST_PKGS = ["utils", ".mdp"]
+    # Import all configs in this package
+    import_packages("tasks", _BLACKLIST_PKGS)
+    import_packages("lwlab.core", _BLACKLIST_PKGS)
+    if scene_name.endswith(".usda") or scene_name.endswith(".usd"):
+        scene_type = "USD"
+    else:
+        scene_type, *_ = scene_name.split("-", 1)
+    # load the default configuration
+    if scene_type == "USD":
+        task_env_cfg = load_robocasa_cfg_cls_from_registry("task", "Usd", "env_cfg_entry_point")
+    else:
+        task_env_cfg = load_robocasa_cfg_cls_from_registry("task", task_name, "env_cfg_entry_point")
+    # set num_envs in task_env_cfg
+    if num_envs is not None:
+        setattr(task_env_cfg, "num_envs", num_envs)
+    setattr(task_env_cfg, "device", device)
+    scene_env_cfg = load_robocasa_cfg_cls_from_registry("scene", scene_type.capitalize(), "env_cfg_entry_point")
+    robot_env_cfg = load_robocasa_cfg_cls_from_registry("robot", robot_name, "env_cfg_entry_point")
+
+    if replay_cfgs is not None:
+        setattr(task_env_cfg, "replay_cfgs", replay_cfgs)
+    setattr(task_env_cfg, "first_person_view", first_person_view)
+    setattr(robot_env_cfg, "enable_cameras", enable_cameras)
+
+    @configclass
+    class RobocasaEnvCfg(robot_env_cfg, task_env_cfg, scene_env_cfg):
+        pass
+
+    if scene_type == "USD":
+        cfg = RobocasaEnvCfg(
+            execute_mode=execute_mode,
+            usd_path=scene_name,
+            robot_scale=robot_scale,
+        )
+    else:
+        cfg = RobocasaEnvCfg(
+            execute_mode=execute_mode,
+            scene_name=scene_name,
+            robot_scale=robot_scale,
+        )
+
+    # check that it is not a dict
+    # we assume users always use a class for the configuration
+    if isinstance(cfg, dict):
+        raise RuntimeError(f"Configuration for the task: '{task_name}' is not a class. Please provide a class.")
+
+    if execute_mode == ExecuteMode.EVAL_JOINT_TARGETS:
+        cfg.set_replay_joint_targets_action()
+    # simulation device
+    cfg.sim.device = device
+    # disable fabric to read/write through USD
+    if use_fabric is not None:
+        cfg.sim.use_fabric = use_fabric
+    # number of environments
+    if num_envs is not None:
+        cfg.scene.num_envs = num_envs
+    if replay_cfgs and "ep_meta" in replay_cfgs and "sim_args" in replay_cfgs["ep_meta"]:
+        cfg.sim.dt = replay_cfgs["ep_meta"]["sim_args"]["dt"]
+        cfg.sim.decimation = replay_cfgs["ep_meta"]["sim_args"]["decimation"]
+        # cfg.sim.render_interval = replay_cfgs["ep_meta"]["sim_args"]["render_interval"]
+        # cfg.scene.num_envs = replay_cfgs["ep_meta"]["sim_args"]["num_envs"]
+    return cfg
+
+
+def set_camera_follow_pose(env, offset, lookat):
+    robot_mat = quat2mat(env.scene.articulations["robot"].data.body_com_quat_w[..., 0, :][0].cpu().numpy()[[1, 2, 3, 0]])
+    robot_pos = env.scene.articulations["robot"].data.body_com_pos_w[..., 0, :][0].cpu().numpy()
+    robot_pos += (robot_mat @ np.array(offset).reshape(3, 1))[:, 0]
+    robot_lookat = robot_pos + (robot_mat @ np.array(lookat).reshape(3, 1))[:, 0]
+    env.sim.set_camera_view(robot_pos, robot_lookat)
+
+
+def set_robot_to_position(env, global_pos, undo_pos=[0.0, 0.0, 0.0], env_ids=None):
+    import robosuite.utils.transform_utils as T
+    # local_pos = np.matmul(
+    #     T.matrix_inverse(T.euler2mat(env.cfg.init_robot_base_ori_anchor)), global_pos
+    # )
+    # undo_pos = np.matmul(
+    #     T.matrix_inverse(T.euler2mat(env.cfg.init_robot_base_ori_anchor)),
+    #     undo_pos,
+    # )
+    robot_curr_z = env.scene.articulations["robot"].data.root_pos_w[0, 2]
+    robot_curr_pos = torch.tensor([[undo_pos[0] + global_pos[0], undo_pos[1] + global_pos[1], robot_curr_z]], dtype=torch.float32, device=env.device) + env.scene.env_origins[env_ids]
+    robot_ori = T.convert_quat(T.mat2quat(T.euler2mat(env.cfg.init_robot_base_ori_anchor)), "wxyz")
+    robot_ori = torch.tensor(robot_ori, dtype=torch.float32, device=env.device).unsqueeze(0).repeat(env_ids.shape[0], 1)
+    robot_pose = torch.concat([robot_curr_pos, robot_ori], dim=-1)
+    env.scene.articulations["robot"].write_root_pose_to_sim(robot_pose, env_ids=env_ids)
+    env.sim.forward()
+
+
+def setup_task_description_ui(desc, env):
+    """
+    Set up UI for displaying task description in the overlay window.
+
+    Args:
+        desc (str): Description of the task
+        env: Environment object
+
+    Returns:
+        overlay_window
+    """
+    if desc is None:
+        return None
+
+    # Setup overlay window
+    main_viewport = env.sim._viewport_window
+    main_viewport.dock_tab_bar_visible = False
+    env.sim.render()
+
+    overlay_window = ui.Window(
+        main_viewport.name,
+        width=0,
+        height=0,
+        flags=ui.WINDOW_FLAGS_NO_TITLE_BAR |
+        ui.WINDOW_FLAGS_NO_SCROLLBAR |
+        ui.WINDOW_FLAGS_NO_RESIZE
+    )
+    env.sim.render()
+
+    with overlay_window.frame:
+        with ui.ZStack():
+            ui.Spacer()
+            with ui.VStack(style={"margin": 15}):
+                ui.Label(
+                    desc,
+                    alignment=ui.Alignment.LEFT_TOP,
+                    style={
+                        "color": 0xFF00FF00,    # Green
+                        "font_size": 28,
+                        "background_color": 0x00000080,  # Semi-transparent black
+                        "padding": 6,
+                        "border_radius": 4,
+                    }
+                )
+
+    env.sim.render()
+
+    return overlay_window
+
+
+def dock_window(space, name, location, ratio):
+    """
+    Dock a window in the specified space with the given name, location, and size ratio.
+
+    Args:
+        space: The workspace to dock the window in.
+        name: The name of the window to dock.
+        location: The docking position.
+        ratio: Size ratio for the docked window.
+    """
+    window = ui.Workspace.get_window(name)
+    if window and space:
+        window.dock_in(space, location, ratio=ratio)
+
+
+def create_and_dock_viewport(env, parent_window_name, position, ratio, camera_path):
+    """
+    Create and configure a viewport window.
+
+    Args:
+        env: Environment object
+        parent_window: Parent window to dock this viewport to
+        position: Docking position
+        ratio: Size ratio for the docked window
+        camera_path: Prim path to the camera to set as active
+
+    Returns:
+        The created viewport window
+    """
+    from omni.kit.viewport.utility import create_viewport_window
+    viewport = create_viewport_window()
+    env.sim.render()
+
+    parent_window = ui.Workspace.get_window(parent_window_name)
+    dock_window(parent_window, viewport.name, position, ratio)
+    env.sim.render()
+
+    viewport.viewport_api.set_active_camera(camera_path)
+    viewport.viewport_api.set_texture_resolution((640, 360))
+
+    env.sim.render()
+
+    return viewport
+
+
+# TODO to optimize this function
+#  1. enable setup cameras with config
+#  2. try to optimize camera config to increase performance
+def setup_cameras(env):
+    """
+    Set up mulitiple viewports for the teleoperation.
+
+    Args:
+        env: Environment object
+    Returns:
+        viewports: Dictionary of created viewports with their names as keys
+    """
+    from pxr import UsdGeom
+    viewports = {}
+    camera_prims = []
+    for prim in env.sim.stage.Traverse():
+        if prim.IsA(UsdGeom.Camera):
+            camera_prims.append(prim)
+    left_hand_camera_prim, right_hand_camera_prim, left_shoulder_prim, right_shoulder_pri, link_camera = None, None, None, None, None
+    for camera_prim in camera_prims:
+        name = camera_prim.GetName().lower()
+        if camera_prim.GetName().lower() == "left_hand_camera":
+            left_hand_camera_prim = camera_prim
+        elif camera_prim.GetName().lower() == "right_hand_camera":
+            right_hand_camera_prim = camera_prim
+        elif camera_prim.GetName().lower() == "left_shoulder_camera":
+            left_shoulder_prim = camera_prim
+        elif camera_prim.GetName().lower() == "right_shoulder_camera":
+            right_shoulder_prim = camera_prim
+        elif camera_prim.GetName().lower() == "camera_link":
+            link_camera = camera_prim
+    if link_camera is not None:
+        viewport_link = create_and_dock_viewport(
+            env,
+            "DockSpace",
+            ui.DockPosition.LEFT,
+            0.25,
+            link_camera.GetPath()
+        )
+        viewports["link_camera"] = viewport_link
+    # viewport_left_shoulder = create_and_dock_viewport(
+    #     env,
+    #     "DockSpace",
+    #     ui.DockPosition.LEFT,
+    #     0.25,
+    #     left_shoulder_prim.GetPath()
+    # )
+    # viewport_left_hand = create_and_dock_viewport(
+    #     env,
+    #     viewport_left_shoulder.name,
+    #     ui.DockPosition.BOTTOM,
+    #     0.5,
+    #     left_hand_camera_prim.GetPath()
+    # )
+    # viewport_right_shoulder = create_and_dock_viewport(
+    #     env,
+    #     "DockSpace",
+    #     ui.DockPosition.RIGHT,
+    #     0.2,
+    #     right_shoulder_prim.GetPath()
+    # )
+    # viewport_right_hand = create_and_dock_viewport(
+    #     env,
+    #     viewport_right_shoulder.name,
+    #     ui.DockPosition.BOTTOM,
+    #     0.5,
+    #     right_hand_camera_prim.GetPath())
+
+    return viewports
+
+
+def generate_random_robot_pos(anchor_pos, anchor_ori, pos_dev_x, pos_dev_y):
+    import robosuite.utils.transform_utils as T
+    local_deviation = np.random.uniform(
+        low=(-pos_dev_x, -pos_dev_y),
+        high=(pos_dev_x, 0.0),
+    )
+    local_deviation = np.concatenate((local_deviation, [0.0]))
+    global_deviation = np.matmul(
+        T.euler2mat(anchor_ori + [0, 0, np.pi / 2]), -local_deviation
+    )
+    return anchor_pos + global_deviation
+
+
+def get_safe_robot_anchor(env, unsafe_anchor_pos, unsafe_anchor_ori):
+    """
+    Takes the default "unsafe" anchor from robocasa and corrects it
+    by moving it backwards based on the robot's arm reach to ensure safety.
+
+    Args:
+        env: The environment object.
+        unsafe_anchor_pos (np.array): The original anchor position from robocasa.
+        unsafe_anchor_ori (np.array): The original anchor orientation from robocasa.
+
+    Returns:
+        tuple(np.array, np.array): The new, safer anchor position and orientation.
+    """
+    import robosuite.utils.transform_utils as T
+
+    # Calculate the required retreat distance based on arm reach
+    try:
+        left_offset = env.cfg.offset_config["left_offset"]
+        left2arm_transform = env.cfg.offset_config["left2arm_transform"]
+        right_offset = env.cfg.offset_config["right_offset"]
+        right2arm_transform = env.cfg.offset_config["right2arm_transform"]
+
+        left_ee_pos = left2arm_transform[0:3, 3] + left_offset
+        right_ee_pos = right2arm_transform[0:3, 3] + right_offset
+
+        robot_forward_reach = max(left_ee_pos[1], right_ee_pos[1])
+
+        retreat_distance = robot_forward_reach + 0.05  # Add a small 5cm extra margin
+
+    except (AttributeError, KeyError):
+        # Fallback if config is not available
+        retreat_distance = 0
+
+    local_retreat_vector = np.array([0, -retreat_distance, 0])
+
+    # Rotate this local vector into the global frame using the robot's orientation
+    global_retreat_vector = np.matmul(
+        T.euler2mat(unsafe_anchor_ori), local_retreat_vector
+    )
+    safe_anchor_pos = unsafe_anchor_pos + global_retreat_vector
+
+    return safe_anchor_pos, unsafe_anchor_ori
+
+
+def detect_robot_collision(env, env_ids=None):
+    robot_contact = env.scene.sensors["base_contact"].data.net_forces_w[env_ids]
+    if "left_gripper_contact" in env.scene.sensors:
+        robot_contact += env.scene.sensors["left_gripper_contact"].data.net_forces_w[env_ids]
+    if "right_gripper_contact" in env.scene.sensors:
+        robot_contact += env.scene.sensors["right_gripper_contact"].data.net_forces_w[env_ids]
+    return torch.all(torch.max(robot_contact, dim=-1).values > 0.0)
+
+
+def set_robot_base(
+    env,
+    anchor_pos,
+    anchor_ori,
+    rot_dev,
+    pos_dev_x,
+    pos_dev_y,
+    env_ids=None,
+):
+    import robosuite.utils.transform_utils as T
+    # random_rot = env.rng.uniform(-rot_dev, rot_dev)
+    # random_quat = T.convert_quat(T.mat2quat(T.euler2mat(np.array([0, 0, random_rot]))), "wxyz")
+    # init_pose_copy = env.scene.articulations["robot"].data.root_state_w[:, :7]
+
+    found_valid = False
+
+    cur_dev_pos_x = pos_dev_x
+    cur_dev_pos_y = pos_dev_y
+    while not found_valid:
+        for attempt_position in range(50):
+            robot_pos = generate_random_robot_pos(
+                anchor_pos=anchor_pos,
+                anchor_ori=anchor_ori,
+                pos_dev_x=cur_dev_pos_x,
+                pos_dev_y=cur_dev_pos_y,
+            )
+            set_robot_to_position(env, robot_pos, env_ids=env_ids)
+            if not detect_robot_collision(env, env_ids=env_ids):
+                found_valid = True
+                break
+            # env.scene.articulations["robot"].write_root_pose_to_sim(init_pose_copy)
+        # if valid position not found, increase range by 10 cm for x and 5 cm for y
+        cur_dev_pos_x += 0.10
+        cur_dev_pos_y += 0.05
+    return robot_pos
+
+
+from . import monkey_patch

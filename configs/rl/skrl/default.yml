@@ -1,0 +1,36 @@
+disable_fabric: false        # Disable fabric and use USD I/O operations
+
+# Environment Configuration
+num_envs: 1                  # Number of environments to simulate
+task: OpenDrawerrl           # Task name
+layout: robocasakitchen-1-8  # Scene layout
+robot: G1-RL                 # Robot type
+
+# Asset and Export Paths
+export_base_path: null       # Export base path (replace with actual ASSET_PATH if defined in code)
+robot_scale: 1.0             # Robot scale
+first_person_view: false     # Enable first-person view
+
+# Reinforcement Learning Settings
+video: false                 # Record videos during training
+video_length: 200            # Length of recorded video (in steps)
+video_interval: 2000         # Interval between video recordings (in steps)
+seed: null                   # Seed used for the environment
+distributed: false           # Run training with multiple GPUs or nodes
+max_iterations: null         # Max RL policy training iterations
+
+# ML Framework Settings
+ml_framework: "torch"        # The ML framework used for training
+# Options: ["torch", "jax", "jax-numpy"]
+
+algorithm: "PPO"             # The RL algorithm used for training
+# Options: ["AMP", "PPO", "IPPO", "MAPPO"]
+
+# Checkpoint
+checkpoint: null
+
+# Play Settings
+video: false
+video_length: 200
+use_pretrained_checkpoint: false
+real_time: false

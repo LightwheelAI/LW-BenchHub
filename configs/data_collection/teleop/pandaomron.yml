@@ -1,0 +1,41 @@
+# =========================
+# Basic Settings
+# =========================
+disable_fabric: false         # Disable fabric
+num_envs: 1                   # Number of environments
+device: cpu                   # Compute device
+sensitivity: 1.0              # Control sensitivity
+step_hz: 50                   # Simulation step frequency
+
+# =========================
+# Robot Settings
+# =========================
+robot: PandaOmron-Rel          # Robot type
+robot_scale: 1.0              # Robot scale
+
+# =========================
+# Task & Scene Settings
+# =========================
+task: OpenOven                # Task name
+layout: robocasakitchen   # Scene layout, can specify robocasakitchen-1-2
+
+# =========================
+# Data Collection Settings
+# =========================
+record: true                 # Enable data recording
+dataset_file: ./datasets/dataset.hdf5  # Dataset file path
+num_demos: 1                  # Number of demonstrations
+
+# =========================
+# Teleoperation Device Settings
+# =========================
+enable_pinocchio: false       # Enable Pinochio dynamics library
+teleop_device: keyboard  # Teleoperation device type
+first_person_view: false      # Enable first person view
+
+# =========================
+# Video Saving Settings
+# =========================
+save_video: true              # Enable video saving
+video_save_dir: ./videos      # Video save directory
+video_fps: 30                 # Video frames per second
