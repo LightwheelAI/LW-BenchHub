@@ -68,15 +68,24 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
         import robocasa.models.scenes.scene_registry as SceneRegistry
         # scene name is of the form robocasa-kitchen-<layout_id>
         scene_name_split = self.scene_name.split("-")
-        layout_ids = SceneRegistry.unpack_layout_ids(None)  # TODO: layout_ids)
-        style_ids = SceneRegistry.unpack_style_ids(None)  # TODO: style_ids)
+        layout_ids = SceneRegistry.unpack_layout_ids(None, "test")
+        style_ids = SceneRegistry.unpack_style_ids(None, "test")
         if len(scene_name_split) == 3:
             _, layout_id, style_id = scene_name_split
-            layout_ids = [int(layout_id)]
-            style_ids = [int(style_id)]
+            layout_id = int(layout_id)
+            style_id = int(style_id)
+            if layout_id not in layout_ids:
+                raise ValueError(f"Layout {layout_id} is not in the list of available layouts")
+            if style_id not in style_ids:
+                raise ValueError(f"Style {style_id} is not in the list of available styles")
+            layout_ids = [layout_id]
+            style_ids = [style_id]
         elif len(scene_name_split) == 2:
             _, layout_id = scene_name_split
-            layout_ids = [int(layout_id)]
+            layout_id = int(layout_id)
+            if layout_id not in layout_ids:
+                raise ValueError(f"Layout {layout_id} is not in the list of available layouts")
+            layout_ids = [layout_id]
         elif len(scene_name_split) != 1:
             raise ValueError(f"Invalid scene name: {self.scene_name}")
         if len(scene_name_split) in (2, 3):
