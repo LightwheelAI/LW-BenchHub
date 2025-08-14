@@ -1,6 +1,3 @@
-[submodule "third_party/lw_skrl"]
-	path = third_party/lw_skrl
-	url = ssh://git@git.lightwheel.ai:2022/robot/lw_skrl.git
 [submodule "third_party/robocasa"]
 	path = third_party/robocasa
-	url = https://git.lightwheel.ai/robot/robocasa/robocasa
+	url = https://github.com/LightwheelAI/robocasa.git

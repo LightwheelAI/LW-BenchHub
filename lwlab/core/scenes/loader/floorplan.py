@@ -43,7 +43,7 @@ class FloorplanLoader:
         self.lock = threading.Lock()
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
         self._should_stop_downloading = False
-        self.usd_suffix = ".usda" if ENV_MODE == "prod" else ".usd"
+        self.usd_suffix = ".usd"
 
     def acquire_usd(self, layout_id: int, style_id: int, scene: str = None, cancel_previous_download: bool = True):
         try:

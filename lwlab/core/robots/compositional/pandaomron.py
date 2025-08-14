@@ -298,3 +298,21 @@ class PandaOmronAbsEnvCfg(PandaOmronEnvCfg):
             body_offset=mdp.DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=(0.0, 0.0, 0.107)),
         )
 
+
+class PandaOmronRLEnvCfg(PandaOmronEnvCfg):
+    robot_cfg: ArticulationCfg = FRANKA_OMRON_HIGH_PD_CFG
+    robot_name: str = "PandaOmron-RL"
+
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+
+        # Set actions for the specific robot type (franka)
+        self.actions.arm_action = mdp.JointPositionActionCfg(
+            asset_name="robot",
+            joint_names=["panda_joint.*"],
+            scale=0.5,
+            use_default_offset=True,
+        )
+
+        self.set_reward_gripper_joint_names(["panda_joint.*"])

@@ -37,7 +37,6 @@ class ExecuteMode(enum.Enum):
     REPLAY_STATE = 5
 
 
-
 import numpy as np
 import torch
 import math
@@ -196,7 +195,7 @@ def parse_env_cfg(
     import_packages("tasks")
     if for_rl:
         import_packages("lwlab_rl")
-    if scene_name.endswith(".usda") or scene_name.endswith(".usd"):
+    if scene_name.endswith(".usd"):
         scene_type = "USD"
     else:
         scene_type, *_ = scene_name.split("-", 1)
