@@ -5,14 +5,14 @@ NOTE: convention for quaternions is (x, y, z, w)
 """
 
 import math
-import torch
-# import numpy as np
+
+import numpy as np
 
 # from robosuite.utils.numba import jit_decorator
 # NOTE: Temporarily deprecate jit (from robosuite)
 
-PI = torch.pi
-EPS = torch.finfo(torch.float32).eps * 4.0
+PI = np.pi
+EPS = np.finfo(float).eps * 4.0
 
 # axis sequences for Euler angles
 _NEXT_AXIS = [1, 2, 0, 1]
@@ -48,55 +48,21 @@ _AXES2TUPLE = {
 _TUPLE2AXES = dict((v, k) for k, v in _AXES2TUPLE.items())
 
 
-def quat2axisangle(quat):
+def convert_quat(q, to="xyzw"):
     """
-    Converts quaternion to axis-angle format.
-    Returns a unit vector direction scaled by its angle in radians.
+    Converts quaternion from one convention to another.
+    The convention to convert TO is specified as an optional argument.
+    If to == 'xyzw', then the input is in 'wxyz' format, and vice-versa.
 
     Args:
-        quat (np.array): (x,y,z,w) vec4 float angles
-
-    Returns:
-        np.array: (ax,ay,az) axis-angle exponential coordinates
+        q (np.array): a 4-dim array corresponding to a quaternion
+        to (str): either 'xyzw' or 'wxyz', determining which convention to convert to.
     """
-    # clip quaternion
-    if quat[3] > 1.0:
-        quat[3] = 1.0
-    elif quat[3] < -1.0:
-        quat[3] = -1.0
-
-    den = torch.sqrt(1.0 - quat[3] * quat[3])
-    if torch.isclose(den, torch.tensor(0.0, device=quat.device)):
-        # This is (close to) a zero degree rotation, immediately return
-        return torch.zeros(3, device=quat.device)
-
-    return (quat[:3] * 2.0 * torch.acos(quat[3])) / den
-
-
-def axisangle2quat(vec):
-    """
-    Converts scaled axis-angle to quat.
-
-    Args:
-        vec (np.array): (ax,ay,az) axis-angle exponential coordinates
-
-    Returns:
-        np.array: (x,y,z,w) vec4 float angles
-    """
-    # Grab angle
-    angle = torch.linalg.norm(vec)
-
-    # handle zero-rotation case
-    if torch.isclose(angle, torch.tensor(0.0, device=vec.device)):
-        return torch.tensor([0.0, 0.0, 0.0, 1.0], device=vec.device)
-
-    # make sure that axis is a unit vector
-    axis = vec / angle
-
-    q = torch.zeros(4, device=vec.device)
-    q[3] = torch.cos(angle / 2.0)
-    q[:3] = axis * torch.sin(angle / 2.0)
-    return q
+    if to == "xyzw":
+        return q[[1, 2, 3, 0]]
+    if to == "wxyz":
+        return q[[3, 0, 1, 2]]
+    raise Exception("convert_quat: choose a valid `to` argument (xyzw or wxyz)")
 
 
 def quat_multiply(quaternion1, quaternion0):
@@ -117,33 +83,15 @@ def quat_multiply(quaternion1, quaternion0):
     """
     x0, y0, z0, w0 = quaternion0
     x1, y1, z1, w1 = quaternion1
-    return torch.tensor(
+    return np.array(
         (
             x1 * w0 + y1 * z0 - z1 * y0 + w1 * x0,
             -x1 * z0 + y1 * w0 + z1 * x0 + w1 * y0,
             x1 * y0 - y1 * x0 + z1 * w0 + w1 * z0,
             -x1 * x0 - y1 * y0 - z1 * z0 + w1 * w0,
         ),
-        dtype=torch.float32,
-        device=quaternion0.device
+        dtype=np.float32,
     )
-
-
-def convert_quat(q, to="xyzw"):
-    """
-    Converts quaternion from one convention to another.
-    The convention to convert TO is specified as an optional argument.
-    If to == 'xyzw', then the input is in 'wxyz' format, and vice-versa.
-
-    Args:
-        q (np.array): a 4-dim array corresponding to a quaternion
-        to (str): either 'xyzw' or 'wxyz', determining which convention to convert to.
-    """
-    if to == "xyzw":
-        return q[[1, 2, 3, 0]]
-    if to == "wxyz":
-        return q[[3, 0, 1, 2]]
-    raise Exception("convert_quat: choose a valid `to` argument (xyzw or wxyz)")
 
 
 def quat_conjugate(quaternion):
@@ -162,10 +110,9 @@ def quat_conjugate(quaternion):
     Returns:
         np.array: (x,y,z,w) quaternion conjugate
     """
-    return torch.tensor(
+    return np.array(
         (-quaternion[0], -quaternion[1], -quaternion[2], quaternion[3]),
-        dtype=torch.float32,
-        device=quaternion.device
+        dtype=np.float32,
     )
 
 
@@ -185,7 +132,7 @@ def quat_inverse(quaternion):
     Returns:
         np.array: (x,y,z,w) quaternion inverse
     """
-    return quat_conjugate(quaternion) / torch.dot(quaternion, quaternion)
+    return quat_conjugate(quaternion) / np.dot(quaternion, quaternion)
 
 
 def quat_distance(quaternion1, quaternion0):
@@ -238,19 +185,19 @@ def quat_slerp(quat0, quat1, fraction, shortestpath=True):
         return q0
     elif fraction == 1.0:
         return q1
-    d = torch.dot(q0, q1)
+    d = np.dot(q0, q1)
     if abs(abs(d) - 1.0) < EPS:
         return q0
     if shortestpath and d < 0.0:
         # invert rotation
         d = -d
-        q1 = q1 * -1.0
-    angle = torch.acos(torch.clip(d, -1, 1))
+        q1 *= -1.0
+    angle = math.acos(np.clip(d, -1, 1))
     if abs(angle) < EPS:
         return q0
-    isin = 1.0 / torch.sin(angle)
-    q0 *= torch.sin((1.0 - fraction) * angle) * isin
-    q1 *= torch.sin(fraction * angle) * isin
+    isin = 1.0 / math.sin(angle)
+    q0 *= math.sin((1.0 - fraction) * angle) * isin
+    q1 *= math.sin(fraction * angle) * isin
     q0 += q1
     return q0
 
@@ -275,17 +222,17 @@ def random_quat(rand=None):
         np.array: (x,y,z,w) random quaternion
     """
     if rand is None:
-        rand = torch.rand(3)
+        rand = np.random.rand(3)
     else:
         assert len(rand) == 3
-    r1 = torch.sqrt(1.0 - rand[0])
-    r2 = torch.sqrt(rand[0])
+    r1 = np.sqrt(1.0 - rand[0])
+    r2 = np.sqrt(rand[0])
     pi2 = math.pi * 2.0
     t1 = pi2 * rand[1]
     t2 = pi2 * rand[2]
-    return torch.tensor(
-        (torch.sin(t1) * r1, torch.cos(t1) * r1, torch.sin(t2) * r2, torch.cos(t2) * r2),
-        dtype=torch.float32,
+    return np.array(
+        (np.sin(t1) * r1, np.cos(t1) * r1, np.sin(t2) * r2, np.cos(t2) * r2),
+        dtype=np.float32,
     )
 
 
@@ -306,20 +253,20 @@ def random_axis_angle(angle_limit=None, random_state=None):
         AssertionError: [Invalid RNG]
     """
     if angle_limit is None:
-        angle_limit = 2.0 * torch.pi
+        angle_limit = 2.0 * np.pi
 
     if random_state is not None:
-        assert isinstance(random_state, torch.Generator)
+        assert isinstance(random_state, np.random.RandomState)
         npr = random_state
     else:
-        npr = torch.random
+        npr = np.random
 
     # sample random axis using a normalized sample from spherical Gaussian.
     # see (http://extremelearning.com.au/how-to-generate-uniformly-random-points-on-n-spheres-and-n-balls/)
     # for why it works.
-    random_axis = torch.randn(3)
-    random_axis /= torch.linalg.norm(random_axis)
-    random_angle = torch.rand(1) * angle_limit
+    random_axis = npr.randn(3)
+    random_axis /= np.linalg.norm(random_axis)
+    random_angle = npr.uniform(low=0.0, high=angle_limit)
     return random_axis, random_angle
 
 
@@ -333,7 +280,7 @@ def vec(values):
     Returns:
         np.array: vector of given values
     """
-    return torch.tensor(values, dtype=torch.float32)
+    return np.array(values, dtype=np.float32)
 
 
 def mat4(array):
@@ -346,7 +293,7 @@ def mat4(array):
     Returns:
         np.array: a 4x4 numpy matrix
     """
-    return torch.tensor(array, dtype=torch.float32).reshape((4, 4))
+    return np.array(array, dtype=np.float32).reshape((4, 4))
 
 
 def mat2pose(hmat):
@@ -378,7 +325,7 @@ def mat2quat(rmat):
     Returns:
         np.array: (x,y,z,w) float quaternion angles
     """
-    M = torch.tensor(rmat, dtype=torch.float32)[:3, :3]
+    M = np.asarray(rmat).astype(np.float32)[:3, :3]
 
     m00 = M[0, 0]
     m01 = M[0, 1]
@@ -390,19 +337,19 @@ def mat2quat(rmat):
     m21 = M[2, 1]
     m22 = M[2, 2]
     # symmetric matrix K
-    K = torch.tensor(
+    K = np.array(
         [
-            [m00 - m11 - m22, torch.tensor(0.0), torch.tensor(0.0), torch.tensor(0.0)],
-            [m01 + m10, m11 - m00 - m22, torch.tensor(0.0), torch.tensor(0.0)],
-            [m02 + m20, m12 + m21, m22 - m00 - m11, torch.tensor(0.0)],
+            [m00 - m11 - m22, np.float32(0.0), np.float32(0.0), np.float32(0.0)],
+            [m01 + m10, m11 - m00 - m22, np.float32(0.0), np.float32(0.0)],
+            [m02 + m20, m12 + m21, m22 - m00 - m11, np.float32(0.0)],
             [m21 - m12, m02 - m20, m10 - m01, m00 + m11 + m22],
         ]
     )
     K /= 3.0
     # quaternion is Eigen vector of K that corresponds to largest eigenvalue
-    w, V = torch.linalg.eigh(K)
-    inds = torch.tensor([3, 0, 1, 2])
-    q1 = V[inds, torch.argmax(w)]
+    w, V = np.linalg.eigh(K)
+    inds = np.array([3, 0, 1, 2])
+    q1 = V[inds, np.argmax(w)]
     if q1[0] < 0.0:
         q1 = -q1
     inds = torch.tensor([1, 2, 3, 0])
@@ -423,16 +370,16 @@ def euler2mat(euler):
         AssertionError: [Invalid input shape]
     """
 
-    euler = torch.asarray(euler, dtype=torch.float64)
+    euler = np.asarray(euler, dtype=np.float64)
     assert euler.shape[-1] == 3, "Invalid shaped euler {}".format(euler)
 
     ai, aj, ak = -euler[..., 2], -euler[..., 1], -euler[..., 0]
-    si, sj, sk = torch.sin(ai), torch.sin(aj), torch.sin(ak)
-    ci, cj, ck = torch.cos(ai), torch.cos(aj), torch.cos(ak)
+    si, sj, sk = np.sin(ai), np.sin(aj), np.sin(ak)
+    ci, cj, ck = np.cos(ai), np.cos(aj), np.cos(ak)
     cc, cs = ci * ck, ci * sk
     sc, ss = si * ck, si * sk
 
-    mat = torch.empty(euler.shape[:-1] + (3, 3), dtype=torch.float64)
+    mat = np.empty(euler.shape[:-1] + (3, 3), dtype=np.float64)
     mat[..., 2, 2] = cj * ck
     mat[..., 2, 1] = sj * sc - cs
     mat[..., 2, 0] = sj * cc + ss
@@ -465,26 +412,26 @@ def mat2euler(rmat, axes="sxyz"):
     j = _NEXT_AXIS[i + parity]
     k = _NEXT_AXIS[i - parity + 1]
 
-    M = torch.tensor(rmat, dtype=torch.float32)[:3, :3]
+    M = np.asarray(rmat, dtype=np.float32)[:3, :3]
     if repetition:
-        sy = torch.sqrt(M[i, j] * M[i, j] + M[i, k] * M[i, k])
+        sy = math.sqrt(M[i, j] * M[i, j] + M[i, k] * M[i, k])
         if sy > EPS:
-            ax = torch.atan2(M[i, j], M[i, k])
-            ay = torch.atan2(sy, M[i, i])
-            az = torch.atan2(M[j, i], -M[k, i])
+            ax = math.atan2(M[i, j], M[i, k])
+            ay = math.atan2(sy, M[i, i])
+            az = math.atan2(M[j, i], -M[k, i])
         else:
-            ax = torch.atan2(-M[j, k], M[j, j])
-            ay = torch.atan2(sy, M[i, i])
+            ax = math.atan2(-M[j, k], M[j, j])
+            ay = math.atan2(sy, M[i, i])
             az = 0.0
     else:
-        cy = torch.sqrt(M[i, i] * M[i, i] + M[j, i] * M[j, i])
+        cy = math.sqrt(M[i, i] * M[i, i] + M[j, i] * M[j, i])
         if cy > EPS:
-            ax = torch.atan2(M[k, j], M[k, k])
-            ay = torch.atan2(-M[k, i], cy)
-            az = torch.atan2(M[j, i], M[i, i])
+            ax = math.atan2(M[k, j], M[k, k])
+            ay = math.atan2(-M[k, i], cy)
+            az = math.atan2(M[j, i], M[i, i])
         else:
-            ax = torch.atan2(-M[j, k], M[j, j])
-            ay = torch.atan2(-M[k, i], cy)
+            ax = math.atan2(-M[j, k], M[j, j])
+            ay = math.atan2(-M[k, i], cy)
             az = 0.0
 
     if parity:
@@ -505,9 +452,9 @@ def pose2mat(pose):
     Returns:
         np.array: 4x4 homogeneous matrix
     """
-    homo_pose_mat = torch.zeros((4, 4), dtype=torch.float32)
+    homo_pose_mat = np.zeros((4, 4), dtype=np.float32)
     homo_pose_mat[:3, :3] = quat2mat(pose[1])
-    homo_pose_mat[:3, 3] = torch.tensor(pose[0], dtype=torch.float32)
+    homo_pose_mat[:3, 3] = np.array(pose[0], dtype=np.float32)
     homo_pose_mat[3, 3] = 1.0
     return homo_pose_mat
 
@@ -524,23 +471,72 @@ def quat2mat(quaternion):
         np.array: 3x3 rotation matrix
     """
     # awkward semantics for use with numba
-    inds = torch.tensor([3, 0, 1, 2])
-    q = quaternion.to(torch.float32)[inds]
+    inds = np.array([3, 0, 1, 2])
+    q = np.asarray(quaternion).copy().astype(np.float32)[inds]
 
-    n = torch.dot(q, q)
+    n = np.dot(q, q)
     if n < EPS:
-        return torch.eye(3)
+        return np.identity(3)
     q *= math.sqrt(2.0 / n)
-    q2 = torch.outer(q, q)
-    return torch.tensor(
+    q2 = np.outer(q, q)
+    return np.array(
         [
             [1.0 - q2[2, 2] - q2[3, 3], q2[1, 2] - q2[3, 0], q2[1, 3] + q2[2, 0]],
             [q2[1, 2] + q2[3, 0], 1.0 - q2[1, 1] - q2[3, 3], q2[2, 3] - q2[1, 0]],
             [q2[1, 3] - q2[2, 0], q2[2, 3] + q2[1, 0], 1.0 - q2[1, 1] - q2[2, 2]],
-        ],
-        dtype=torch.float32,
-        device=quaternion.device
+        ]
     )
+
+
+def quat2axisangle(quat):
+    """
+    Converts quaternion to axis-angle format.
+    Returns a unit vector direction scaled by its angle in radians.
+
+    Args:
+        quat (np.array): (x,y,z,w) vec4 float angles
+
+    Returns:
+        np.array: (ax,ay,az) axis-angle exponential coordinates
+    """
+    # clip quaternion
+    if quat[3] > 1.0:
+        quat[3] = 1.0
+    elif quat[3] < -1.0:
+        quat[3] = -1.0
+
+    den = np.sqrt(1.0 - quat[3] * quat[3])
+    if math.isclose(den, 0.0):
+        # This is (close to) a zero degree rotation, immediately return
+        return np.zeros(3)
+
+    return (quat[:3] * 2.0 * math.acos(quat[3])) / den
+
+
+def axisangle2quat(vec):
+    """
+    Converts scaled axis-angle to quat.
+
+    Args:
+        vec (np.array): (ax,ay,az) axis-angle exponential coordinates
+
+    Returns:
+        np.array: (x,y,z,w) vec4 float angles
+    """
+    # Grab angle
+    angle = np.linalg.norm(vec)
+
+    # handle zero-rotation case
+    if math.isclose(angle, 0.0):
+        return np.array([0.0, 0.0, 0.0, 1.0])
+
+    # make sure that axis is a unit vector
+    axis = vec / angle
+
+    q = np.zeros(4)
+    q[3] = np.cos(angle / 2.0)
+    q[:3] = axis * np.sin(angle / 2.0)
+    return q
 
 
 def pose_in_A_to_pose_in_B(pose_A, pose_A_in_B):
@@ -586,7 +582,7 @@ def pose_inv(pose):
     # -t in the original frame, which is -R-1*t in the new frame, and then rotate back by
     # R-1 to align the axis again.
 
-    pose_inv = torch.zeros((4, 4))
+    pose_inv = np.zeros((4, 4))
     pose_inv[:3, :3] = pose[:3, :3].T
     pose_inv[:3, 3] = -pose_inv[:3, :3].dot(pose[:3, 3])
     pose_inv[3, 3] = 1.0
@@ -604,7 +600,7 @@ def _skew_symmetric_translation(pos_A_in_B):
     Returns:
         np.array: 3x3 skew symmetric translation matrix
     """
-    return torch.tensor(
+    return np.array(
         [
             0.0,
             -pos_A_in_B[2],
@@ -699,27 +695,27 @@ def rotation_matrix(angle, direction, point=None):
     Returns:
         np.array: 4x4 homogeneous matrix that includes the desired rotation
     """
-    sina = torch.sin(angle)
-    cosa = torch.cos(angle)
+    sina = math.sin(angle)
+    cosa = math.cos(angle)
     direction = unit_vector(direction[:3])
     # rotation matrix around unit vector
-    R = torch.tensor(((cosa, 0.0, 0.0), (0.0, cosa, 0.0), (0.0, 0.0, cosa)), dtype=torch.float32)
-    R += torch.outer(direction, direction) * (1.0 - cosa)
+    R = np.array(((cosa, 0.0, 0.0), (0.0, cosa, 0.0), (0.0, 0.0, cosa)), dtype=np.float32)
+    R += np.outer(direction, direction) * (1.0 - cosa)
     direction *= sina
-    R += torch.tensor(
+    R += np.array(
         (
             (0.0, -direction[2], direction[1]),
             (direction[2], 0.0, -direction[0]),
             (-direction[1], direction[0], 0.0),
         ),
-        dtype=torch.float32,
+        dtype=np.float32,
     )
-    M = torch.eye(4)
+    M = np.identity(4)
     M[:3, :3] = R
     if point is not None:
         # rotation not around origin
-        point = torch.tensor(point[:3], dtype=torch.float32)
-        M[:3, 3] = point - torch.dot(R, point)
+        point = np.asarray(point[:3], dtype=np.float32)
+        M[:3, 3] = point - np.dot(R, point)
     return M
 
 
@@ -739,7 +735,7 @@ def clip_translation(dpos, limit):
             - (np.array) Clipped translation (same dimension as inputs)
             - (bool) whether the value was clipped or not
     """
-    input_norm = torch.linalg.norm(dpos)
+    input_norm = np.linalg.norm(dpos)
     return (dpos * limit / input_norm, True) if input_norm > limit else (dpos, False)
 
 
@@ -762,9 +758,9 @@ def clip_rotation(quat, limit):
     clipped = False
 
     # First, normalize the quaternion
-    quat = quat / torch.linalg.norm(quat, dim=0)
+    quat = quat / np.linalg.norm(quat)
 
-    den = torch.sqrt(torch.max(1 - quat[3] * quat[3], torch.tensor(0.0, device=quat.device)))
+    den = np.sqrt(max(1 - quat[3] * quat[3], 0))
     if den == 0:
         # This is a zero degree rotation, immediately return
         return quat, clipped
@@ -773,14 +769,14 @@ def clip_rotation(quat, limit):
         x = quat[0] / den
         y = quat[1] / den
         z = quat[2] / den
-        a = 2 * torch.acos(quat[3])
+        a = 2 * math.acos(quat[3])
 
     # Clip rotation if necessary and return clipped quat
     if abs(a) > limit:
-        a = limit * torch.sign(a) / 2
-        sa = torch.sin(a)
-        ca = torch.cos(a)
-        quat = torch.tensor([x * sa, y * sa, z * sa, ca], device=quat.device)
+        a = limit * np.sign(a) / 2
+        sa = math.sin(a)
+        ca = math.cos(a)
+        quat = np.array([x * sa, y * sa, z * sa, ca])
         clipped = True
 
     return quat, clipped
@@ -797,7 +793,7 @@ def make_pose(translation, rotation):
     Returns:
         pose (np.array): a 4x4 homogeneous matrix
     """
-    pose = torch.zeros((4, 4), device=translation.device)
+    pose = np.zeros((4, 4))
     pose[:3, :3] = rotation
     pose[:3, 3] = translation
     pose[3, 3] = 1.0
@@ -845,18 +841,18 @@ def unit_vector(data, axis=None, out=None):
         None or np.array: If @out is not specified, will return normalized vector. Otherwise, stores the output in @out
     """
     if out is None:
-        data = torch.tensor(data, dtype=torch.float32)
+        data = np.array(data, dtype=np.float32, copy=True)
         if data.ndim == 1:
-            data /= torch.sqrt(torch.dot(data, data))
+            data /= math.sqrt(np.dot(data, data))
             return data
     else:
         if out is not data:
-            out[:] = torch.asarray(data)
+            out[:] = np.asarray(data)
         data = out
-    length = torch.atleast_1d(torch.sum(data * data, axis))
-    length = torch.sqrt(length)
+    length = np.atleast_1d(np.sum(data * data, axis))
+    np.sqrt(length, length)
     if axis is not None:
-        length = torch.unsqueeze(length, axis)
+        length = np.expand_dims(length, axis)
     data /= length
     if out is None:
         return data
@@ -875,14 +871,14 @@ def get_orientation_error(target_orn, current_orn):
         orn_error (np.array): (ax,ay,az) current orientation error, corresponds to
             (target_orn - current_orn)
     """
-    current_orn = torch.tensor([current_orn[3], current_orn[0], current_orn[1], current_orn[2]], device=current_orn.device)
-    target_orn = torch.tensor([target_orn[3], target_orn[0], target_orn[1], target_orn[2]], device=current_orn.device)
+    current_orn = np.array([current_orn[3], current_orn[0], current_orn[1], current_orn[2]])
+    target_orn = np.array([target_orn[3], target_orn[0], target_orn[1], target_orn[2]])
 
-    pinv = torch.zeros((3, 4), device=target_orn.device)
-    pinv[0, :] = torch.tensor([-current_orn[1], current_orn[0], -current_orn[3], current_orn[2]], device=target_orn.device)
-    pinv[1, :] = torch.tensor([-current_orn[2], current_orn[3], current_orn[0], -current_orn[1]], device=target_orn.device)
-    pinv[2, :] = torch.tensor([-current_orn[3], -current_orn[2], current_orn[1], current_orn[0]], device=target_orn.device)
-    orn_error = 2.0 * pinv.dot(target_orn)
+    pinv = np.zeros((3, 4))
+    pinv[0, :] = [-current_orn[1], current_orn[0], -current_orn[3], current_orn[2]]
+    pinv[1, :] = [-current_orn[2], current_orn[3], current_orn[0], -current_orn[1]]
+    pinv[2, :] = [-current_orn[3], -current_orn[2], current_orn[1], current_orn[0]]
+    orn_error = 2.0 * pinv.dot(np.array(target_orn))
     return orn_error
 
 
@@ -899,7 +895,7 @@ def get_pose_error(target_pose, current_pose):
     Returns:
         np.array: 6-dim pose error.
     """
-    error = torch.zeros(6, device=target_pose.device)
+    error = np.zeros(6)
 
     # compute translational error
     target_pos = target_pose[:3, 3]
@@ -913,7 +909,7 @@ def get_pose_error(target_pose, current_pose):
     r1d = target_pose[:3, 0]
     r2d = target_pose[:3, 1]
     r3d = target_pose[:3, 2]
-    rot_err = 0.5 * (torch.cross(r1, r1d) + torch.cross(r2, r2d) + torch.cross(r3, r3d))
+    rot_err = 0.5 * (np.cross(r1, r1d) + np.cross(r2, r2d) + np.cross(r3, r3d))
 
     error[:3] = pos_err
     error[3:] = rot_err
@@ -931,7 +927,7 @@ def matrix_inverse(matrix):
     Returns:
         np.array: 2d-array representing the matrix inverse
     """
-    return torch.linalg.inv(matrix, device=matrix.device)
+    return np.linalg.inv(matrix)
 
 
 def rotate_2d_point(input, rot):
@@ -946,7 +942,7 @@ def rotate_2d_point(input, rot):
         np.array: rotated 1d-array
     """
     input_x, input_y = input
-    x = input_x * torch.cos(rot) - input_y * torch.sin(rot)
-    y = input_x * torch.sin(rot) + input_y * torch.cos(rot)
+    x = input_x * np.cos(rot) - input_y * np.sin(rot)
+    y = input_x * np.sin(rot) + input_y * np.cos(rot)
 
-    return torch.tensor([x, y], device=input.device)
+    return np.array([x, y])

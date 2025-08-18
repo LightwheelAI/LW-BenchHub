@@ -16,13 +16,12 @@ import torch
 from functools import cached_property
 
 from isaaclab.envs import ManagerBasedRLEnvCfg, ManagerBasedRLEnv
-from robocasa.models.fixtures.toaster import Toaster as RoboCasaToaster
 
 from .fixture import Fixture
 from lwlab.utils.usd_utils import OpenUsd as usd
 
 
-class Toaster(Fixture, RoboCasaToaster):
+class Toaster(Fixture):
     def setup_cfg(self, cfg: ManagerBasedRLEnvCfg, root_prim):
         super().setup_cfg(cfg, root_prim)
         self._controls = {
@@ -34,10 +33,14 @@ class Toaster(Fixture, RoboCasaToaster):
     def setup_env(self, env: ManagerBasedRLEnv):
         super().setup_env(env)
         self._env = env
-        self._state = {s: {c: torch.tensor([0.0], device=env.device).repeat(env.num_envs) for c in self._controls} for s in self.slot_pairs}
-        self._turned_on = {s: torch.tensor([False], device=env.device).repeat(env.num_envs) for s in self.slot_pairs}
-        self._num_steps_on = {s: torch.tensor([0], device=env.device).repeat(env.num_envs) for s in self.slot_pairs}
-        self._cooldown = {s: torch.tensor([0], device=env.device).repeat(env.num_envs) for s in self.slot_pairs}
+        try:
+            self._state = {s: {c: torch.tensor([0.0], device=env.device).repeat(env.num_envs) for c in self._controls} for s in self.slot_pairs}
+            self._turned_on = {s: torch.tensor([False], device=env.device).repeat(env.num_envs) for s in self.slot_pairs}
+            self._num_steps_on = {s: torch.tensor([0], device=env.device).repeat(env.num_envs) for s in self.slot_pairs}
+            self._cooldown = {s: torch.tensor([0], device=env.device).repeat(env.num_envs) for s in self.slot_pairs}
+        except:
+            print("fuck toaster!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ")
+            return
 
     def set_joint_state(self, min: float, max: float, env: ManagerBasedRLEnv, env_id: int, joint_names: list[str]):
         assert 0 <= min <= 1 and 0 <= max <= 1 and min <= max

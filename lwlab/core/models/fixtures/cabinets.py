@@ -16,25 +16,18 @@ import numpy as np
 import torch
 from .fixture import Fixture
 import lwlab.utils.object_utils as OU
-from robocasa.models.fixtures.cabinets import Cabinet as RoboCasaCabinet
-from robocasa.models.fixtures.cabinets import SingleCabinet as RoboCasaSingleCabinet
-from robocasa.models.fixtures.cabinets import HingeCabinet as RoboCasaHingeCabinet
-from robocasa.models.fixtures.cabinets import OpenCabinet as RoboCasaOpenCabinet
-from robocasa.models.fixtures.cabinets import Drawer as RoboCasaDrawer
-from robocasa.models.fixtures.cabinets import PanelCabinet as RoboCasaPanelCabinet
-from robocasa.models.fixtures.cabinets import HousingCabinet as RoboCasaHousingCabinet
 
 
-class Cabinet(Fixture, RoboCasaCabinet):
+class Cabinet(Fixture):
     def set_door_state(self, min, max, env, env_ids=None, rng=None):
         pass
 
 
-class SingleCabinet(Cabinet, RoboCasaSingleCabinet):
+class SingleCabinet(Cabinet):
     pass
 
 
-class HingeCabinet(Cabinet, RoboCasaHingeCabinet):
+class HingeCabinet(Cabinet):
 
     def get_state(self, env):
         """
@@ -96,12 +89,12 @@ class HingeCabinet(Cabinet, RoboCasaHingeCabinet):
         return state
 
 
-class OpenCabinet(Cabinet, RoboCasaOpenCabinet):
+class OpenCabinet(Cabinet):
     # Done
     pass
 
 
-class Drawer(Cabinet, RoboCasaDrawer):
+class Drawer(Cabinet):
 
     def update_state(self, env):
         """
@@ -182,7 +175,7 @@ class Drawer(Cabinet, RoboCasaDrawer):
         }
 
 
-class PanelCabinet(Cabinet, RoboCasaPanelCabinet):
+class PanelCabinet(Cabinet):
 
     def get_state(self, env):
         """
@@ -200,5 +193,5 @@ class PanelCabinet(Cabinet, RoboCasaPanelCabinet):
         return state
 
 
-class HousingCabinet(Cabinet, RoboCasaHousingCabinet):
+class HousingCabinet(Cabinet):
     pass

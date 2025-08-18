@@ -17,10 +17,9 @@ from functools import cached_property
 from .fixture import Fixture
 from lwlab.utils.usd_utils import OpenUsd as usd
 from isaaclab.envs import ManagerBasedRLEnvCfg, ManagerBasedRLEnv
-from robocasa.models.fixtures.dishwasher import Dishwasher as RoboCasaDishwasher
 
 
-class Dishwasher(Fixture, RoboCasaDishwasher):
+class Dishwasher(Fixture):
     """
     Dishwasher fixture class
     """

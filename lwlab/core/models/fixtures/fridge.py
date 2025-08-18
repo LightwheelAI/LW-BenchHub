@@ -13,15 +13,11 @@
 # limitations under the License.
 
 from isaaclab.envs import ManagerBasedRLEnvCfg
-from robocasa.models.fixtures.fridge import Fridge as RobocasaFridge
-from robocasa.models.fixtures.fridge import FridgeFrenchDoor as RobocasaFridgeFrenchDoor
-from robocasa.models.fixtures.fridge import FridgeSideBySide as RobocasaFridgeSideBySide
-from robocasa.models.fixtures.fridge import FridgeBottomFreezer as RobocasaFridgeBottomFreezer
-
 from .fixture import Fixture
+import numpy as np
 
 
-class Fridge(Fixture, RobocasaFridge):
+class Fridge(Fixture):
     def setup_cfg(self, cfg: ManagerBasedRLEnvCfg, root_prim):
         super().setup_cfg(cfg, root_prim)
         self._fridge_door_joint_names = []
@@ -71,17 +67,53 @@ class Fridge(Fixture, RobocasaFridge):
             joint_names = self._freezer_door_joint_names
         self.set_joint_state(min=min, max=max, env=env, env_ids=env_ids, joint_names=joint_names)
 
+    def get_reset_region_names(self):
+        return self._fridge_reg_names + self._freezer_reg_names
 
-class FridgeFrenchDoor(Fridge, RobocasaFridgeFrenchDoor):
+    def get_reset_regions(self, env, reg_type="fridge", z_range=(0.50, 1.50)):
+        assert reg_type in ["fridge", "freezer"]
+        reset_region_names = [
+            reg_name
+            for reg_name in self.get_reset_region_names()
+            if reg_type in reg_name
+        ]
+        reset_regions = {}
+        for reg_name in reset_region_names:
+            reg_dict = self._regions.get(reg_name, None)
+            if reg_dict is None:
+                continue
+            p0 = reg_dict["p0"]
+            px = reg_dict["px"]
+            py = reg_dict["py"]
+            pz = reg_dict["pz"]
+            height = pz[2] - p0[2]
+            if height < 0.20:
+                # region is too small, skip
+                continue
+
+            if z_range is not None:
+                reg_abs_z = self.pos[2] + p0[2]
+                if reg_abs_z < z_range[0] or reg_abs_z > z_range[1]:
+                    # region hard to reach, skip
+                    continue
+
+            reset_regions[reg_name] = {
+                "offset": (np.mean((p0[0], px[0])), np.mean((p0[1], py[1])), p0[2]),
+                "size": (px[0] - p0[0], py[1] - p0[1]),
+            }
+        return reset_regions
+
+
+class FridgeFrenchDoor(Fridge):
     def setup_cfg(self, cfg: ManagerBasedRLEnvCfg, root_prim):
         super().setup_cfg(cfg, root_prim)
 
 
-class FridgeSideBySide(Fridge, RobocasaFridgeSideBySide):
+class FridgeSideBySide(Fridge):
     def setup_cfg(self, cfg: ManagerBasedRLEnvCfg, root_prim):
         super().setup_cfg(cfg, root_prim)
 
 
-class FridgeBottomFreezer(Fridge, RobocasaFridgeBottomFreezer):
+class FridgeBottomFreezer(Fridge):
     def setup_cfg(self, cfg: ManagerBasedRLEnvCfg, root_prim):
         super().setup_cfg(cfg, root_prim)

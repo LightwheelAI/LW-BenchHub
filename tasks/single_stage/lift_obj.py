@@ -6,7 +6,7 @@ import os
 import torch
 import isaaclab.sim as sim_utils
 from isaaclab.utils import configclass
-from robocasa.models.fixtures import FixtureType
+from lwlab.core.models.fixtures import FixtureType
 from lwlab.core.scenes.kitchen.kitchen import RobocasaKitchenEnvCfg
 from lwlab.core.tasks.base import BaseTaskEnvCfg
 
@@ -48,7 +48,7 @@ class LiftObj(BaseTaskEnvCfg, RobocasaKitchenEnvCfg):
         cfgs.append(
             dict(
                 name="object",
-                obj_groups=os.path.abspath("./third_party/robocasa/robocasa/models/assets/objects/objaverse/apple/apple_11/model.xml"),
+                obj_groups=os.path.abspath("apple_11"),
                 graspable=True,
                 placement=dict(
                     fixture=self.counter,

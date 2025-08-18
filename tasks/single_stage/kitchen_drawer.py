@@ -14,8 +14,8 @@
 
 import torch
 
-import robocasa.utils.env_utils as EnvUtils
-from robocasa.models.fixtures import FixtureType
+import lwlab.utils.place_utils.env_utils as EnvUtils
+from lwlab.core.models.fixtures import FixtureType
 from robocasa.models.fixtures.others import Floor, Wall
 
 from tasks.base import BaseTaskEnvCfg

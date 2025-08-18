@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import os
-from pxr import Usd, UsdPhysics, UsdGeom, UsdSkel, PhysxSchema
+from pxr import Usd, UsdPhysics, UsdGeom, UsdSkel, PhysxSchema, Gf
 from lwlab.core.mdp.helpers.transformations import quaternion_from_euler
 
 
@@ -130,15 +130,18 @@ class OpenUsd:
         """Get prim position, rotation and scale in world coordinates"""
         xformable = UsdGeom.Xformable(prim)
         if not xformable:
-            return None, None
+            return None, None, None
         matrix = xformable.ComputeLocalToWorldTransform(Usd.TimeCode.Default())
-
-        pos, rot, scale = UsdSkel.DecomposeTransform(matrix)
-        # pos = matrix.ExtractTranslation()
-        # rot = matrix.ExtractRotationQuat()
-        pos_list = list(pos)
-        rot_list = [rot.GetReal(), rot.GetImaginary()[0], rot.GetImaginary()[1], rot.GetImaginary()[2]]
-        return pos_list, rot_list, list(scale)
+        try:
+            pos, rot, scale = UsdSkel.DecomposeTransform(matrix)
+            # pos = matrix.ExtractTranslation()
+            # rot = matrix.ExtractRotationQuat()
+            pos_list = list(pos)
+            quat_list = [rot.GetReal(), rot.GetImaginary()[0], rot.GetImaginary()[1], rot.GetImaginary()[2]]  # wxyz
+            return pos_list, quat_list, list(scale)
+        except Exception as e:
+            print(f"Error decomposing transform for {prim.GetName()}: {e}")
+            return None, None, None
 
     @staticmethod
     def get_articulation_joints(articulation_prim):
@@ -159,6 +162,45 @@ class OpenUsd:
         """Get joint type"""
         joint = UsdPhysics.Joint(joint_prim)
         return joint.GetTypeName()
+
+    @staticmethod
+    def get_object_extent(prim, obj_name):
+        """Get object extent"""
+        obj_prims = OpenUsd.get_prim_by_name(prim, obj_name, only_xform=False)
+        if len(obj_prims) == 0:
+            raise ValueError(f"Object {obj_name} not found in the scene")
+        obj_prim = obj_prims[0]
+        size = obj_prim.GetAttribute("extent").Get()
+        return size
+
+    @staticmethod
+    def scale_size(root_prim, scale_factor=(1.0, 1.0, 1.0)):
+        """Scale object size"""
+        xformable = UsdGeom.Xformable(OpenUsd.get_prim_by_name(root_prim, "root")[0])
+        if not xformable:
+            raise ValueError("prim must be xformable")
+        xform_ops = xformable.GetOrderedXformOps()
+        found_scale = False
+        for op in xform_ops:
+            if op.GetOpType() == UsdGeom.XformOp.TypeScale:
+                op.Set((scale_factor[0], scale_factor[1], scale_factor[2]))
+                found_scale = True
+                break
+        if not found_scale:
+            xformable.AddScaleOp().Set((scale_factor[0], scale_factor[1], scale_factor[2]))
+
+    @staticmethod
+    def rotate_upright(root_prim, axis=(0, 1, 0)):
+        """Rotate object to be upright"""
+        xformable = UsdGeom.Xformable(OpenUsd.get_prim_by_name(root_prim, "root")[0])
+        if not xformable:
+            raise ValueError("prim must be xformable")
+        xformable.Rotate(axis, 0)
+
+    @staticmethod
+    def export(stage, path):
+        """Export prim to path"""
+        stage.Export(path)
 
     @staticmethod
     def is_fixed_joint(prim):
@@ -196,6 +238,19 @@ class OpenUsd:
                 result.append(prim)
         for child in prim.GetAllChildren():
             result.extend(OpenUsd.get_prim_by_name(child, name, only_xform))
+        return result
+
+    @staticmethod
+    def get_prim_by_type(prim, include_types=None, exclude_types=None):
+        """Get prim by type"""
+        result = []
+        if (
+            (include_types is None or prim.GetTypeName() in include_types)
+            and (exclude_types is None or prim.GetTypeName() not in exclude_types)
+        ):
+            result.append(prim)
+        for child in prim.GetAllChildren():
+            result.extend(OpenUsd.get_prim_by_type(child, include_types, exclude_types))
         return result
 
     @staticmethod
@@ -284,22 +339,32 @@ class OpenUsd:
         return os.path.commonprefix(names)
 
     @staticmethod
-    def get_child_xform_names(prim):
-        """Get child xform names"""
-        xform_names = []
+    def get_child_xform_infos(prim):
+        """Get child xform infos"""
+        infos = []
         for child in prim.GetChildren():
             if child.GetTypeName() == "Xform":
-                xform_names.append(child.GetName())
-        return xform_names
+                info = dict(
+                    name=child.GetName(),
+                    type=child.GetAttribute("type").Get(),
+                    prim=child,
+                )
+                infos.append(info)
+        return infos
 
     @staticmethod
-    def get_all_child_xform_names(prim):
-        """Get child xform names"""
-        xform_names = []
+    def get_all_child_xform_infos(prim):
+        """Get child xform infos"""
+        infos = []
         for child in prim.GetAllChildren():
             if child.GetTypeName() == "Xform":
-                xform_names.append(child.GetName())
-        return xform_names
+                info = dict(
+                    name=child.GetName(),
+                    type=child.GetAttribute("type").Get(),
+                    prim=child,
+                )
+                infos.append(info)
+        return infos
 
     @staticmethod
     def get_prim_aabb_bounding_box(prim):
@@ -355,6 +420,23 @@ class OpenUsdWrapper:
 
     def get_all_joints(self):
         return self._usd.get_all_joints(self.stage)
+
+    def get_prim_pos_rot_in_world(self, prim):
+        return self._usd.get_prim_pos_rot_in_world(prim)
+
+    def get_object_extent(self, obj_name, prim=None):
+        if prim is None:
+            prim = self.root_prim
+        return self._usd.get_object_extent(prim, obj_name)
+
+    def scale_size(self, scale_factor=(1.0, 1.0, 1.0)):
+        return self._usd.scale_size(self.root_prim, scale_factor)
+
+    def rotate_upright(self, axis=(0, 1, 0)):
+        return self._usd.rotate_upright(self.root_prim, axis)
+
+    def export(self, path):
+        return self._usd.export(self.stage, path)
 
     def get_articulation_joints(self, articulation_prim=None):
         if articulation_prim is None:

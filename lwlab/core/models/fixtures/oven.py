@@ -16,13 +16,15 @@ import torch
 from functools import cached_property
 
 from isaaclab.envs import ManagerBasedRLEnvCfg, ManagerBasedRLEnv
-from robocasa.models.fixtures.oven import Oven as RoboCasaOven
 
 from .fixture import Fixture
 from lwlab.utils.usd_utils import OpenUsd as usd
 
+import numpy as np
+import re
 
-class Oven(Fixture, RoboCasaOven):
+
+class Oven(Fixture):
     def setup_cfg(self, cfg: ManagerBasedRLEnvCfg, root_prim):
         super().setup_cfg(cfg, root_prim)
         self._door = torch.tensor([0.0], device=cfg.device).repeat(cfg.num_envs)
@@ -160,3 +162,46 @@ class Oven(Fixture, RoboCasaOven):
                             rack_infos[name].append(prim)
         assert "rack0" in rack_infos, f"Oven rack0 not found!"
         return rack_infos
+
+    def get_reset_region_names(self):
+        return ("rack0", "rack1")
+
+    def get_reset_regions(self, env=None, rack_level=0, z_range=None):
+        rack_regions = []
+
+        for key, reg in self._regions.items():
+            m = re.fullmatch(r"rack(\d+)", key)
+            if not m:
+                continue
+            idx = int(m.group(1))
+            p0, px, py, pz = reg["p0"], reg["px"], reg["py"], reg["pz"]
+            hx, hy, hz = (px[0] - p0[0]) / 2, (py[1] - p0[1]) / 2, (pz[2] - p0[2]) / 2
+            center = p0 + np.array([hx, hy, hz])
+            entry = (idx, key, p0, px, py, pz)
+            rack_regions.append(entry)
+
+        rack_regions.sort(key=lambda x: x[0])
+        region = (
+            rack_regions[1]
+            if rack_level == 1 and len(rack_regions) > 1
+            else rack_regions[0]
+            if rack_regions
+            else None
+        )
+
+        if region:
+            level = region[0]
+            self._joint_names["rack"] = f"rack{level}_joint"
+            self._rack[f"rack{level}"] = 0.0
+        else:
+            raise ValueError(f"No rack reset regions found for rack_level {rack_level}")
+
+        idx, key, p0, px, py, pz = region
+        offset = (
+            float(np.mean((p0[0], px[0]))),
+            float(np.mean((p0[1], py[1]))),
+            float(p0[2]),
+        )
+        size = (float(px[0] - p0[0]), float(py[1] - p0[1]))
+        height = float(pz[2] - p0[2])
+        return {key: {"offset": offset, "size": size, "height": height}}

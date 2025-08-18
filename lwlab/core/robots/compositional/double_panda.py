@@ -119,9 +119,9 @@ class DoublePandaEnvCfg(BaseRobotCfg):
                 arm_action = abs_arm.clone()
                 arm_action[3:] = abs_arm[[6, 3, 4, 5]]
                 if arm_idx == 0:
-                    left_arm_action = arm_action  # 机器人系
+                    left_arm_action = arm_action  # robot frame
                 else:
-                    right_arm_action = arm_action  # 机器人系
+                    right_arm_action = arm_action  # robot frame
         left_gripper = torch.tensor([-1.0 if action["left_gripper"] > 0 else 1.0], device=action['rbase'].device)
         right_gripper = torch.tensor([-1.0 if action["right_gripper"] > 0 else 1.0], device=action['rbase'].device)
         return torch.concat([left_arm_action, right_arm_action,

@@ -177,7 +177,7 @@ DOUBLE_PANDA_CFG = ArticulationCfg(
             solver_position_iteration_count=8,
             solver_velocity_iteration_count=0,
             fix_root_link=True,
-            sleep_threshold=0.00005, # follow isaacsim 5.0.0 tutorial 7 setting
+            sleep_threshold=0.00005,  # follow isaacsim 5.0.0 tutorial 7 setting
             stabilization_threshold=0.00001,
         ),
         scale=(1.0, 1.0, 1.0),
@@ -252,4 +252,24 @@ DOUBLE_PANDA_OFFSET_CONFIG = {
     "left2finger_transform": np.eye(4),
     "right2finger_transform": np.eye(4),
     "robot_arm_length": 0.6,
+}
+
+
+VIS_HELPER_CFG = {
+    "gripper_line": {
+        "relative_prim_path": f"omron_v2/Franka/panda_hand",
+        "translation": (-0.00111, 0.00182, 0.0998),
+        "orientation": (0.01147, 0.50623, 0.8623, -0.00619),
+        "color": (0.0, 0.7, 1.0),
+        "spawn": sim_utils.CylinderCfg(
+            radius=0.004,
+            height=0.6,
+            axis="Z",
+            visual_material=sim_utils.PreviewSurfaceCfg(
+                diffuse_color=(0.0, 0.7, 1.0)
+            ),
+            physics_material=None,
+            rigid_props=None,
+        )
+    }
 }

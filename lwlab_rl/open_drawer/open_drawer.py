@@ -13,6 +13,9 @@
 # limitations under the License.
 
 import torch
+from lwlab.core.scenes.kitchen.kitchen import RobocasaKitchenEnvCfg
+
+from lwlab.core.models.fixtures import FixtureType
 from isaaclab.managers import EventTermCfg as EventTerm
 from isaaclab.managers import ObservationGroupCfg as ObsGroup
 from isaaclab.managers import ObservationTermCfg as ObsTerm

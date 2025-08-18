@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from robocasa.models.fixtures import FixtureType
+from lwlab.core.models.fixtures import FixtureType
 
 from tasks.base import BaseTaskEnvCfg
 from lwlab.core.scenes.kitchen.kitchen import RobocasaKitchenEnvCfg

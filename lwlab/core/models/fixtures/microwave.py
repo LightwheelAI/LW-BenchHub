@@ -17,12 +17,11 @@ from .fixture import Fixture
 from functools import cached_property
 
 from isaaclab.envs import ManagerBasedRLEnvCfg, ManagerBasedRLEnv
-from robocasa.models.fixtures.microwave import Microwave as RoboCasaMicrowave
 
 from lwlab.utils.usd_utils import OpenUsd as usd
 
 
-class Microwave(Fixture, RoboCasaMicrowave):
+class Microwave(Fixture):
     def setup_cfg(self, cfg: ManagerBasedRLEnvCfg, root_prim):
         super().setup_cfg(cfg, root_prim)
         self._turned_on = torch.tensor([False], dtype=torch.bool, device=cfg.device).repeat(cfg.num_envs)

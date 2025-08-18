@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from robocasa.models.fixtures.hood import Hood as RoboCasaHood
 from .fixture import Fixture
 
 
-class Hood(Fixture, RoboCasaHood):
+class Hood(Fixture):
     pass

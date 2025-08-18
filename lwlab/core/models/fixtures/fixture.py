@@ -13,23 +13,54 @@
 # limitations under the License.
 
 import torch
-from typing import Dict, Any
-from collections import defaultdict
+import numpy as np
+from enum import IntEnum
+from pxr import UsdGeom, Gf
+from copy import deepcopy
+from functools import cached_property
 
-from robocasa.models.fixtures.fixture import Fixture as RoboCasaFixture
-from robocasa.models.fixtures.fixture_stack import STACKABLE
-from robocasa.models.scenes.scene_builder import FIXTURES, FIXTURES_INTERIOR
 from isaaclab.envs import ManagerBasedRLEnvCfg, ManagerBasedRLEnv
 from isaaclab.sensors import ContactSensorCfg
 
 import lwlab.utils.object_utils as OU
 from lwlab.utils.usd_utils import OpenUsd as usd
+import lwlab.utils.math_utils.transform_utils as T
+from lwlab.utils.errors import SamplingError
+
+FIXTURES = dict()
 
 
-# adapt for multiple names for the same fixture class
-fixture_class_to_names: Dict[Any, list] = defaultdict(list)
-for k, v in FIXTURES.items():
-    fixture_class_to_names[v].append(k)
+class FixtureType(IntEnum):
+    """
+    Enum for fixture types in lwlab kitchen environments.
+    """
+
+    MICROWAVE = 1
+    STOVE = 2
+    OVEN = 3
+    SINK = 4
+    COFFEE_MACHINE = 5
+    TOASTER = 6
+    TOASTER_OVEN = 7
+    FRIDGE = 8
+    DISHWASHER = 9
+    BLENDER = 10
+    STAND_MIXER = 11
+    ELECTRIC_KETTLE = 12
+    STOOL = 13
+    COUNTER = 14
+    ISLAND = 15
+    COUNTER_NON_CORNER = 16
+    DINING_COUNTER = 17
+    CABINET = 18
+    CABINET_WITH_DOOR = 19
+    CABINET_SINGLE_DOOR = 20
+    CABINET_DOUBLE_DOOR = 21
+    SHELF = 22
+    DRAWER = 23
+    TOP_DRAWER = 24
+    WINDOW = 25
+    DISH_RACK = 26
 
 
 class Fixture:
@@ -37,28 +68,178 @@ class Fixture:
         return self
 
     def __init_subclass__(cls) -> None:
-        fixture_found = False
-        for kls in cls.mro()[1:]:
-            if issubclass(kls, Fixture):
-                fixture_found = True
+        FIXTURES[cls.__name__] = cls
 
-            elif (kls is not RoboCasaFixture and issubclass(kls, RoboCasaFixture)):
-                if not fixture_found:
-                    raise ValueError(f"Robocasa Fixture must be inherited after Fixture")
-                names = fixture_class_to_names[kls]
-                for name in names:
-                    FIXTURES[name] = cls
-                    if name in STACKABLE:
-                        STACKABLE[name] = cls
-                    if name in FIXTURES_INTERIOR:
-                        FIXTURES_INTERIOR[name] = cls
-                break
+    def __init__(
+            self,
+            name,
+            prim,
+            pos=None,
+            size=None,
+            max_size=None,
+            placement=None,
+            rng=None,
+    ):
+        self.name = name
+        # if pos is not None:
+        #     self.set_pos(pos)
+
+        # Preserve existing regions if they exist
+        if not hasattr(self, '_regions'):
+            self._regions = dict()
+
+        geom_prim_list = usd.get_prim_by_type(prim, exclude_types=["Xform", "Scope"])
+        for geom_prim in geom_prim_list:
+            g_name = geom_prim.GetName()
+            if not g_name.startswith("reg_"):
+                continue
+            reg_dict = {}
+
+            reg_pos = geom_prim.GetAttribute("xformOp:translate").Get()
+            reg_rot = geom_prim.GetAttribute("xformOp:orient").Get()
+
+            if reg_pos is None or reg_rot is None:
+                continue
             else:
-                # no robocasa fixture found
-                raise ValueError(f"Robocasa Fixture must be inherited")
+                reg_quat = [reg_rot.GetReal(), reg_rot.GetImaginary()[0], reg_rot.GetImaginary()[1], reg_rot.GetImaginary()[2]]
+                self._pos = np.array(reg_pos)
+                self._quat = np.array(reg_quat)
+                from lwlab.core.mdp.helpers.rotation_helper import get_euler_xyz
+                reg_euler_rad = get_euler_xyz(np.array(reg_quat))
+                self._euler = reg_euler_rad
+                self._rot = reg_euler_rad
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+            reg_curr_pos = np.array(list(geom_prim.GetAttribute("xformOp:translate").Get()))
+            reg_halfsize = list(geom_prim.GetAttribute("extent").Get()[1])
+            p0 = reg_curr_pos + [-reg_halfsize[0], -reg_halfsize[1], -reg_halfsize[2]]
+            px = reg_curr_pos + [reg_halfsize[0], -reg_halfsize[1], -reg_halfsize[2]]
+            py = reg_curr_pos + [-reg_halfsize[0], reg_halfsize[1], -reg_halfsize[2]]
+            pz = reg_curr_pos + [-reg_halfsize[0], -reg_halfsize[1], reg_halfsize[2]]
+            # reg_dict["prim"] = geom_prim
+            reg_dict["p0"] = p0
+            reg_dict["px"] = px
+            reg_dict["py"] = py
+            reg_dict["pz"] = pz
+            self._regions[g_name.replace("reg_", "")] = reg_dict
+
+        # if size is not None:
+        #     self.set_scale_from_size(size, max_size=max_size)
+
+        self.size = np.array([self.width, self.depth, self.height])
+
+        if self.width is not None:
+            try:
+                # calculate based on bounding points
+                reg_key = None
+                if "main" in self._regions:
+                    reg_key = "main"
+                elif "bbox" in self._regions:
+                    reg_key = "bbox"
+                else:
+                    raise ValueError
+                p0 = self._regions[reg_key]["p0"]
+                px = self._regions[reg_key]["px"]
+                py = self._regions[reg_key]["py"]
+                pz = self._regions[reg_key]["pz"]
+                self.origin_offset = np.array(
+                    [
+                        np.mean((p0[0], px[0])),
+                        np.mean((p0[1], py[1])),
+                        np.mean((p0[2], pz[2])),
+                    ]
+                ) - np.array(prim.GetAttribute("xformOp:translate").Get())
+            except:
+                raise RuntimeError(f"The counter self._regions is None.")
+        else:
+            self.origin_offset = np.array([0, 0, 0])
+
+        # placement config, for determining where to place fixture (most fixture will not use this)
+        self._placement = placement
+
+        if rng is not None:
+            self.rng = rng
+        else:
+            self.rng = np.random.default_rng()
+
+        # track information about all joints
+        self._joint_infos = dict()
+        joint_prims = usd.get_all_joints_without_fixed(prim)
+        for jnt in joint_prims:
+            self._joint_infos[jnt.GetName()] = {} if jnt.GetAttribute("physics:lowerLimit").Get() is None \
+                else {"range": torch.tensor([jnt.GetAttribute("physics:lowerLimit").Get() * torch.pi / 180,
+                                             jnt.GetAttribute("physics:upperLimit").Get() * torch.pi / 180])}
+
+        self._pos = np.array(prim.GetAttribute("xformOp:translate").Get())
+
+    def get_reset_region_names(self):
+        return ("int", )
+
+    # def set_origin(self, origin):
+    #     """
+    #     Set the origin of the fixture to a specified position
+
+    #     Args:
+    #         origin (3-tuple): new (x, y, z) position of the fixture
+    #     """
+    #     # compute new position
+    #     fixture_rot = np.array([0, 0, self.rot])
+    #     fixture_mat = T.euler2mat(fixture_rot)
+
+    #     pos = origin + np.dot(fixture_mat, -self.origin_offset)
+    #     self.set_pos(pos)
+
+    # def set_scale_from_size(self, size, max_size=None):
+    #     """
+    #     Set the scale of the fixture based on the desired size. If any of the dimensions are None,
+    #     the scaling factor will be the same as one of the other two dimensions
+
+    #     Args:
+    #         size (3-tuple): (width, depth, height) of the fixture
+    #         max_size (3-tuple): maximum allowable size (width, depth, height) of the fixture
+    #     """
+    #     # check that the argument is valid
+    #     assert len(size) == 3
+
+    #     # calculate and set scale according to specification
+    #     scale = [None, None, None]
+    #     cur_size = [self.width, self.depth, self.height]
+
+    #     for (i, t) in enumerate(size):
+    #         if t is not None:
+    #             scale[i] = t / cur_size[i]
+
+    #     scale[0] = scale[0] or scale[2] or scale[1]
+    #     scale[1] = scale[1] or scale[0] or scale[2]
+    #     scale[2] = scale[2] or scale[0] or scale[1]
+    #     scale = np.array(scale)
+
+    #     if max_size is not None:
+    #         # recompute the scaling as needed
+    #         scaling_adjustment = 1.0
+    #         for i in range(3):
+    #             if max_size[i] is None:
+    #                 continue
+    #             scaling_adjustment = min(
+    #                 scaling_adjustment, max_size[i] / (cur_size[i] * scale[i])
+    #             )
+    #         scale *= scaling_adjustment
+
+    #     self.set_scale(scale)
+
+    #     for (reg_name, reg_dict) in self._regions.items():
+    #         for (k, v) in reg_dict.items():
+    #             if isinstance(v, np.ndarray):
+    #                 reg_dict[k] = v * scale
+
+    # def set_pos(self, pos):
+    #     xformable = UsdGeom.Xformable(self._prim)
+    #     xformable.SetTranslate(Gf.Vec3f(pos[0], pos[1], pos[2]))
+
+    # def set_scale(self, scale, prim=None):
+    #     if prim is None:
+    #         prim = self._prim
+    #     xformable = UsdGeom.Xformable(prim)
+    #     xformable.SetScale(Gf.Vec3f(scale[0], scale[1], scale[2]))
 
     def setup_cfg(self, cfg: ManagerBasedRLEnvCfg, root_prim):
 
@@ -241,10 +422,284 @@ class Fixture:
             env=env, min=min, max=max, joint_names=self.door_joint_names, env_ids=env_ids, rng=rng
         )
 
-    @property
+    def get_reset_regions(self, env=None, reset_region_names=None, z_range=(0.45, 1.50)):
+        """
+        Get reset regions from USD file using existing USDObject pattern
+        """
+        reset_regions = dict()
+        if reset_region_names is None:
+            reset_region_names = self.get_reset_region_names()
+        for reg_name in reset_region_names:
+            reg_dict = self._regions.get(reg_name, None)
+            if reg_dict is None:
+                continue
+            p0 = reg_dict["p0"]
+            px = reg_dict["px"]
+            py = reg_dict["py"]
+            pz = reg_dict["pz"]
+
+            if z_range is not None:
+                reg_abs_z = self.pos[2] + p0[2]
+                if reg_abs_z < z_range[0] or reg_abs_z > z_range[1]:
+                    continue
+
+            reset_regions[reg_name] = {
+                "offset": (np.mean((p0[0], px[0])), np.mean((p0[1], py[1])), p0[2]),
+                "size": (px[0] - p0[0], py[1] - p0[1]),
+                "height": (pz[2] - p0[2]),
+            }
+
+        return reset_regions
+
+    @cached_property
+    def width(self):
+        reg_key = None
+        if "main" in self._regions:
+            reg_key = "main"
+        elif "bbox" in self._regions:
+            reg_key = "bbox"
+        else:
+            return None
+
+        reg_p0 = self._regions[reg_key]["p0"]
+        reg_px = self._regions[reg_key]["px"]
+        w = reg_px[0] - reg_p0[0]
+        return w
+
+    @cached_property
+    def depth(self):
+        reg_key = None
+        if "main" in self._regions:
+            reg_key = "main"
+        elif "bbox" in self._regions:
+            reg_key = "bbox"
+        else:
+            return None
+
+        reg_p0 = self._regions[reg_key]["p0"]
+        reg_py = self._regions[reg_key]["py"]
+        d = reg_py[1] - reg_p0[1]
+        return d
+
+    @cached_property
+    def height(self):
+        reg_key = None
+        if "main" in self._regions:
+            reg_key = "main"
+        elif "bbox" in self._regions:
+            reg_key = "bbox"
+        else:
+            return None
+
+        reg_p0 = self._regions[reg_key]["p0"]
+        reg_pz = self._regions[reg_key]["pz"]
+        h = reg_pz[2] - reg_p0[2]
+        return h
+
+    @cached_property
+    def rot(self):
+        return self._rot[2] if hasattr(self, "_rot") else 3.14  # NOTE get _rot from USD
+
+    @cached_property
+    def euler(self):
+        return self._rot[2] if hasattr(self, "_rot") else 0
+
+    @cached_property
     def door_joint_names(self):
         return [j_name for j_name in self._joint_infos if "door" in j_name]
 
-    @property
+    @cached_property
     def nat_lang(self):
         return self.name
+
+    @property
+    def pos(self):
+        return self._pos if hasattr(self, "_pos") else np.array([0, 0, 0])
+
+    @property
+    def quat(self):
+        return self._quat
+
+    def get_ext_sites(self, all_points=False, relative=True):
+        """
+        Get the exterior bounding box points of the object
+
+        Args:
+            all_points (bool): If True, will return all 8 points of the bounding box
+
+            relative (bool): If True, will return the points relative to the object's position
+
+        Returns:
+            list: 4 or 8 points
+        """
+        reg_key = None
+        if "main" in self._regions:
+            reg_key = "main"
+        elif "bbox" in self._regions:
+            reg_key = "bbox"
+        else:
+            print("fuck assets!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ")
+            return [np.array([2.79, -0.625, 0.62]), np.array([3.51, -0.625, 0.62]), np.array([2.79, -0.025, 0.62]), np.array([2.79, -0.625, 1.22])]
+
+        sites = [
+            self._regions[reg_key]["p0"],
+            self._regions[reg_key]["px"],
+            self._regions[reg_key]["py"],
+            self._regions[reg_key]["pz"],
+        ]
+
+        if all_points:
+            p0, px, py, pz = sites
+            sites += [
+                np.array([p0[0], py[1], pz[2]]),
+                np.array([px[0], py[1], pz[2]]),
+                np.array([px[0], py[1], p0[2]]),
+                np.array([px[0], p0[1], pz[2]]),
+            ]
+
+        if relative is False:
+            sites = [OU.get_pos_after_rel_offset(self, offset) for offset in sites]
+
+        return sites
+
+    def get_int_sites(self, all_points=False, relative=True):
+        """
+        Get the interior bounding box points of the object
+
+        Args:
+            all_points (bool): If True, will return all 8 points of the bounding box
+
+            relative (bool): If True, will return the points relative to the object's position
+
+        Returns:
+            dict: a dictionary of interior areas, each with 4 or 8 points
+        """
+        sites_dict = {}
+        for prefix in self.get_reset_region_names():
+            reg_dict = self._regions.get(prefix, None)
+            if reg_dict is None:
+                continue
+
+            sites = [
+                reg_dict["p0"],
+                reg_dict["px"],
+                reg_dict["py"],
+                reg_dict["pz"],
+            ]
+
+            if all_points:
+                p0, px, py, pz = sites
+                sites += [
+                    np.array([p0[0], py[1], pz[2]]),
+                    np.array([px[0], py[1], pz[2]]),
+                    np.array([px[0], py[1], p0[2]]),
+                    np.array([px[0], p0[1], pz[2]]),
+                ]
+
+            if relative is False:
+                sites = [OU.get_pos_after_rel_offset(self, offset) for offset in sites]
+
+            sites_dict[prefix] = sites
+
+        return sites_dict
+
+    def get_bbox_points(self, trans=None, rot=None):
+        """
+        Get the full set of bounding box points of the object
+        rot: a rotation matrix
+        """
+        bbox_offsets = self.get_ext_sites(all_points=True, relative=True)
+
+        if trans is None:
+            trans = self.pos
+        if rot is not None:
+            rot = T.quat2mat(rot)
+        else:
+            rot = np.array([0, 0, self.rot])
+            rot = T.euler2mat(rot)
+
+        points = [(np.matmul(rot, p) + trans) for p in bbox_offsets]
+        return points
+
+    def sample_reset_region(self, min_size=None, *args, **kwargs):
+        """
+        Sample a reset region from available regions
+        """
+        from lwlab.utils.fixture_utils import fixture_is_type
+
+        if min_size is not None:
+            assert len(min_size) in [2, 3]
+
+        ref_rot = None
+        if "ref" in kwargs:
+            ref_fixture = kwargs["ref"]
+            if hasattr(ref_fixture, "rot"):
+                ref_rot = ref_fixture.rot
+
+        # checks if the host fixture is a dining counter, and the reference fixture faces a different direction
+        if (
+            ref_rot is not None
+            and abs(ref_rot - self.rot) > 0.01
+            and fixture_is_type(self, FixtureType.DINING_COUNTER)
+        ):
+            ref_rot_flag = True
+        else:
+            ref_rot_flag = False
+
+        if fixture_is_type(self, FixtureType.DINING_COUNTER):
+            all_regions_dict = self.get_reset_regions(
+                *args, **kwargs, ref_rot_flag=ref_rot_flag
+            )
+        else:
+            all_regions_dict = self.get_reset_regions(*args, **kwargs)
+
+        valid_regions = []
+        for reg_name, reg_dict in all_regions_dict.items():
+            reg_height = reg_dict.get("height", None)
+            reg_size = reg_dict["size"]
+            if min_size is not None:
+                if min_size[0] > max(reg_size) and min_size[1] > max(reg_size):
+                    # object cannot fit plane
+                    continue
+                if (
+                    reg_height is not None
+                    and len(min_size) == 3
+                    and min_size[2] > reg_height
+                ):
+                    # object cannot fit height of region
+                    continue
+            reg_dict_copy = deepcopy(reg_dict)
+            reg_dict_copy["name"] = reg_name
+            valid_regions.append(reg_dict_copy)
+
+        if len(valid_regions) < 1:
+            raise SamplingError(
+                f"Could not find suitable region to sample from for {self.name}"
+            )
+        return self.rng.choice(valid_regions)
+
+    def set_regions(self, region_dict):
+        """
+        Set the positions of the exterior and interior bounding box sites of the object
+
+        Args:
+            region_dict (dict): Dictionary of regions (containing pos, halfsize)
+        """
+        for (name, reg) in region_dict.items():
+            pos = np.array(reg["pos"])
+            halfsize = np.array(reg["halfsize"])
+            # self._regions[name]["elem"].set("pos", pos)
+            # self._regions[name]["elem"].set("size", halfsize)
+            self._regions[name] = {}
+            self._regions[name]["pos"] = pos
+            self._regions[name]["size"] = halfsize
+
+            # compute boundary points for reference
+            p0 = pos + np.array([-halfsize[0], -halfsize[1], -halfsize[2]])
+            px = pos + np.array([halfsize[0], -halfsize[1], -halfsize[2]])
+            py = pos + np.array([-halfsize[0], halfsize[1], -halfsize[2]])
+            pz = pos + np.array([-halfsize[0], -halfsize[1], halfsize[2]])
+            self._regions[name]["p0"] = p0
+            self._regions[name]["px"] = px
+            self._regions[name]["py"] = py
+            self._regions[name]["pz"] = pz

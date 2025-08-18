@@ -333,7 +333,7 @@ def main():
         env.reset()
         teleop_interface.reset()
 
-        from lwlab.utils.env import setup_cameras, setup_task_description_ui
+        from lwlab.utils.env import setup_cameras, setup_task_description_ui, spawn_robot_vis_helper_general, destroy_robot_vis_helper
 
         if env_cfg.enable_cameras and args_cli.enable_multiple_viewports:
             viewports = setup_cameras(env)
@@ -360,6 +360,8 @@ def main():
         frame_analyzer = DEBUG_FRAME_ANALYZER
         debug_print("Frame rate analyzer initialized in debug mode")
 
+        vis_helper_prims = []
+
         # simulate environment
         while simulation_app.is_running():
 
@@ -375,11 +377,13 @@ def main():
             if actions is None or should_reset_recording_instance:
                 if args_cli.enable_log:
                     try:
+                        destroy_robot_vis_helper(vis_helper_prims, env)
                         env.reset()
                     except Exception as e:
                         handle_exception_and_log(e, log_path)
                         break
                 else:
+                    destroy_robot_vis_helper(vis_helper_prims, env)
                     env.reset()
                 should_reset_recording_instance = False
                 frame_count = 0
@@ -397,6 +401,7 @@ def main():
                     print("Start Recording!!!")
                     start_record_state = True
 
+                    vis_helper_prims = spawn_robot_vis_helper_general(env)
                     # Initialize video recording
                     if video_recorder is not None:
                         camera_data, camera_name = get_camera_images(env)

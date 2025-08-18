@@ -13,8 +13,7 @@
 # limitations under the License.
 
 from .fixture import Fixture
-from robocasa.models.fixtures.fixture_stack import FixtureStack as RoboCasaFixtureStack
 
 
-class FixtureStack(Fixture, RoboCasaFixtureStack):
+class FixtureStack(Fixture):
     pass

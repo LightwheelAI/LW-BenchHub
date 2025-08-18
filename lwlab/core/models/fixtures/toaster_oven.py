@@ -17,13 +17,12 @@ import time
 from functools import cached_property
 
 from isaaclab.envs import ManagerBasedRLEnvCfg, ManagerBasedRLEnv
-from robocasa.models.fixtures.toaster_oven import ToasterOven as RoboCasaToasterOven
 
 from .fixture import Fixture
 from lwlab.utils.usd_utils import OpenUsd as usd
 
 
-class ToasterOven(Fixture, RoboCasaToasterOven):
+class ToasterOven(Fixture):
     def setup_cfg(self, cfg: ManagerBasedRLEnvCfg, root_prim):
         super().setup_cfg(cfg, root_prim)
         self._door = torch.tensor([0.0], device=cfg.device).repeat(cfg.num_envs)

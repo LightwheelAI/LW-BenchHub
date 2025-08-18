@@ -33,7 +33,10 @@ class GeneralAsset(AssetBase):
 
     def _make_articulation_cfg(self, prim):
         from isaaclab.assets.articulation.articulation_cfg import ArticulationCfg
-        pos, rot, scale = usd.get_prim_pos_rot_in_world(prim)
+        pos, quat, scale = usd.get_prim_pos_rot_in_world(prim)
+        if pos is None or quat is None:
+            print(f"fuck {prim.GetName()} none pos or quat !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ")
+            return None
         joints = usd.get_all_joints_without_fixed(prim)
         if not joints:
             return None
@@ -46,14 +49,17 @@ class GeneralAsset(AssetBase):
                                spawn=None,
                                init_state=ArticulationCfg.InitialStateCfg(
                                    pos=pos,
-                                   rot=rot,
+                                   rot=quat,
                                ),
                                actuators={},
                                )
 
     def _make_rigidbody_cfg(self, prim):
         from isaaclab.assets.rigid_object.rigid_object_cfg import RigidObjectCfg
-        pos, rot, scale = usd.get_prim_pos_rot_in_world(prim)
+        pos, quat, scale = usd.get_prim_pos_rot_in_world(prim)
+        if pos is None or quat is None:
+            print(f"fuck {prim.GetName()} none pos or quat !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ")
+            return None
         orin_prim_path = prim.GetPath().pathString
         name = orin_prim_path.split("/")[-1]
         sub_prim_path = orin_prim_path[orin_prim_path.find('/', 1) + 1:]
@@ -63,7 +69,7 @@ class GeneralAsset(AssetBase):
                               spawn=None,
                               init_state=RigidObjectCfg.InitialStateCfg(
                                   pos=pos,
-                                  rot=rot,
+                                  rot=quat,
                               ),
                               )
 
@@ -83,6 +89,8 @@ class GeneralAsset(AssetBase):
                 if prim in articulation_sub_prims:
                     continue
                 rb_cfg = self._make_rigidbody_cfg(prim)
+                if rb_cfg is None:
+                    continue
                 self.rigid_objects.append(RigidObject(rb_cfg))
 
     def reset(self, env_ids=None):

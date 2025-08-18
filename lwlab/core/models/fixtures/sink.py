@@ -16,13 +16,12 @@ import torch
 from functools import cached_property
 
 from isaaclab.envs import ManagerBasedRLEnvCfg, ManagerBasedRLEnv
-from robocasa.models.fixtures.sink import Sink as RoboCasaSink
 
 from .fixture import Fixture
 from lwlab.utils.usd_utils import OpenUsd as usd
 
 
-class Sink(Fixture, RoboCasaSink):
+class Sink(Fixture):
     def setup_cfg(self, cfg: ManagerBasedRLEnvCfg, root_prim):
         super().setup_cfg(cfg, root_prim)
 
@@ -165,3 +164,6 @@ class Sink(Fixture, RoboCasaSink):
     @property
     def nat_lang(self):
         return "sink"
+
+    def get_reset_region_names(self):
+        return ("basin", "basin_right", "basin_left")

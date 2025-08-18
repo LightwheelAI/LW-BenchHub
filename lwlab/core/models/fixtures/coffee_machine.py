@@ -17,10 +17,9 @@ from functools import cached_property
 from .fixture import Fixture
 from lwlab.utils.usd_utils import OpenUsd as usd
 from isaaclab.envs import ManagerBasedRLEnvCfg, ManagerBasedRLEnv
-from robocasa.models.fixtures.coffee_machine import CoffeeMachine as RoboCasaCoffeeMachine
 
 
-class CoffeeMachine(Fixture, RoboCasaCoffeeMachine):
+class CoffeeMachine(Fixture):
     """
     Coffee machine object. Supports turning on coffee machine, and simulated coffee pouring
     """

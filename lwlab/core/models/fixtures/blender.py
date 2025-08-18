@@ -12,12 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import platform
 from .fixture import Fixture
-from isaaclab.sensors import ContactSensorCfg
-from isaaclab.envs import ManagerBasedRLEnvCfg
-from robocasa.models.fixtures.blender import Blender as RoboCasaBlender
 
 
-class Blender(Fixture, RoboCasaBlender):
+class Blender(Fixture):
     pass

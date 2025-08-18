@@ -14,9 +14,9 @@
 
 from dataclasses import MISSING
 
-from robocasa.models.fixtures import FixtureType
-import robocasa.utils.env_utils as EnvUtils
-from robocasa.environments.kitchen.kitchen import fixture_is_type
+from lwlab.core.models.fixtures import FixtureType
+import lwlab.utils.place_utils.env_utils as EnvUtils
+from lwlab.core.models.fixtures import fixture_is_type
 
 from tasks.base import BaseTaskEnvCfg
 from lwlab.core.scenes.kitchen.kitchen import RobocasaKitchenEnvCfg

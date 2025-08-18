@@ -15,12 +15,11 @@
 import torch
 
 from isaaclab.envs import ManagerBasedRLEnvCfg
-from robocasa.models.fixtures.stand_mixer import StandMixer as RoboCasaStandMixer
 
 from .fixture import Fixture
 
 
-class StandMixer(Fixture, RoboCasaStandMixer):
+class StandMixer(Fixture):
 
     def setup_cfg(self, cfg: ManagerBasedRLEnvCfg, root_prim):
         super().setup_cfg(cfg, root_prim)
@@ -133,3 +132,6 @@ class StandMixer(Fixture, RoboCasaStandMixer):
     @property
     def nat_lang(self):
         return "stand mixer"
+
+    def get_reset_region_names(self):
+        return ("bowl",)

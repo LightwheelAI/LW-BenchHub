@@ -16,10 +16,9 @@ import torch
 import time
 from .fixture import Fixture
 from isaaclab.envs import ManagerBasedRLEnvCfg
-from robocasa.models.fixtures.electric_kettle import ElectricKettle as RoboCasaElectricKettle
 
 
-class ElectricKettle(Fixture, RoboCasaElectricKettle):
+class ElectricKettle(Fixture):
     def setup_cfg(self, cfg: ManagerBasedRLEnvCfg, root_prim):
         super().setup_cfg(cfg, root_prim)
         joint_names = list(self._joint_infos.keys())

@@ -493,8 +493,101 @@ def setup_cameras(env):
     return viewports
 
 
+def spawn_cylinder_with_xform(
+    parent_prim_path,
+    xform_name,
+    cylinder_name,
+    cfg,
+    env,
+):
+    from pxr import UsdGeom, Sdf, Gf, UsdShade
+    stage = env.sim.stage
+
+    xform_path = f"{parent_prim_path}/{xform_name}"
+    xform_prim = stage.GetPrimAtPath(xform_path)
+    if xform_prim and xform_prim.IsValid():
+        return xform_prim
+
+    xform = UsdGeom.Xform.Define(stage, Sdf.Path(xform_path))
+
+    xform.AddTranslateOp().Set(Gf.Vec3f(*cfg["translation"]))
+    xform.AddOrientOp().Set(Gf.Quatf(*cfg["orientation"]))
+
+    cyl_path = f"{xform_path}/{cylinder_name}"
+    cyl = UsdGeom.Cylinder.Define(stage, Sdf.Path(cyl_path))
+    cyl.CreateRadiusAttr(cfg["spawn"].radius)
+    cyl.CreateHeightAttr(cfg["spawn"].height)
+    cyl.CreateAxisAttr(cfg["spawn"].axis)
+
+    material_path = f"{xform_path}/{cylinder_name}_Material"
+    material = UsdShade.Material.Define(stage, Sdf.Path(material_path))
+    shader = UsdShade.Shader.Define(stage, Sdf.Path(f"{material_path}/Shader"))
+    shader.CreateIdAttr("UsdPreviewSurface")
+    shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(*cfg["color"]))
+    shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(0.4)
+    shader.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(0.0)
+
+    surface_output = material.CreateSurfaceOutput()
+    shader_output = shader.CreateOutput("surface", Sdf.ValueTypeNames.Token)
+    surface_output.ConnectToSource(shader_output)
+
+    UsdShade.MaterialBindingAPI(cyl).Bind(material)
+
+    return xform
+
+
+def spawn_robot_vis_helper_general(env):
+    # check if the robot_vis_helper_cfg is available
+    if not hasattr(env.cfg, "robot_vis_helper_cfg"):
+        return
+
+    vis_helper_prims = []
+
+    for prim in env.sim.stage.Traverse():
+        if prim.GetName().lower() == "robot":
+            robot_prim_path = prim.GetPath()
+    for key, cfg in env.cfg.robot_vis_helper_cfg.items():
+        prim_path = robot_prim_path.AppendPath(cfg["relative_prim_path"])
+        cylinder_prim = spawn_cylinder_with_xform(
+            parent_prim_path=prim_path,
+            xform_name=key,
+            cylinder_name="mesh",
+            cfg=cfg,
+            env=env,
+        )
+        vis_helper_prims.append(cylinder_prim)
+    return vis_helper_prims
+
+
+def spawn_robot_vis_helper(env):
+    # Have problems with Isaaclab/IsaacSim 4.5, works fine with Isaaclab/IsaacSim 5.0
+    # check if the robot_vis_helper_cfg is available
+    if not hasattr(env.cfg, "robot_vis_helper_cfg"):
+        return
+    import isaaclab.sim as sim_utils
+
+    robot_prim = None
+    vis_helper_prims = []
+
+    for prim in env.sim.stage.Traverse():
+        if prim.GetName().lower() == "robot":
+            robot_prim = prim
+            robot_prim_path = prim.GetPath()
+    for key, cfg in env.cfg.robot_vis_helper_cfg.items():
+        prim_path = robot_prim_path.AppendPath(cfg["relative_prim_path"])
+        prim = sim_utils.spawn_cylinder(prim_path, cfg['spawn'], translation=cfg['translation'], orientation=cfg['orientation'])
+        vis_helper_prims.append(prim)
+    return vis_helper_prims
+
+
+def destroy_robot_vis_helper(prim_list, env):
+    for prim in prim_list:
+        if prim.GetPrim().IsValid():
+            env.sim.stage.RemovePrim(prim.GetPath())
+
+
 def generate_random_robot_pos(anchor_pos, anchor_ori, pos_dev_x, pos_dev_y):
-    import robosuite.utils.transform_utils as T
+    import lwlab.utils.math_utils.transform_utils as T
     local_deviation = np.random.uniform(
         low=(-pos_dev_x, -pos_dev_y),
         high=(pos_dev_x, 0.0),
@@ -519,7 +612,7 @@ def get_safe_robot_anchor(env, unsafe_anchor_pos, unsafe_anchor_ori):
     Returns:
         tuple(np.array, np.array): The new, safer anchor position and orientation.
     """
-    import robosuite.utils.transform_utils as T
+    import lwlab.utils.math_utils.transform_utils as T
 
     # Calculate the required retreat distance based on arm reach
     try:
@@ -567,7 +660,7 @@ def check_overlap(bbox1, bbox2):
     return overlaps_x and overlaps_y and overlaps_z
 
 
-def calculate_robot_bbox(env, robot_pos, arm_margin=0.1, floor_margin=0.1, env_ids=None):
+def calculate_robot_bbox(env, robot_pos, arm_margin=0.08, floor_margin=0.1, env_ids=None):
     """
     Calculate the bounding box of the robot in the environment.
 

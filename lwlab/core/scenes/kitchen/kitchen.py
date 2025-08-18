@@ -66,7 +66,7 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
 
     def __post_init__(self):
         assert self.scene_name.startswith("robocasa"), "Only robocasa scenes are supported"
-        import robocasa.models.scenes.scene_registry as SceneRegistry
+        import lwlab.utils.place_utils.scene_registry as SceneRegistry
         # scene name is of the form robocasa-kitchen-<layout_id>
         scene_name_split = self.scene_name.split("-")
         layout_ids = SceneRegistry.unpack_layout_ids(None, "test")
@@ -105,7 +105,7 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
         self._ep_meta = {}
         if hasattr(self, "replay_cfgs") and "ep_meta" in self.replay_cfgs:
             self.set_ep_meta(self.replay_cfgs["ep_meta"])
-        self.obj_registries = (
+        self.sources = (
             "objaverse",
             "lightwheel"
         )
@@ -150,7 +150,8 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
             self.usd_path = new_path
             self.fixtures = self.fixture_refs
         del self.stage
-
+        del self.lwlab_arena.stage
+        self.usd_path = self.lwlab_arena.usd_path
         # run robocasa fixture initialization ahead of everything else
         super().__post_init__()
         self._init_fixtures()
@@ -190,7 +191,7 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
             self.terminations.camera_pose_update = DoneTerm(func=camera_pose_update)
 
     def _setup_model(self):
-        from robocasa.models.scenes.kitchen_arena import KitchenArena
+        from lwlab.core.scenes.kitchen.kitchen_arena import KitchenArena
         if "layout_id" in self._ep_meta and "style_id" in self._ep_meta:
             self.layout_id = self._ep_meta["layout_id"]
             self.style_id = self._ep_meta["style_id"]
@@ -198,36 +199,23 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
             layout_id, style_id = self.rng.choice(self.layout_and_style_ids)
             self.layout_id = int(layout_id)
             self.style_id = int(style_id)
-        self._usd_future = floorplan_loader.acquire_usd(self.layout_id, self.style_id, cancel_previous_download=True)
-
         self._curr_gen_fixtures = self._ep_meta.get("gen_textures")
 
         import time
         start_time = time.time()
         print(f"load scene {self.layout_id} {self.style_id}", end="...")
-        self.mujoco_arena = KitchenArena(
+        self.lwlab_arena = KitchenArena(
             layout_id=self.layout_id,
             style_id=self.style_id,
-            rng=self.rng,
             enable_fixtures=self.enable_fixtures
         )
         print(f" done in {time.time() - start_time:.2f}s")
-        # Arena always gets set to zero origin
-        self.mujoco_arena.set_origin([0, 0, 0])
-
-        self.fixture_cfgs = self.mujoco_arena.get_fixture_cfgs()
-        # The character . cannot be parsed by isaacsim
-        for cfg in self.fixture_cfgs:
-            if "." in cfg["name"]:
-                cfg["name"] = cfg["name"].replace(".", "_")
-        self.fixtures = {cfg["name"]: cfg["model"] for cfg in self.fixture_cfgs}
+        self.fixtures = self.lwlab_arena.fixtures
+        self.fixture_cfgs = self.lwlab_arena.get_fixture_cfgs()
 
     def _load_model(self):
-        import robocasa.utils.env_utils as EnvUtils
-        from robocasa.models.fixtures import Fixture
-        import robosuite.utils.transform_utils as T
-        import robocasa.macros as macros
-        from robocasa.utils.errors import PlacementError
+        from lwlab.core.models.fixtures import Fixture
+        import lwlab.utils.math_utils.transform_utils as T
 
         self._setup_model()
 
@@ -237,21 +225,13 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
                 if init_fixture is not None:
                     break
                 self._setup_model()
-
-        import time
-        start_time = time.time()
-        print(f"load usd", end="...")
-        self.usd_path = str(self._usd_future.result())
-        del self._usd_future
-        print(f" done in {time.time() - start_time:.2f}s")
-        self.stage = usd.get_stage(self.usd_path)
-
+        self.stage = self.lwlab_arena.stage
         self.fxtr_placements = usd.get_fixture_placements(self.stage.GetPseudoRoot(), self.fixture_cfgs, self.fixtures)
-        for obj_pos, obj_quat, obj in self.fxtr_placements.values():
-            assert isinstance(obj, Fixture)
-            obj.set_pos(obj_pos)
-            # hacky code to set orientation
-            obj.set_euler(T.mat2euler(T.quat2mat(T.convert_quat(obj_quat, "xyzw"))))
+        # for obj_pos, obj_quat, obj in self.fxtr_placements.values():
+        #     assert isinstance(obj, Fixture)
+        #     obj.set_pos(obj_pos)
+        #     # hacky code to set orientation
+        #     obj.set_euler(T.mat2euler(T.quat2mat(T.convert_quat(obj_quat, "xyzw"))))
 
         from collections import namedtuple
         dummy_robot = namedtuple("dummy_robot", ["robot_model"])
@@ -268,33 +248,28 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
         # setup internal references related to fixtures
         self._setup_kitchen_references()
         # create and place objects
-        self._create_objects()
 
-        try:
-            self.placement_initializer = EnvUtils._get_placement_initializer(
-                self, self.object_cfgs
-            )
-        except PlacementError as e:
-            if macros.VERBOSE:
-                print(
-                    "Could not create placement initializer for objects. Trying again with self._load_model()"
-                )
-            self._load_model()
-            return
+        # TODO: create objects from usd
+        self._create_objects()
+        import lwlab.utils.place_utils.env_utils as EnvUtils
+        # try:
+        self.placement_initializer = EnvUtils._get_placement_initializer(
+            self, self.object_cfgs
+        )
+        # except Exception as e:
+        #     print(
+        #         "Could not create placement initializer for objects. Trying again with self._load_model()"
+        #     )
+        #     self._load_model()
+        #     return
         object_placements = None
-        for attempt in range(1):
-            try:
-                object_placements = self.placement_initializer.sample(
-                    placed_objects=self.fxtr_placements
-                )
-            except PlacementError as e:
-                if macros.VERBOSE:
-                    print("Placement error for objects")
-                continue
-            break
+
+        object_placements = self.placement_initializer.sample(
+            placed_objects=self.fxtr_placements
+        )
+
         if object_placements is None:
-            if macros.VERBOSE:
-                print("Could not place objects. Trying again with self._load_model()")
+            print("Could not place objects. Trying again with self._load_model()")
             self._load_model()
             return
 
@@ -335,14 +310,14 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
 
     def _init_fixtures(self):
         # init fixtures for isaac
-        stage = usd.get_stage(self.usd_path)
+        stage = usd.get_stage(self.lwlab_arena.usd_path)
         root_prim = stage.GetPseudoRoot()
         for fixtr in self.fixtures.values():
             if isinstance(fixtr, IsaacFixture):
                 try:
                     fixtr.setup_cfg(self, root_prim)
                 except Exception as e:
-                    print(f"Error setting up cfg of {fixtr.folder.split('/')[-1]}: {str(e)}")
+                    print(f"Error setting up cfg of {fixtr.name}: {str(e)}")
 
     def _setup_scene(self, env_ids=None):
         pass
@@ -364,8 +339,7 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
         Creates and places objects in the kitchen environment.
         Helper function called by _create_objects()
         """
-        import robocasa.utils.env_utils as EnvUtils
-
+        import lwlab.utils.place_utils.env_utils as EnvUtils
         # add objects
         self.objects = {}
         if "object_cfgs" in self._ep_meta:
@@ -375,7 +349,7 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
                     cfg["name"] = "obj_{}".format(obj_num + 1)
                 model, info = EnvUtils.create_obj(self, cfg)
                 cfg["info"] = info
-                self.objects[model.name] = model
+                self.objects[model.task_name] = model
                 # self.model.merge_objects([model])
         else:
             self.object_cfgs = self._get_obj_cfgs()
@@ -386,7 +360,7 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
                     cfg["name"] = "obj_{}".format(obj_num + 1)
                 model, info = EnvUtils.create_obj(self, cfg)
                 cfg["info"] = info
-                self.objects[model.name] = model
+                self.objects[model.task_name] = model
                 # self.model.merge_objects([model])
                 try_to_place_in = cfg["placement"].get("try_to_place_in", None)
 
@@ -410,7 +384,7 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
                     addl_obj_cfgs.append(container_cfg)
                     model, info = EnvUtils.create_obj(self, container_cfg)
                     container_cfg["info"] = info
-                    self.objects[model.name] = model
+                    self.objects[model.task_name] = model
                     # self.model.merge_objects([model])
 
                     # modify object config to lie inside of container
@@ -476,78 +450,6 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
             ep_meta["init_robot_base_ori"] = list(self.init_robot_base_ori)
         return ep_meta
 
-    def sample_object(
-        self,
-        groups,
-        exclude_groups=None,
-        graspable=None,
-        microwavable=None,
-        washable=None,
-        cookable=None,
-        freezable=None,
-        dishwashable=None,
-        split=None,
-        obj_registries=None,
-        max_size=(None, None, None),
-        object_scale=None,
-        rotate_upright=False,
-    ):
-        """
-        Sample a kitchen object from the specified groups and within max_size bounds.
-
-        Args:
-            groups (list or str): groups to sample from or the exact xml path of the object to spawn
-
-            exclude_groups (str or list): groups to exclude
-
-            graspable (bool): whether the sampled object must be graspable
-
-            washable (bool): whether the sampled object must be washable
-
-            microwavable (bool): whether the sampled object must be microwavable
-
-            cookable (bool): whether whether the sampled object must be cookable
-
-            freezable (bool): whether whether the sampled object must be freezable
-
-            dishwashable (bool): whether whether the sampled object must be dishwashable
-
-            split (str): split to sample from. Split "train" specifies all but the last 4 object instances
-                        (or the first half - whichever is larger), "test" specifies the rest, and None
-                        specifies all.
-
-            obj_registries (tuple): registries to sample from
-
-            max_size (tuple): max size of the object. If the sampled object is not within bounds of max size,
-                            function will resample
-
-            object_scale (float): scale of the object. If set will multiply the scale of the sampled object by this value
-
-
-        Returns:
-            dict: kwargs to apply to the MJCF model for the sampled object
-
-            dict: info about the sampled object - the path of the mjcf, groups which the object's category belongs to,
-            the category of the object the sampling split the object came from, and the groups the object was sampled from
-        """
-        from robocasa.models.objects.kitchen_object_utils import sample_kitchen_object
-        return sample_kitchen_object(
-            groups,
-            exclude_groups=exclude_groups,
-            graspable=graspable,
-            washable=washable,
-            microwavable=microwavable,
-            cookable=cookable,
-            freezable=freezable,
-            dishwashable=dishwashable,
-            rng=self.rng,
-            obj_registries=(obj_registries or self.obj_registries),
-            split=(split or self.obj_instance_split),
-            max_size=max_size,
-            object_scale=object_scale,
-            rotate_upright=rotate_upright,
-        )
-
     def get_fixture(self, id, ref=None, size=(0.2, 0.2), full_name_check=False, fix_id=None):
         """
         search fixture by id (name, object, or type)
@@ -562,8 +464,8 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
         Returns:
             Fixture: fixture object
         """
-        from robocasa.models.fixtures import Fixture, FixtureType, fixture_is_type
-        import robocasa.models.fixtures.fixture_utils as FixtureUtils
+        from lwlab.core.models.fixtures import Fixture, FixtureType, fixture_is_type
+        import lwlab.utils.fixture_utils as FixtureUtils
 
         # case 1: id refers to fixture object directly
         if isinstance(id, Fixture):
@@ -602,7 +504,8 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
         else:
             ref_fixture = self.get_fixture(ref)
 
-            assert isinstance(id, FixtureType)
+            # NOTE: I dont konw why error here?
+            # assert isinstance(id, FixtureType)
             cand_fixtures = []
             for fxtr in self.fixtures.values():
                 if not fixture_is_type(fxtr, id):
@@ -674,19 +577,11 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
 
     def _spawn_objects(self):
         for pos, rot, obj in self.object_placements.values():
-            xml_path = obj.folder
-            path_attr = "robocasa/models/assets/"
-            if platform.system() == "Windows":
-                path_attr = path_attr.replace("/", "\\")
-            xml_path = Path(xml_path[xml_path.rfind(path_attr) + len(path_attr):])
-            usd_name = xml_path.stem
-            usd_cache_path = object_loader.acquire_object(str(xml_path), "USD")
             obj_cfg = RigidObjectCfg(
-                prim_path=f"{{ENV_REGEX_NS}}/Scene/{obj.name}",
+                prim_path=f"{{ENV_REGEX_NS}}/Scene/{obj.task_name}",
                 init_state=RigidObjectCfg.InitialStateCfg(pos=pos, rot=rot),
                 spawn=sim_utils.UsdFileCfg(
-                    usd_path=usd_cache_path,
-                    scale=obj._scale,
+                    usd_path=obj.obj_path,
                     activate_contact_sensors=True,
                     rigid_props=sim_utils.RigidBodyPropertiesCfg(
                         sleep_threshold=0.0,  # disable sleep in CPU mode
@@ -694,16 +589,16 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
                     ),
                 ),
             )
-            setattr(self.scene, obj.name, obj_cfg)
+            setattr(self.scene, obj.task_name, obj_cfg)
             obj_concact = ContactSensorCfg(
-                prim_path=f"{{ENV_REGEX_NS}}/Scene/{obj.name}/{usd_name}",
+                prim_path=f"{{ENV_REGEX_NS}}/Scene/{obj.task_name}/{obj.name}",
                 update_period=0.0,
                 history_length=6,
                 debug_vis=False,
                 force_threshold=10.0,
                 filter_prim_paths_expr=[],
             )
-            setattr(self.scene, f"{obj.name}_contact", obj_concact)
+            setattr(self.scene, f"{obj.task_name}_contact", obj_concact)
 
     def _reset_internal(self, env_ids=None):
         """
@@ -728,7 +623,7 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
         if isinstance(geoms_1, str):
             geoms_1_sensor_path = f"{geoms_1}_contact"
         else:
-            geoms_1_sensor_path = f"{geoms_1.name}_contact"
+            geoms_1_sensor_path = f"{geoms_1.task_name}_contact"
 
         if isinstance(geoms_2, str):
             geoms_2_sensor_path = geoms_2
@@ -766,7 +661,6 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
         """
         reset the root state of objects and robot in the environment
         """
-        from robocasa.utils.errors import PlacementError
 
         def place_objects(self):
             object_placements = None
@@ -775,7 +669,7 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
                     object_placements = self.placement_initializer.sample(
                         placed_objects=self.fxtr_placements
                     )
-                except PlacementError as e:
+                except Exception as e:
                     print("Placement error for objects")
                     place_objects(self)
             return object_placements

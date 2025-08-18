@@ -17,8 +17,6 @@ import numpy as np
 from functools import cached_property
 
 from isaaclab.envs import ManagerBasedRLEnvCfg, ManagerBasedRLEnv
-from robocasa.models.fixtures.stove import Stove as RoboCasaStove
-from robocasa.models.fixtures.stove import Stovetop as RoboCasaStovetop
 
 from .fixture import Fixture
 from lwlab.utils.usd_utils import OpenUsd as usd
@@ -37,8 +35,12 @@ STOVE_LOCATIONS = [
 ]
 
 
-class Stove(Fixture, RoboCasaStove):
+class Stove(Fixture):
     _env = None
+
+    def __init__(self, name="stove", prim=None, *args, **kwargs):
+        super().__init__(name, prim, *args, **kwargs)
+        self._reset_regions = self._get_reset_regions(prim)
 
     def setup_cfg(self, cfg: ManagerBasedRLEnvCfg, root_prim):
         super().setup_cfg(cfg, root_prim)
@@ -87,7 +89,6 @@ class Stove(Fixture, RoboCasaStove):
                 else:
                     if burner_site[env_idx] is not None:
                         burner_site[env_idx].GetAttribute("visibility").Set("invisible")
-
 
     def set_knob_state(self, env, rng, knob, mode="on"):
         """
@@ -212,6 +213,36 @@ class Stove(Fixture, RoboCasaStove):
     def nat_lang(self):
         return "stove"
 
+    def get_reset_regions(self, env, locs=None):
+        regions = dict()
+        if locs is None:
+            locs = STOVE_LOCATIONS
+        for location in locs:
+            regions[location] = self._reset_regions[location]
+        return regions
 
-class Stovetop(Stove, RoboCasaStovetop):
+    def _get_reset_regions(self, prim):
+        regions = dict()
+        locs = STOVE_LOCATIONS
+        for location in locs:
+
+            site = usd.get_prim_by_name(prim, f"burner_{location}_place_site", only_xform=False)
+            site = site[0] if site else None
+            if site is None:
+                site = usd.get_prim_by_name(prim, f"burner_on_{location}", only_xform=False)
+                site = site[0] if site else None
+
+            if site is None:
+                continue
+
+            pos, _, _ = usd.get_prim_pos_rot_in_world(site)
+            regions[location] = {
+                "offset": pos,
+                "size": [0.10, 0.10],
+            }
+
+        return regions
+
+
+class Stovetop(Stove):
     pass

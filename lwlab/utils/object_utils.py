@@ -1,9 +1,7 @@
 import numpy as np
 import torch
-import robosuite.utils.transform_utils as T
+import lwlab.utils.math_utils.transform_utils as T
 import os
-
-from robocasa.models.objects.objects import MJCFObject
 
 
 def array_to_string(array):
@@ -26,7 +24,6 @@ def obj_inside_of(env, obj_name, fixture_id, partial_check=False):
     """
     whether an object (another mujoco object) is inside of fixture. applies for most fixtures
     """
-    from robocasa.models.fixtures import Fixture
 
     obj = env.cfg.objects[obj_name]
     fixture = env.cfg.get_fixture(fixture_id)
@@ -146,12 +143,14 @@ def compute_rel_transform(A_pos, A_mat, B_pos, B_mat):
     return T_AB[:3, 3], T_AB[:3, :3]
 
 
-def get_fixture_to_point_rel_offset(fixture, point):
+def get_fixture_to_point_rel_offset(fixture, point, rot=None):
     """
     get offset relative to fixture's frame, given a global point
     """
     global_offset = point - fixture.pos
-    T_WF = T.euler2mat([0, 0, fixture.rot])
+    if rot is None:
+        rot = fixture.rot
+    T_WF = T.euler2mat([0, 0, rot])
     rel_offset = np.matmul(np.linalg.inv(T_WF), global_offset)
     return rel_offset
 
@@ -203,6 +202,9 @@ def point_in_fixture(point, fixture, only_2d=False):
         return check1 and check2 and check3
 
 
+from lwlab.utils.place_utils.usd_object import USDObject
+
+
 def obj_in_region(
     obj,
     obj_pos,
@@ -216,9 +218,9 @@ def obj_in_region(
     check if object is in the region defined by the points.
     Uses either the objects bounding box or the object's horizontal radius
     """
-    from robocasa.models.fixtures import Fixture
+    from lwlab.core.models.fixtures import Fixture
 
-    if isinstance(obj, MJCFObject) or isinstance(obj, Fixture):
+    if isinstance(obj, USDObject) or isinstance(obj, Fixture):
         obj_points = obj.get_bbox_points(trans=obj_pos, rot=obj_quat)
     else:
         radius = obj.horizontal_radius
@@ -272,10 +274,10 @@ def objs_intersect(
     """
     check if two objects intersect
     """
-    from robocasa.models.fixtures import Fixture
+    from lwlab.core.models.fixtures import Fixture
 
-    bbox_check = (isinstance(obj, MJCFObject) or isinstance(obj, Fixture)) and (
-        isinstance(other_obj, MJCFObject) or isinstance(other_obj, Fixture)
+    bbox_check = (isinstance(obj, USDObject) or isinstance(obj, Fixture)) and (
+        isinstance(other_obj, USDObject) or isinstance(other_obj, Fixture)
     )
     if bbox_check:
         obj_points = obj.get_bbox_points(trans=obj_pos, rot=obj_quat)
@@ -478,3 +480,41 @@ def quat2mat(quaternion):
 def construct_full_env_path(env_regex_ns_template: str, env_index: int, fixture_name: str) -> str:
 
     return os.path.join(f"{env_regex_ns_template.rstrip('.*')}{env_index}", "Scene", fixture_name)
+
+
+def project_point_to_segment(point, seg_start, seg_end):
+    """
+    Projects a point onto a line segment, and clamps it to the segment bounds.
+
+    Args:
+        point (np.ndarray): The point to project, shape (2,) or (3,)
+        seg_start (np.ndarray): Start point of the segment, same shape as point
+        seg_end (np.ndarray): End point of the segment, same shape as point
+
+    Returns:
+        np.ndarray: The closest point on the segment to the input point
+        float: The distance to the segment
+
+    From ChatGPT
+    """
+    # Convert to numpy arrays in case they aren't already
+    point = np.array(point)
+    seg_start = np.array(seg_start)
+    seg_end = np.array(seg_end)
+
+    seg_vec = seg_end - seg_start
+    seg_len_sq = np.dot(seg_vec, seg_vec)
+
+    if seg_len_sq == 0.0:
+        # Segment is a point
+        return seg_start, 0.0
+
+    # Compute t: projection factor along the segment
+    t = np.dot(point - seg_start, seg_vec) / seg_len_sq
+    t_clamped = np.clip(t, 0.0, 1.0)
+
+    # Compute the closest point
+    closest_point = seg_start + t_clamped * seg_vec
+    dist = np.linalg.norm(point - closest_point)
+
+    return closest_point, dist
