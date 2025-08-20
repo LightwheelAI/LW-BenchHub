@@ -1,12 +1,12 @@
-import numpy as np
-import torch
-import dill
+
 import os
 import sys
 
 current_file_path = os.path.abspath(__file__)
 parent_directory = os.path.dirname(current_file_path)
 sys.path.append(parent_directory)
+
+import torch
 
 from lwlab.third_party.isaac_arena.isaac_arena.policies.gr00t.gr00t_n1_5_policy import Gr00tN15Policy
 from lwlab.third_party.isaac_arena.isaac_arena.policies.gr00t.policy_cfg import GR00TN15Config
@@ -80,7 +80,7 @@ def eval(TASK_ENV, model, observation):
     # ======== Get Action ========
     robot_action_policy = model.get_action(observations)
     full_body_target_joints_pos, base_height_command, navigate_command = decode_action(robot_action_policy)
-    # TODO(xinjie.yao): add assertion checks
+    # TODO(xinjie.yao): check with the new action term definition
     assert full_body_target_joints_pos.shape[0] == TASK_ENV.action_space.shape[0], f"Full body target joints pos shape: {full_body_target_joints_pos.shape}, num envs: {TASK_ENV.action_space.shape[0]}"
     assert full_body_target_joints_pos.shape[1] == num_joints, f"Full body target joints pos shape: {full_body_target_joints_pos.shape}, num joints: {num_joints}"
 
