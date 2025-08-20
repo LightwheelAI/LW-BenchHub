@@ -11,6 +11,16 @@ gym.register(
 )
 
 gym.register(
+    id="Robocasa-Robot-G1-Controller",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.g1:UnitreeG1ControllerEnvCfg",
+    },
+    disable_env_checker=True,
+)
+
+
+gym.register(
     id="Robocasa-Robot-G1-Loco-Hand",
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
     kwargs={
@@ -18,6 +28,17 @@ gym.register(
     },
     disable_env_checker=True,
 )
+
+
+gym.register(
+    id="Robocasa-Robot-G1-Loco-Controller",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.g1:UnitreeG1LocoControllerEnvCfg",
+    },
+    disable_env_checker=True,
+)
+
 
 gym.register(
     id="Robocasa-Robot-G1-RL",

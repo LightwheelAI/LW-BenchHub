@@ -21,9 +21,12 @@ from lwlab.core.robots.base import BaseRobotCfg
 from .assets_cfg import (
     G1_HIGH_PD_CFG,
     OFFSET_CONFIG_G1,
+    G1_WITH_INSPIRE_HAND_HIGH_PD_CFG,
+    OFFSET_CONFIG_G1_WITH_INSPIRE,
     G1_Loco_CFG,
 )
 from lwlab.core.models.grippers.dex3 import Dex3GripperCfg
+from lwlab.core.models.grippers.inspire_hands import InspireHandsGripperCfg
 ##
 # Pre-defined configs
 ##
@@ -364,6 +367,65 @@ class UnitreeG1HandEnvCfg(UnitreeG1EnvCfg):
         return torch.concat([base_action, left_arm_action, right_arm_action,
                              left_finger_tips, right_finger_tips]).unsqueeze(0)
 
+
+class UnitreeG1ControllerEnvCfg(UnitreeG1EnvCfg):
+    robot_name: str = "G1-Controller"
+    hand_action_mode: str = "handle"
+
+    def preprocess_device_action(self, action: dict[str, torch.Tensor], device) -> torch.Tensor:
+        base_action = torch.zeros(3,)
+        if action['rsqueeze'] > 0.5:
+            base_action = torch.tensor([action['rbase'][0], 0, action['rbase'][1]], device=action['rbase'].device)
+        else:
+            base_action = torch.tensor([action['rbase'][0], action['rbase'][1], 0,], device=action['rbase'].device)
+
+        _cumulative_base, base_quat = math_utils.subtract_frame_transforms(device.robot.data.root_com_pos_w[0],
+                                                                           device.robot.data.root_com_quat_w[0],
+                                                                           device.robot.data.body_link_pos_w[0, 4],
+                                                                           device.robot.data.body_link_quat_w[0, 4])
+        # base_quat = T.quat_multiply(device.robot.data.body_link_quat_w[0,3][[1,2,3,0]],device.robot.data.root_com_quat_w[0][[1,2,3,0]], )
+        base_yaw = T.quat2axisangle(base_quat[[1, 2, 3, 0]])[2]
+        base_quat = T.axisangle2quat(torch.tensor([0, 0, base_yaw], device=device.env.device))
+        base_movement = torch.tensor([_cumulative_base[0], _cumulative_base[1], 0], device=device.env.device)
+
+        cos_yaw = torch.cos(base_yaw)
+        sin_yaw = torch.sin(base_yaw)
+        rot_mat_2d = torch.tensor([
+            [cos_yaw, -sin_yaw],
+            [sin_yaw, cos_yaw]
+        ], device=device.env.device)
+        robot_x = base_action[0]
+        robot_y = base_action[1]
+        local_xy = torch.tensor([robot_x, robot_y], device=device.env.device)
+        world_xy = torch.matmul(rot_mat_2d, local_xy)
+        base_action[0] = world_xy[0]
+        base_action[1] = world_xy[1]
+        left_arm_action = None
+        right_arm_action = None
+        if self.actions.left_arm_action.controller.use_relative_mode:  # Relative mode
+            left_arm_action = action["left_arm_delta"]
+            right_arm_action = action["right_arm_delta"]
+        else:  # Absolute mode
+            for arm_idx, abs_arm in enumerate([action["left_arm_abs"], action["right_arm_abs"]]):
+                pose_quat = abs_arm[3:7]
+                combined_quat = T.quat_multiply(base_quat, pose_quat)
+                arm_action = abs_arm.clone()
+                rot_mat = T.quat2mat(base_quat)
+                gripper_movement = torch.matmul(rot_mat, arm_action[:3])
+                pose_movement = base_movement + gripper_movement
+                arm_action[:3] = pose_movement
+                arm_action[3] = combined_quat[3]  # Update quaternion from xyzw to wxyz
+                arm_action[4:7] = combined_quat[:3]
+                if arm_idx == 0:
+                    left_arm_action = arm_action  # Robot frame
+                else:
+                    right_arm_action = arm_action  # Robot frame
+        left_gripper = torch.tensor([-action["left_gripper"]], device=action['rbase'].device)
+        right_gripper = torch.tensor([-action["right_gripper"]], device=action['rbase'].device)
+        return torch.concat([base_action, left_arm_action, right_arm_action,
+                             left_gripper, right_gripper]).unsqueeze(0)
+
+
 class UnitreeG1LocoHandEnvCfg(UnitreeG1LocoEnvCfg):
     robot_name: str = "G1-Loco-Hand"
     hand_action_mode: str = "tracking"
@@ -404,6 +466,67 @@ class UnitreeG1LocoHandEnvCfg(UnitreeG1LocoEnvCfg):
         right_finger_tips = action["right_finger_tips"][[0, 1, 2]].flatten()
         return torch.concat([left_arm_action, right_arm_action,
                              left_finger_tips, right_finger_tips, base_action]).unsqueeze(0)
+
+
+class UnitreeG1LocoControllerEnvCfg(UnitreeG1LocoEnvCfg):
+    robot_name: str = "G1-Loco-Controller"
+    hand_action_mode: str = "handle"
+
+    def preprocess_device_action(self, action: dict[str, torch.Tensor], device) -> torch.Tensor:
+        base_action = torch.zeros(3,)
+
+        if action['rsqueeze'] > 0.5:
+            base_action = torch.tensor([action['rbase'][0], 0, action['rbase'][1]], device=action['rbase'].device)
+        else:
+            base_action = torch.tensor([action['rbase'][0], action['rbase'][1], 0,], device=action['rbase'].device)
+        base_action = torch.cat([base_action, torch.tensor([action["base_mode"]], dtype=action["rbase"].dtype, device=action["rbase"].device)], dim=0)
+
+        left_arm_action = None
+        right_arm_action = None
+        if self.actions.left_arm_action.controller.use_relative_mode:  # Relative mode
+            left_arm_action = action["left_arm_delta"]
+            right_arm_action = action["right_arm_delta"]
+        else:  # Absolute mode
+            _cumulative_base, base_quat = math_utils.subtract_frame_transforms(device.robot.data.root_com_pos_w[0],
+                                                                               device.robot.data.root_com_quat_w[0],
+                                                                               device.robot.data.body_link_pos_w[0, 4],
+                                                                               device.robot.data.body_link_quat_w[0, 4])
+            # base_quat = T.quat_multiply(device.robot.data.body_link_quat_w[0,3][[1,2,3,0]],device.robot.data.root_com_quat_w[0][[1,2,3,0]], )
+            base_yaw = T.quat2axisangle(base_quat[[1, 2, 3, 0]])[2]
+            base_quat = T.axisangle2quat(torch.tensor([0, 0, base_yaw], device=device.env.device))
+            base_movement = torch.tensor([_cumulative_base[0], _cumulative_base[1], 0], device=device.env.device)
+
+            cos_yaw = torch.cos(torch.tensor(base_yaw, device=device.env.device))
+            sin_yaw = torch.sin(torch.tensor(base_yaw, device=device.env.device))
+            rot_mat_2d = torch.tensor([
+                [cos_yaw, -sin_yaw],
+                [sin_yaw, cos_yaw]
+            ], device=device.env.device)
+            robot_x = base_action[0]
+            robot_y = base_action[1]
+            local_xy = torch.tensor([robot_x, robot_y], device=device.env.device)
+            world_xy = torch.matmul(rot_mat_2d, local_xy)
+            base_action[0] = world_xy[0]
+            base_action[1] = world_xy[1]
+
+            for arm_idx, abs_arm in enumerate([action["left_arm_abs"], action["right_arm_abs"]]):
+                pose_quat = abs_arm[3:7]
+                combined_quat = T.quat_multiply(base_quat, pose_quat)
+                arm_action = abs_arm.clone()
+                rot_mat = T.quat2mat(base_quat)
+                gripper_movement = torch.matmul(rot_mat, arm_action[:3])
+                pose_movement = base_movement + gripper_movement
+                arm_action[:3] = pose_movement
+                arm_action[3] = combined_quat[3]  # Update rotation quaternion from xyzw to wxyz
+                arm_action[4:7] = combined_quat[:3]
+                if arm_idx == 0:
+                    left_arm_action = arm_action  # Robot coordinate system
+                else:
+                    right_arm_action = arm_action  # Robot coordinate system
+        left_gripper = torch.tensor([-action["left_gripper"]], device=action['rbase'].device)
+        right_gripper = torch.tensor([-action["right_gripper"]], device=action['rbase'].device)
+        return torch.concat([left_arm_action, right_arm_action,
+                             left_gripper, right_gripper, base_action]).unsqueeze(0)
 
 
 class UnitreeG1HandEnvRLCfg(UnitreeG1HandEnvCfg):

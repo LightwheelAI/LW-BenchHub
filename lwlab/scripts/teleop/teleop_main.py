@@ -53,9 +53,8 @@ if args_cli.teleop_device.lower() == "handtracking":
 if "handtracking" in args_cli.teleop_device.lower():
     app_launcher_args["xr"] = True
 
-if args_cli.enable_pinocchio:
+if 'hand' in args_cli.teleop_device.lower() or args_cli.enable_pinocchio:
     import pinocchio
-
 
 app_launcher_args["profiler_backend"] = ["tracy"]
 
@@ -134,8 +133,9 @@ def optimize_rendering(env):
     settings.set_int("/rtx/post/dlss/execMode", 0)  # "Performance"
     settings.set_bool("/rtx/raytracing/fractionalCutoutOpacity", False)
 
-    settings.set_bool("/app/renderer/skipMaterialLoading", True)
-    settings.set_bool("/app/renderer/skipTextureLoading", True)
+    # TODO this option affects the rendering of dynamic spawned objects
+    settings.set_bool("/app/renderer/skipMaterialLoading", False)
+    settings.set_bool("/app/renderer/skipTextureLoading", False)
 
     # Setup timeline
     import omni.timeline as timeline
@@ -180,12 +180,17 @@ def main():
 
     """Rest everything follows."""
     import gymnasium as gym
-    from lwlab.core.devices import LwOpenXRDevice, KEYCONTROLLER_MAP
+    import numpy as np
+    from lwlab.core.devices import VRController, VRHand, LwOpenXRDevice, KEYCONTROLLER_MAP
     from isaaclab.devices import Se3Keyboard, Se3SpaceMouse
     if app_launcher_args.get("xr"):
         from isaacsim.xr.openxr import OpenXRSpec
     from isaaclab.envs import ViewerCfg, ManagerBasedRLEnv
     from isaaclab.envs.ui import ViewportCameraController
+    from isaaclab.managers import TerminationTermCfg as DoneTerm
+    import isaaclab_tasks  # noqa: F401
+    from isaaclab_tasks.manager_based.manipulation.lift import mdp
+    from multiprocessing import Process, shared_memory
     from lwlab.utils.video_recorder import VideoRecorder, get_camera_images
 
     import carb
@@ -296,14 +301,28 @@ def main():
             env=env,
         )
         teleoperation_active = False
+    elif args_cli.teleop_device.lower().startswith("vr"):
+        image_size = (720, 1280)
+        shm = shared_memory.SharedMemory(
+            create=True,
+            size=image_size[0] * image_size[1] * 3 * np.uint8().itemsize,
+        )
+        vr_device_type = {
+            "vr-controller": VRController,
+            "vr-hand": VRHand,
+        }[args_cli.teleop_device.lower()]
+        teleop_interface = vr_device_type(env,
+                                          img_shape=image_size,
+                                          shm_name=shm.name,)
     else:
         raise ValueError(
-            f"Invalid device interface '{args_cli.teleop_device}'. Supported: 'handtracking'."
+            f"Invalid device interface '{args_cli.teleop_device}'. Supported: 'keyboard', 'spacemouse''handtracking'."
         )
 
     def run_simulation():
         # add teleoperation key for env reset
         should_reset_recording_instance = False
+        flush_recorder_manager_flag = False
 
         def reset_recording_instance():
             nonlocal should_reset_recording_instance
@@ -317,6 +336,10 @@ def main():
             nonlocal teleoperation_active
             teleoperation_active = False
 
+        def flush_recorder_manager():
+            nonlocal flush_recorder_manager_flag
+            flush_recorder_manager_flag = True
+
         if isinstance(teleop_interface, LwOpenXRDevice):
             teleoperation_active = False
             teleop_interface.add_callback("RESET", reset_recording_instance)
@@ -325,6 +348,7 @@ def main():
         else:
             teleoperation_active = True
             teleop_interface.add_callback("R", reset_recording_instance)
+            teleop_interface.add_callback("T", flush_recorder_manager)
         print(teleop_interface)
 
         rate_limiter = RateLimiter(args_cli.step_hz)
@@ -333,7 +357,7 @@ def main():
         env.reset()
         teleop_interface.reset()
 
-        from lwlab.utils.env import setup_cameras, setup_task_description_ui
+        from lwlab.utils.env import setup_cameras, setup_task_description_ui, spawn_robot_vis_helper_general, destroy_robot_vis_helper
 
         if env_cfg.enable_cameras and args_cli.enable_multiple_viewports:
             viewports = setup_cameras(env)
@@ -360,8 +384,14 @@ def main():
         frame_analyzer = DEBUG_FRAME_ANALYZER
         debug_print("Frame rate analyzer initialized in debug mode")
 
+        vis_helper_prims = []
+
         # simulate environment
         while simulation_app.is_running():
+            if flush_recorder_manager_flag:
+                env.recorder_manager.export_episodes()
+                env.recorder_manager.reset()
+                flush_recorder_manager_flag = False
 
             # start frame analysis (debug mode only)
             frame_analyzer.start_frame()
@@ -375,11 +405,13 @@ def main():
             if actions is None or should_reset_recording_instance:
                 if args_cli.enable_log:
                     try:
+                        destroy_robot_vis_helper(vis_helper_prims, env)
                         env.reset()
                     except Exception as e:
                         handle_exception_and_log(e, log_path)
                         break
                 else:
+                    destroy_robot_vis_helper(vis_helper_prims, env)
                     env.reset()
                 should_reset_recording_instance = False
                 frame_count = 0
@@ -397,6 +429,7 @@ def main():
                     print("Start Recording!!!")
                     start_record_state = True
 
+                    vis_helper_prims = spawn_robot_vis_helper_general(env)
                     # Initialize video recording
                     if video_recorder is not None:
                         camera_data, camera_name = get_camera_images(env)

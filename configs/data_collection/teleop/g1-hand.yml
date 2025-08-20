@@ -1,4 +1,4 @@
 _base_: [teleop_base]
 robot: G1-Hand
 enable_pinocchio: true
-teleop_device: dualhandtracking_abs
+teleop_device: vr-controller

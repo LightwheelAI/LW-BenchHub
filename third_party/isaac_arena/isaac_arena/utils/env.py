@@ -12,11 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import enum
 
-def get_robot_joint_target_from_scene(scene):
-    # only articulations have joints
-    return {
-        "joint_pos_target": scene.articulations["robot"].data.joint_pos_target.clone(),
-        "joint_vel_target": scene.articulations["robot"].data.joint_vel_target.clone(),
-        "joint_effort_target": scene.articulations["robot"].data.joint_effort_target.clone()
-    }
+
+class ExecuteMode(enum.Enum):
+    """The mode to execute the task."""
+
+    TRAIN = 0
+    EVAL = 1
+    TELEOP = 2
+    REPLAY_JOINT_TARGETS = 3
+    REPLAY_ACTION = 4
+    REPLAY_STATE = 5

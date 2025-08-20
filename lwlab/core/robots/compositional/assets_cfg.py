@@ -177,7 +177,7 @@ DOUBLE_PANDA_CFG = ArticulationCfg(
             solver_position_iteration_count=8,
             solver_velocity_iteration_count=0,
             fix_root_link=True,
-            sleep_threshold=0.00005, # follow isaacsim 5.0.0 tutorial 7 setting
+            sleep_threshold=0.00005,  # follow isaacsim 5.0.0 tutorial 7 setting
             stabilization_threshold=0.00001,
         ),
         scale=(1.0, 1.0, 1.0),
