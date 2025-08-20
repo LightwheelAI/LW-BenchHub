@@ -109,6 +109,8 @@ policy/skrl/task_config/default.yml
 
 # third party
 third_party/*
+!third_party/isaac_arena/
+!third_party/isaac_arena/**
 !third_party/lw_skrl/
 !third_party/lw_skrl/**
 
