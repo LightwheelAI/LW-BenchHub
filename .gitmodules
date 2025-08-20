@@ -8,3 +8,4 @@
 [submodule "third_party/isaac_arena/third_party/Isaac-GR00T"]
 	path = third_party/isaac_arena/third_party/Isaac-GR00T
 	url = git@github.com:NVIDIA/Isaac-GR00T.git
+	branch = main
