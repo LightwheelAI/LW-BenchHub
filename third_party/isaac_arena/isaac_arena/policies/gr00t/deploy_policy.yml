@@ -1,0 +1,19 @@
+# Basic experiment configuration (keep unchanged)
+policy_name: null
+task_name: null
+task_config: null
+ckpt_setting: null
+seed: null
+instruction_type: unseen
+
+# Add Parameters You Need
+model_path: null
+embodiment_tag: null
+action_horizon: null
+denoising_steps: null
+gr00t_joints_config_path: null
+action_joints_config_path: null
+state_joints_config_path: null
+num_feedback_actions: null
+rollout_length: null
+
