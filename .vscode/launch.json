@@ -11,10 +11,10 @@
         },
         {
             "name": "train_rl",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "args": [
-                "--task_config=g1_liftobj_visual", // policy/skrl/task_config/default.yml
+                "--task_config=lerobot_liftobj_state", // policy/skrl/task_config/default.yml
                 "--headless",
             ],
             "program": "${workspaceFolder}/lwlab/scripts/rl/train.py",
