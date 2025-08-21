@@ -17,6 +17,7 @@ import os
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
+from isaaclab.utils import configclass
 import isaaclab.utils.math as math_utils
 from isaaclab.assets.articulation import Articulation
 from isaaclab.envs import ManagerBasedEnv

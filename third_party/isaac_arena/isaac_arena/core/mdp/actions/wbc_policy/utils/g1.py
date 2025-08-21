@@ -13,8 +13,8 @@
 # limitations under the License.
 from typing import Literal
 
-from isaac_arena.embodiments.wbc_policy.utils.robot_model import RobotModel
-from isaac_arena.embodiments.wbc_policy.utils.g1_supplemental_info import (
+from isaac_arena.core.mdp.actions.wbc_policy.utils.robot_model import RobotModel
+from isaac_arena.core.mdp.actions.wbc_policy.utils.g1_supplemental_info import (
     G1SupplementalInfo,
     G1SupplementalInfoWaistLowerAndUpperBody,
     G1SupplementalInfoWaistUpperBody,

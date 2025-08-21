@@ -16,10 +16,10 @@ import time
 
 import numpy as np
 
-from isaac_arena.embodiments.wbc_policy.policy.g1_homie_policy import G1HomiePolicy
-from isaac_arena.embodiments.wbc_policy.policy.identity_policy import IdentityPolicy
-from isaac_arena.embodiments.wbc_policy.policy.interpolation_policy import InterpolationPolicy
-from isaac_arena.embodiments.wbc_policy.policy.g1_decoupled_whole_body_policy import G1DecoupledWholeBodyPolicy
+from isaac_arena.core.mdp.actions.wbc_policy.policy.g1_homie_policy import G1HomiePolicy
+from isaac_arena.core.mdp.actions.wbc_policy.policy.identity_policy import IdentityPolicy
+from isaac_arena.core.mdp.actions.wbc_policy.policy.interpolation_policy import InterpolationPolicy
+from isaac_arena.core.mdp.actions.wbc_policy.policy.g1_decoupled_whole_body_policy import G1DecoupledWholeBodyPolicy
 
 
 def get_wbc_policy(

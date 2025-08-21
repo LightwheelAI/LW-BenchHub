@@ -16,7 +16,7 @@ from typing import Optional
 
 import numpy as np
 
-from isaac_arena.embodiments.wbc_policy.base.policy import Policy
+from isaac_arena.core.mdp.actions.wbc_policy.base.policy import Policy
 
 
 class G1DecoupledWholeBodyPolicy(Policy):
