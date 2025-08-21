@@ -94,9 +94,6 @@ class G1DecoupledWBCAction(ActionTerm):
             "toggle_policy_action": np.tile(np.array([0]), (self.num_envs, 1)),
         }
 
-        self.increment = -0.005
-        self.height = 0.75
-
         # self._wbc_goal = {
         #     "target_upper_body_pose": self.current_upper_body_pose.reshape([self.num_envs, -1]),
         #     # lin_vel_cmd_x, lin_vel_cmd_y, ang_vel_cmd
@@ -216,7 +213,7 @@ class G1DecoupledWBCAction(ActionTerm):
         # extract navigate_cmd, stand_cmd, base_height_cmd from actions
         navigate_cmd = actions_clone[:, -5:-2]
         stand_cmd = actions_clone[:, -2:-1]
-        base_height_cmd = copy.copy(self.height)# actions_clone[:, -1:]
+        base_height_cmd = actions_clone[:, -1:]
 
         self._navigate_cmd = torch.tensor(navigate_cmd)
 
