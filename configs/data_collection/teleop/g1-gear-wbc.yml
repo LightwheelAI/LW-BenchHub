@@ -1,4 +1,3 @@
 _base_: [teleop_base]
 robot: G1-GEAR-WBC
 enable_pinocchio: true
-teleop_device: vr-controller

@@ -73,7 +73,8 @@ class G1DecoupledWBCAction(ActionTerm):
         config.wbc_version = "homie"
         config.wbc_model_path = 'models/t1.onnx'
         # assert relative path exists
-        assert os.path.exists(os.path.join(os.path.dirname(__file__), config.wbc_model_path)), f"Model path does not exist: {config.wbc_model_path}"
+        
+        assert os.path.exists(os.path.join(os.path.dirname(__file__), "wbc_policy", config.wbc_model_path)), f"Model path does not exist: {config.wbc_model_path}"
 
         wbc_config = config.load_wbc_yaml()
         waist_location = "lower_and_upper_body" if config.enable_waist else "lower_body"
@@ -90,8 +91,24 @@ class G1DecoupledWBCAction(ActionTerm):
             # base_height_cmd: 0.75 as pelvis height
             "base_height_command": np.tile(np.array([0.75]), (self.num_envs, 1)),
             # toggle_policy_action: 0 for disable policy, 1 for enable policy
-            "toggle_policy_action": np.tile(np.array([1]), (self.num_envs, 1)),
+            "toggle_policy_action": np.tile(np.array([0]), (self.num_envs, 1)),
         }
+
+        self.increment = -0.005
+        self.height = 0.75
+
+        # self._wbc_goal = {
+        #     "target_upper_body_pose": self.current_upper_body_pose.reshape([self.num_envs, -1]),
+        #     # lin_vel_cmd_x, lin_vel_cmd_y, ang_vel_cmd
+        #     "navigate_cmd": np.array([[0., 0., 0.]]).reshape([self.num_envs, -1]),
+        #     # base_height_cmd: 0.75 as pelvis height
+        #     # NOTE: 0 does not support squatting motion
+        #     "base_height_command": np.array([0.75]).reshape([self.num_envs, -1]),
+        #     # stand_cmd: 0 for disable tapping, 1 for enable tapping
+        #     "toggle_stand_command": np.array([[0]]).reshape([self.num_envs, -1]),
+        #     # toggle_policy_action: 0 for disable policy, 1 for enable policy
+        #     "toggle_policy_action": np.array([[0]]).reshape([self.num_envs, -1]),
+        # }
 
     # Properties.
     @property
@@ -199,7 +216,8 @@ class G1DecoupledWBCAction(ActionTerm):
         # extract navigate_cmd, stand_cmd, base_height_cmd from actions
         navigate_cmd = actions_clone[:, -5:-2]
         stand_cmd = actions_clone[:, -2:-1]
-        base_height_cmd = actions_clone[:, -1:]
+        base_height_cmd = copy.copy(self.height)# actions_clone[:, -1:]
+
         self._navigate_cmd = torch.tensor(navigate_cmd)
 
         self.set_wbc_goal(navigate_cmd, stand_cmd, base_height_cmd)
@@ -214,6 +232,10 @@ class G1DecoupledWBCAction(ActionTerm):
         sim_target_full_body_joints = actions_clone[:, :self._num_joints]
         wbc_target_full_body_joints = convert_sim_joint_to_wbc_joint(sim_target_full_body_joints, self._asset.data.joint_names, self.wbc_g1_joints_order)
         wbc_target_upper_body_joints = wbc_target_full_body_joints[:, self.robot_model.get_joint_group_indices("upper_body")]
+
+
+        # TESTING: Get other action terms
+        print(f"ACTION TERMS: {self._env.action_manager._terms}\n\n\n\n")
 
         self.wbc_policy.set_observation(wbc_obs)
 
