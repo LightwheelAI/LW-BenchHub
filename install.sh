@@ -8,11 +8,9 @@ pip install 'isaacsim[all,extscache]==5.0.0' --extra-index-url https://pypi.nvid
 mkdir -p third_party
 
 # IsaacLab
-cd third_party
-git clone https://github.com/isaac-sim/IsaacLab.git
-cd IsaacLab
+cd third_party/isaac_arena/submodules/IsaacLab
 bash isaaclab.sh --install
-cd ../
+cd ../../../..
 
 # robosuite
 cd third_party
