@@ -48,6 +48,17 @@
             "justMyCode": false
         },
         {
+            "name": "teleop-g1-loco-controller",
+            "type": "python",
+            "request": "launch",
+            "args": [
+                "--task_config=g1-loco-controller" , // data_collection/teleop/task_config/default.yml
+            ],
+            "program": "${workspaceFolder}/lwlab/scripts/teleop/teleop_main.py",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
             "name": "replay",
             "type": "debugpy",
             "request": "launch",
