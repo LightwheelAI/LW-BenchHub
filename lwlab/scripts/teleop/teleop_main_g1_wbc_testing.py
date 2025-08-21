@@ -410,7 +410,9 @@ def main():
             teleop_start = time.time()
             actions = teleop_interface.advance()
 
-            actions = torch.zeros(env.num_envs, 48)
+            actions_upper = torch.randn(env.num_envs, 59) * 0.1
+            actions_lower = torch.zeros(env.num_envs, 5)
+            actions = torch.cat([actions_upper, actions_lower], dim=1)
 
             teleop_time = time.time() - teleop_start
             frame_analyzer.record_stage('teleop_advance', teleop_time)
