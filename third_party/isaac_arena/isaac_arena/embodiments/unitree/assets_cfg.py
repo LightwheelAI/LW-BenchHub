@@ -822,7 +822,7 @@ G1_Loco_CFG = ArticulationCfg(
 G1_GEARWBC_CFG =ArticulationCfg(
     spawn=sim_utils.UsdFileCfg(
         usd_path="omniverse://isaac-dev.ov.nvidia.com/Isaac/Samples/Groot/Robots/g1_29dof_with_hand_rev_1_0.usd",
-        activate_contact_sensors=False,
+        activate_contact_sensors=True,
         rigid_props=sim_utils.RigidBodyPropertiesCfg(
             disable_gravity=False,
             retain_accelerations=False,
@@ -843,7 +843,7 @@ G1_GEARWBC_CFG =ArticulationCfg(
     ),
     prim_path="/World/envs/env_.*/Robot",
     init_state=ArticulationCfg.InitialStateCfg(
-        pos=(0, 0, 0.78),
+        pos=(0.8, -1.38, 0.78),
         rot=(0.0, 0.0, 0.0, 1.0),
         joint_pos={
             # target angles [rad]

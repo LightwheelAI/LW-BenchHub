@@ -27,9 +27,10 @@ class LocoActionsCfg:
 @configclass
 class DecoupledWBCActionsCfg:
     """Actions specifications for the G1 robot, with decoupled WBC policy from Gear."""
-    base_action: G1DecoupledWBCActionCfg = MISSING
+    
     # Note(xinjie.yao): check if this is correct with teleop pipeline
     left_arm_action: mdp.DifferentialInverseKinematicsActionCfg = MISSING
     right_arm_action: mdp.DifferentialInverseKinematicsActionCfg = MISSING
     left_hand_action: mdp.ActionTermCfg = MISSING
     right_hand_action: mdp.ActionTermCfg = MISSING
+    base_action: G1DecoupledWBCActionCfg = MISSING

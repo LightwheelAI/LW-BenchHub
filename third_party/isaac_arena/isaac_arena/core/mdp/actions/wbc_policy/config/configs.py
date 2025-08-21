@@ -67,6 +67,7 @@ def override_wbc_config(
         "SIMULATOR": config.simulator,
         "model_path": config.wbc_model_path,
         "verbose": config.verbose,
+        "upper_body_max_joint_speed": config.upper_body_joint_speed,
     }
 
     if missed_keys_only:
@@ -108,6 +109,13 @@ class BaseConfig(ArgsConfig):
 
     env_name: str = "default"
     """Environment name."""
+
+    # Robot Configuration
+    enable_waist: bool = False
+    """Whether to include waist joints in IK."""
+
+    upper_body_joint_speed: float = 5
+    """Upper body joint speed."""
 
     # Policy settings
     enable_upper_body_operation: bool = True

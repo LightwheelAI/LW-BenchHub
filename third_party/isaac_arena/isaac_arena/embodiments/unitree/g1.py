@@ -605,9 +605,13 @@ class UnitreeG1DecoupledWBCEnvCfg(UnitreeG1EnvCfg):
     actions: DecoupledWBCActionsCfg = DecoupledWBCActionsCfg()
     robot_cfg: ArticulationCfg = G1_GEARWBC_CFG
     robot_name: str = "G1-DecoupledWBC"
-    hand_action_mode: str = MISSING
+    hand_action_mode: str = "handle"
 
     def __post_init__(self):
         super().__post_init__()
+        self.actions.left_arm_action = None
+        self.actions.right_arm_action = None
+        self.actions.left_hand_action = None
+        self.actions.right_hand_action = None
         self.actions.base_action = G1DecoupledWBCActionCfg(asset_name="robot", joint_names=[".*"])
         # TODO(xinjie.yao): check/update hand/arm action

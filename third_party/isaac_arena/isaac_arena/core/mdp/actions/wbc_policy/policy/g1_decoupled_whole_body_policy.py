@@ -94,9 +94,7 @@ class G1DecoupledWholeBodyPolicy(Policy):
         q_arms = q[:, self.robot_model.get_joint_group_indices("arms")]
         q_waist = q[:, self.robot_model.get_joint_group_indices("waist")]
         base_height_command = upper_body_action.get("base_height_command", None)
-        lower_body_action = self.lower_body_policy.get_action(
-            None, q_arms, base_height_command, q_waist
-        )
+        lower_body_action = self.lower_body_policy.get_action(q_waist)
         q[:, lower_body_indices] = lower_body_action["body_action"][0][:, :len(lower_body_indices)]
 
         return {"q": q}

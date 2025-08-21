@@ -54,9 +54,9 @@ class G1HomiePolicy(Policy):
         self.cmd[:] = self.config["cmd_init"]  # Copy values from config
         self.height_cmd = self.config["height_cmd"]
         self.freq_cmd = self.config["freq_cmd"]
-        self.roll_cmd = self.config["roll_cmd"]
-        self.pitch_cmd = self.config["pitch_cmd"]
-        self.yaw_cmd = self.config["yaw_cmd"]
+        self.roll_cmd = np.array([self.config["roll_cmd"]], dtype=np.float32)
+        self.pitch_cmd = np.array([self.config["pitch_cmd"]], dtype=np.float32)
+        self.yaw_cmd = np.array([self.config["yaw_cmd"]], dtype=np.float32)
         self.gait_indices = torch.zeros((num_envs, 1), dtype=torch.float32)
 
     def reset(self, env_ids: torch.Tensor):
