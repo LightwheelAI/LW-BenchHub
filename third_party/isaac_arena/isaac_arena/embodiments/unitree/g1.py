@@ -1,11 +1,7 @@
+from dataclasses import MISSING
+
 import torch
 import numpy as np
-import json
-import time
-from dataclasses import MISSING
-from pathlib import Path
-from lwlab.utils.math_utils import transform_utils as T
-from .common import ActionsCfg, LocoActionsCfg
 
 from isaaclab.assets import ArticulationCfg
 from isaaclab.sensors import FrameTransformerCfg
@@ -18,15 +14,21 @@ from isaaclab.sensors.frame_transformer.frame_transformer_cfg import OffsetCfg
 
 import lwlab.core.mdp as mdp
 from lwlab.core.robots.base import BaseRobotCfg
-from .assets_cfg import (
+from lwlab.core.models.grippers.dex3 import Dex3GripperCfg
+from lwlab.core.models.grippers.inspire_hands import InspireHandsGripperCfg
+from lwlab.utils.math_utils import transform_utils as T
+
+from isaac_arena.core.mdp.actions.decoupled_wbc_action import G1DecoupledWBCActionCfg
+from isaac_arena.embodiments.unitree.assets_cfg import (
     G1_HIGH_PD_CFG,
     OFFSET_CONFIG_G1,
     G1_WITH_INSPIRE_HAND_HIGH_PD_CFG,
     OFFSET_CONFIG_G1_WITH_INSPIRE,
     G1_Loco_CFG,
+    G1_GEARWBC_CFG,
 )
-from lwlab.core.models.grippers.dex3 import Dex3GripperCfg
-from lwlab.core.models.grippers.inspire_hands import InspireHandsGripperCfg
+from isaac_arena.embodiments.unitree.common import ActionsCfg, LocoActionsCfg, DecoupledWBCActionsCfg
+
 ##
 # Pre-defined configs
 ##
@@ -597,3 +599,15 @@ class UnitreeG1HandEnvRLCfg(UnitreeG1HandEnvCfg):
         self.set_reward_gripper_joint_names(["right_hand_.*"])
         self.set_reward_arm_joint_names(["right_shoulder_pitch_joint", "right_shoulder_roll_joint", "right_shoulder_yaw_joint",
                                          "right_elbow_joint", "right_wrist_roll_joint", "right_wrist_pitch_joint", "right_wrist_yaw_joint"])
+
+
+class UnitreeG1DecoupledWBCEnvCfg(UnitreeG1EnvCfg):
+    actions: DecoupledWBCActionsCfg = DecoupledWBCActionsCfg()
+    robot_cfg: ArticulationCfg = G1_GEARWBC_CFG
+    robot_name: str = "G1-DecoupledWBC"
+    hand_action_mode: str = MISSING
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.actions.base_action = G1DecoupledWBCActionCfg(asset_name="robot", joint_names=[".*"])
+        # TODO(xinjie.yao): check/update hand/arm action

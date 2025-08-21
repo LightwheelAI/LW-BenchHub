@@ -113,6 +113,7 @@ third_party/*
 !third_party/isaac_arena/**
 !third_party/lw_skrl/
 !third_party/lw_skrl/**
+third_party/isaac_arena/isaac_arena/core/mdp/actions/wbc_policy/models/*
 
 log/
 
