@@ -10,7 +10,7 @@ mkdir -p third_party
 # IsaacLab
 cd third_party/isaac_arena/submodules/IsaacLab
 bash isaaclab.sh --install
-cd ../
+cd ../../../..
 
 # robosuite
 cd third_party
