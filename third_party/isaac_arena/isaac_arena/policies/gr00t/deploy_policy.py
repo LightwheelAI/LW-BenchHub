@@ -8,18 +8,20 @@ sys.path.append(parent_directory)
 
 import torch
 
-from lwlab.third_party.isaac_arena.isaac_arena.policies.gr00t.gr00t_n1_5_policy import Gr00tN15Policy
-from lwlab.third_party.isaac_arena.isaac_arena.policies.gr00t.policy_cfg import GR00TN15Config
-from lwlab.third_party.isaac_arena.isaac_arena.policies.gr00t.robot_joints import JointsAbsPosition
-from lwlab.third_party.isaac_arena.isaac_arena.policies.gr00t.io_utils import load_robot_joints_config
-from lwlab.third_party.isaac_arena.isaac_arena.policies.gr00t.joints_conversion import \
+from isaac_arena.isaac_arena.policies.gr00t.gr00t_n1_5_policy import Gr00tN15Policy
+from isaac_arena.isaac_arena.policies.gr00t.policy_cfg import GR00TN15Config
+from isaac_arena.isaac_arena.policies.gr00t.robot_joints import JointsAbsPosition
+from isaac_arena.isaac_arena.policies.gr00t.io_utils import load_robot_joints_config
+from isaac_arena.isaac_arena.policies.gr00t.joints_conversion import \
     (remap_sim_joints_to_policy_joints, remap_policy_joints_to_sim_joints)
+
 
 # TODO(xinjie.yao): change to better design, a hack
 g1_state_joints_config = load_robot_joints_config('g1/43dof_joint_space.yaml')
 gr00t_joints_config = load_robot_joints_config('g1/gr00t_43dof_joint_space.yaml')
 simulation_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 num_joints = len(g1_state_joints_config)
+
 
 # Encode observation for the model
 def encode_obs(observation, language_instruction):

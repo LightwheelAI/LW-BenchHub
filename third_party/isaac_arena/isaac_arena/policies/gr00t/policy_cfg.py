@@ -17,7 +17,7 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from lwlab.third_party.isaac_arena.isaac_arena.policies.gr00t.tasks import EvalTaskConfig
+from isaac_arena.isaac_arena.policies.gr00t.tasks import EvalTaskConfig
 
 # Pulling args from Gr00tN1ClosedLoopArguments into a data class
 @dataclass

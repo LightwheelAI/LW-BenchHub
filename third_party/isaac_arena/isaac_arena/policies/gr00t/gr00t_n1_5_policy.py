@@ -14,23 +14,19 @@
 # limitations under the License.
 
 import os
-import shutil
-from dataclasses import dataclass, field
-from enum import Enum
-from pathlib import Path
-from typing import Optional
 from typing import Tuple
 
 import numpy as np
 
-from lwlab.third_party.isaac_arena.third_party.Isaac-GR00T.isaac_gr00t.experiment.data_config import DATA_CONFIG_MAP
-from lwlab.third_party.isaac_arena.third_party.Isaac-GR00T.isaac_gr00t.model.policy import Gr00tPolicy
-
-from lwlab.third_party.isaac_arena.isaac_arena.policies.gr00t.io_utils import load_robot_joints_config
-from lwlab.third_party.isaac_arena.isaac_arena.policies.gr00t.joints_conversion import remap_policy_joints_to_sim_joints, remap_sim_joints_to_policy_joints
-from lwlab.third_party.isaac_arena.isaac_arena.policies.gr00t.robot_joints import JointsAbsPosition
-from lwlab.third_party.isaac_arena.isaac_arena.policies.gr00t.policy_cfg import GR00TN15Config
 from isaaclab.sensors import Camera
+
+from gr00t.experiment.data_config import DATA_CONFIG_MAP
+from gr00t.model.policy import Gr00tPolicy
+
+from isaac_arena.isaac_arena.policies.gr00t.io_utils import load_robot_joints_config
+from isaac_arena.isaac_arena.policies.gr00t.joints_conversion import remap_policy_joints_to_sim_joints, remap_sim_joints_to_policy_joints
+from isaac_arena.isaac_arena.policies.gr00t.robot_joints import JointsAbsPosition
+from isaac_arena.isaac_arena.policies.gr00t.policy_cfg import GR00TN15Config
 
 
 class Gr00tN15Policy():
