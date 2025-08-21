@@ -17,8 +17,8 @@ import os
 from typing import List, Optional, Set, Union, TYPE_CHECKING
 import yaml
 
-if TYPE_CHECKING:
-    from isaac_arena.embodiments.wbc_policy.utils.robot_supplemental_info import RobotSupplementalInfo
+
+from isaac_arena.core.mdp.actions.wbc_policy.utils.robot_supplemental_info import RobotSupplementalInfo
 
 
 class RobotModel:

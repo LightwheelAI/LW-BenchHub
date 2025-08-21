@@ -20,7 +20,7 @@ import gymnasium as gym
 import numpy as np
 import scipy.interpolate as si
 
-from isaac_arena.embodiments.wbc_policy.base.policy import Policy
+from isaac_arena.core.mdp.actions.wbc_policy.base.policy import Policy
 
 
 class InterpolationPolicy(Policy):

@@ -15,7 +15,7 @@
 from dataclasses import dataclass
 
 import numpy as np
-from isaac_arena.embodiments.wbc_policy.utils.robot_supplemental_info import (
+from isaac_arena.core.mdp.actions.wbc_policy.utils.robot_supplemental_info import (
     RobotSupplementalInfo
 )
 

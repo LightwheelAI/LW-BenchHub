@@ -20,8 +20,8 @@ import numpy as np
 import onnxruntime as ort
 import torch
 
-from isaac_arena.embodiments.wbc_policy.policy.base.policy import Policy
-from isaac_arena.embodiments.wbc_policy.utils.homie_utils import get_gravity_orientation, load_config
+from isaac_arena.core.mdp.actions.wbc_policy.base.policy import Policy
+from isaac_arena.core.mdp.actions.wbc_policy.utils.homie_utils import get_gravity_orientation, load_config
 
 
 class G1HomiePolicy(Policy):
