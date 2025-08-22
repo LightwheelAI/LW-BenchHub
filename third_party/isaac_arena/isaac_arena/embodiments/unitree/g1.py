@@ -601,13 +601,65 @@ class UnitreeG1HandEnvRLCfg(UnitreeG1HandEnvCfg):
                                          "right_elbow_joint", "right_wrist_roll_joint", "right_wrist_pitch_joint", "right_wrist_yaw_joint"])
 
 
-class UnitreeG1DecoupledWBCEnvCfg(UnitreeG1EnvCfg):
+class UnitreeG1ControllerDecoupledWBCEnvCfg(UnitreeG1ControllerEnvCfg):
     actions: DecoupledWBCActionsCfg = DecoupledWBCActionsCfg()
     robot_cfg: ArticulationCfg = G1_GEARWBC_CFG
-    robot_name: str = "G1-DecoupledWBC"
+    robot_name: str = "G1-Controller-DecoupledWBC"
     hand_action_mode: str = "handle"
 
     def __post_init__(self):
         super().__post_init__()
         self.actions.base_action = G1DecoupledWBCActionCfg(asset_name="robot", joint_names=[".*"])
-        # TODO(xinjie.yao): check/update hand/arm action
+
+    def preprocess_device_action(self, action: dict[str, torch.Tensor], device) -> torch.Tensor:
+        base_action = torch.zeros(3,)
+        if action['rsqueeze'] > 0.5:
+            base_action = torch.tensor([action['rbase'][0], 0, action['rbase'][1]], device=action['rbase'].device)
+        else:
+            base_action = torch.tensor([action['rbase'][0], action['rbase'][1], 0,], device=action['rbase'].device)
+
+        _cumulative_base, base_quat = math_utils.subtract_frame_transforms(device.robot.data.root_com_pos_w[0],
+                                                                           device.robot.data.root_com_quat_w[0],
+                                                                           device.robot.data.body_link_pos_w[0, 4],
+                                                                           device.robot.data.body_link_quat_w[0, 4])
+        # base_quat = T.quat_multiply(device.robot.data.body_link_quat_w[0,3][[1,2,3,0]],device.robot.data.root_com_quat_w[0][[1,2,3,0]], )
+        base_yaw = T.quat2axisangle(base_quat[[1, 2, 3, 0]])[2]
+        base_quat = T.axisangle2quat(torch.tensor([0, 0, base_yaw], device=device.env.device))
+        base_movement = torch.tensor([_cumulative_base[0], _cumulative_base[1], 0], device=device.env.device)
+
+        cos_yaw = torch.cos(base_yaw)
+        sin_yaw = torch.sin(base_yaw)
+        rot_mat_2d = torch.tensor([
+            [cos_yaw, -sin_yaw],
+            [sin_yaw, cos_yaw]
+        ], device=device.env.device)
+        robot_x = base_action[0]
+        robot_y = base_action[1]
+        local_xy = torch.tensor([robot_x, robot_y], device=device.env.device)
+        world_xy = torch.matmul(rot_mat_2d, local_xy)
+        base_action[0] = world_xy[0]
+        base_action[1] = world_xy[1]
+        left_arm_action = None
+        right_arm_action = None
+        if self.actions.left_arm_action.controller.use_relative_mode:  # Relative mode
+            left_arm_action = action["left_arm_delta"]
+            right_arm_action = action["right_arm_delta"]
+        else:  # Absolute mode
+            for arm_idx, abs_arm in enumerate([action["left_arm_abs"], action["right_arm_abs"]]):
+                pose_quat = abs_arm[3:7]
+                combined_quat = T.quat_multiply(base_quat, pose_quat)
+                arm_action = abs_arm.clone()
+                rot_mat = T.quat2mat(base_quat)
+                gripper_movement = torch.matmul(rot_mat, arm_action[:3])
+                pose_movement = base_movement + gripper_movement
+                arm_action[:3] = pose_movement
+                arm_action[3] = combined_quat[3]  # Update quaternion from xyzw to wxyz
+                arm_action[4:7] = combined_quat[:3]
+                if arm_idx == 0:
+                    left_arm_action = arm_action  # Robot frame
+                else:
+                    right_arm_action = arm_action  # Robot frame
+        left_gripper = torch.tensor([-action["left_gripper"]], device=action['rbase'].device)
+        right_gripper = torch.tensor([-action["right_gripper"]], device=action['rbase'].device)
+        return torch.concat([left_arm_action, right_arm_action,
+                             left_gripper, right_gripper, base_action]).unsqueeze(0)
