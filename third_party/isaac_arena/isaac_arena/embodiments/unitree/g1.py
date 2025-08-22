@@ -424,8 +424,8 @@ class UnitreeG1ControllerEnvCfg(UnitreeG1EnvCfg):
                     right_arm_action = arm_action  # Robot frame
         left_gripper = torch.tensor([-action["left_gripper"]], device=action['rbase'].device)
         right_gripper = torch.tensor([-action["right_gripper"]], device=action['rbase'].device)
-        return torch.concat([base_action, left_arm_action, right_arm_action,
-                             left_gripper, right_gripper]).unsqueeze(0)
+        return torch.concat([left_arm_action, right_arm_action,
+                             left_gripper, right_gripper, base_action]).unsqueeze(0)
 
 
 class UnitreeG1LocoHandEnvCfg(UnitreeG1LocoEnvCfg):
@@ -601,7 +601,9 @@ class UnitreeG1HandEnvRLCfg(UnitreeG1HandEnvCfg):
                                          "right_elbow_joint", "right_wrist_roll_joint", "right_wrist_pitch_joint", "right_wrist_yaw_joint"])
 
 
+
 class UnitreeG1ControllerDecoupledWBCEnvCfg(UnitreeG1ControllerEnvCfg):
+
     actions: DecoupledWBCActionsCfg = DecoupledWBCActionsCfg()
     robot_cfg: ArticulationCfg = G1_GEARWBC_CFG
     robot_name: str = "G1-Controller-DecoupledWBC"
@@ -610,13 +612,26 @@ class UnitreeG1ControllerDecoupledWBCEnvCfg(UnitreeG1ControllerEnvCfg):
     def __post_init__(self):
         super().__post_init__()
         self.actions.base_action = G1DecoupledWBCActionCfg(asset_name="robot", joint_names=[".*"])
+        self.init_robot_base_height = 0.75
 
     def preprocess_device_action(self, action: dict[str, torch.Tensor], device) -> torch.Tensor:
-        base_action = torch.zeros(3,)
+        """
+        Base action [lin_x_local, lin_y_local, ang_z_local, base_height_cmd]
+        range of -1, 1 each
+        """
+        base_action = torch.zeros(4,)
+
         if action['rsqueeze'] > 0.5:
-            base_action = torch.tensor([action['rbase'][0], 0, action['rbase'][1]], device=action['rbase'].device)
+            # linear x + turning yaw
+            base_action[:3] = torch.tensor([action['rbase'][0], 0, action['rbase'][1]], device=action['rbase'].device)
         else:
-            base_action = torch.tensor([action['rbase'][0], action['rbase'][1], 0,], device=action['rbase'].device)
+            # linear x + linear y
+            base_action[:3] = torch.tensor([action['rbase'][0], action['rbase'][1], 0,], device=action['rbase'].device)
+        # base_height_cmd (relative to current height)
+        # joystaick returns -1 to 1, remap to a smaller range
+        base_action[3] =  self.init_robot_base_height + 0.5 * torch.tensor([action['lbase'][0]], device=action['lbase'].device)
+        # Clip base_action[3] to be within 0.5 to 1.0
+        base_action[3] = torch.clamp(base_action[3], min=0.2, max=1.)
 
         _cumulative_base, base_quat = math_utils.subtract_frame_transforms(device.robot.data.root_com_pos_w[0],
                                                                            device.robot.data.root_com_quat_w[0],
@@ -633,12 +648,15 @@ class UnitreeG1ControllerDecoupledWBCEnvCfg(UnitreeG1ControllerEnvCfg):
             [cos_yaw, -sin_yaw],
             [sin_yaw, cos_yaw]
         ], device=device.env.device)
-        robot_x = base_action[0]
-        robot_y = base_action[1]
-        local_xy = torch.tensor([robot_x, robot_y], device=device.env.device)
-        world_xy = torch.matmul(rot_mat_2d, local_xy)
-        base_action[0] = world_xy[0]
-        base_action[1] = world_xy[1]
+
+        # Decoupled WBC does not use x/y/angular in global frame, use local frame
+        # robot_x = base_action[0]
+        # robot_y = base_action[1]
+        # local_xy = torch.tensor([robot_x, robot_y], device=device.env.device)
+        # world_xy = torch.matmul(rot_mat_2d, local_xy)
+        # base_action[0] = world_xy[0]
+        # base_action[1] = world_xy[1]
+
         left_arm_action = None
         right_arm_action = None
         if self.actions.left_arm_action.controller.use_relative_mode:  # Relative mode

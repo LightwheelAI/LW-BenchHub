@@ -26,8 +26,10 @@ class LocoActionsCfg:
 @configclass
 class DecoupledWBCActionsCfg:
     """Actions specifications for the G1 robot, with decoupled WBC policy from Gear."""
+
     # Sequential action terms. Upper body actions are used for WBC policy (base_action).
     # The following ordering must be enforced for WBC policy to function correctly.
+
     left_arm_action: mdp.DifferentialInverseKinematicsActionCfg = MISSING
     right_arm_action: mdp.DifferentialInverseKinematicsActionCfg = MISSING
     left_hand_action: mdp.ActionTermCfg = MISSING
