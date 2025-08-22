@@ -601,10 +601,12 @@ class UnitreeG1HandEnvRLCfg(UnitreeG1HandEnvCfg):
                                          "right_elbow_joint", "right_wrist_roll_joint", "right_wrist_pitch_joint", "right_wrist_yaw_joint"])
 
 
-class UnitreeG1DecoupledWBCEnvCfg(UnitreeG1ControllerEnvCfg):
+
+class UnitreeG1ControllerDecoupledWBCEnvCfg(UnitreeG1ControllerEnvCfg):
+
     actions: DecoupledWBCActionsCfg = DecoupledWBCActionsCfg()
     robot_cfg: ArticulationCfg = G1_GEARWBC_CFG
-    robot_name: str = "G1-DecoupledWBC"
+    robot_name: str = "G1-Controller-DecoupledWBC"
     hand_action_mode: str = "handle"
 
     def __post_init__(self):
@@ -646,6 +648,7 @@ class UnitreeG1DecoupledWBCEnvCfg(UnitreeG1ControllerEnvCfg):
             [cos_yaw, -sin_yaw],
             [sin_yaw, cos_yaw]
         ], device=device.env.device)
+
         # Decoupled WBC does not use x/y/angular in global frame, use local frame
         # robot_x = base_action[0]
         # robot_y = base_action[1]
@@ -653,6 +656,7 @@ class UnitreeG1DecoupledWBCEnvCfg(UnitreeG1ControllerEnvCfg):
         # world_xy = torch.matmul(rot_mat_2d, local_xy)
         # base_action[0] = world_xy[0]
         # base_action[1] = world_xy[1]
+
         left_arm_action = None
         right_arm_action = None
         if self.actions.left_arm_action.controller.use_relative_mode:  # Relative mode

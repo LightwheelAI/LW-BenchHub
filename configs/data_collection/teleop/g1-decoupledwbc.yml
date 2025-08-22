@@ -1,4 +1,3 @@
 _base_: [g1-controller]
-robot: G1-DecoupledWBC
-enable_pinocchio: false
-# teleop_device: vr-controller
+robot: G1-Controller-DecoupledWBC
+teleop_device: vr-controller
