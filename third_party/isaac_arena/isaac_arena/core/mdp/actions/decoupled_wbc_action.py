@@ -151,7 +151,7 @@ class G1DecoupledWBCAction(ActionTerm):
     @property
     def action_dim(self) -> int:
         """Dimension of the action space (based on number of tasks and pose dimension)."""
-        return 43 + 3 + 1 + 1
+        return 3
 
     @property
     def raw_actions(self) -> torch.Tensor:
@@ -193,6 +193,7 @@ class G1DecoupledWBCAction(ActionTerm):
 
 
     def process_actions(self, actions: torch.Tensor):
+        return
         """Process the input actions and set targets for each task.
 
         Args:
@@ -212,6 +213,7 @@ class G1DecoupledWBCAction(ActionTerm):
         '''
         # extract navigate_cmd, stand_cmd, base_height_cmd from actions
         navigate_cmd = actions_clone[:, -5:-2]
+        navigate_cmd[:, :] = 0
         stand_cmd = actions_clone[:, -2:-1]
         base_height_cmd = 0.7 # actions_clone[:, -1:]
 
@@ -281,7 +283,7 @@ class G1DecoupledWBCAction(ActionTerm):
 
     def apply_actions(self):
         """Apply the computed joint positions based on the WBC solution."""
-        self._asset.set_joint_position_target(self._processed_actions, self._joint_ids)
+        # self._asset.set_joint_position_target(self._processed_actions, self._joint_ids)
 
     def reset(self, env_ids: Sequence[int] | None = None) -> None:
         """Reset the action term for specified environments.

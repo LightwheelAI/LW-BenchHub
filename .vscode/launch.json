@@ -54,7 +54,29 @@
             "args": [
                 "--task_config=g1-loco-controller" , // data_collection/teleop/task_config/default.yml
             ],
-            "program": "${workspaceFolder}/lwlab/scripts/teleop/teleop_main.py",
+            "program": "${workspaceFolder}/lwlab/scripts/teleop/teleop_main_g1_wbc_testing.py",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "teleop-g1-controller",
+            "type": "python",
+            "request": "launch",
+            "args": [
+                "--task_config=g1-controller" , // data_collection/teleop/task_config/default.yml
+            ],
+            "program": "${workspaceFolder}/lwlab/scripts/teleop/teleop_main_g1_wbc_testing.py",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },        
+        {
+            "name": "teleop-g1-decoupledwbc",
+            "type": "python",
+            "request": "launch",
+            "args": [
+                "--task_config=g1-decoupledwbc" , // data_collection/teleop/task_config/default.yml
+            ],
+            "program": "${workspaceFolder}/lwlab/scripts/teleop/teleop_main_g1_wbc_testing.py",
             "console": "integratedTerminal",
             "justMyCode": false
         },

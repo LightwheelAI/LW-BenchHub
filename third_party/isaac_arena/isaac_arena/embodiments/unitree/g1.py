@@ -601,9 +601,10 @@ class UnitreeG1HandEnvRLCfg(UnitreeG1HandEnvCfg):
                                          "right_elbow_joint", "right_wrist_roll_joint", "right_wrist_pitch_joint", "right_wrist_yaw_joint"])
 
 
-class UnitreeG1DecoupledWBCEnvCfg(UnitreeG1EnvCfg):
+class UnitreeG1DecoupledWBCEnvCfg(UnitreeG1ControllerEnvCfg):
     actions: DecoupledWBCActionsCfg = DecoupledWBCActionsCfg()
-    robot_cfg: ArticulationCfg = G1_GEARWBC_CFG
+    # robot_cfg: ArticulationCfg = G1_GEARWBC_CFG
+    robot_cfg: ArticulationCfg = G1_HIGH_PD_CFG
     robot_name: str = "G1-DecoupledWBC"
     hand_action_mode: str = "handle"
 
