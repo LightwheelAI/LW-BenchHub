@@ -55,8 +55,11 @@ class OpenTeleVision:
         self.app.add_handler("CAMERA_MOVE")(self.on_cam_move)
 
         if self.stream_mode == "image":
-            existing_shm = shared_memory.SharedMemory(name=self.shm_name)
-            self.img_array = np.ndarray((self.img_shape[0], self.img_shape[1], 3), dtype=np.uint8, buffer=existing_shm.buf)
+            if self.shm_name is not None:
+                existing_shm = shared_memory.SharedMemory(name=self.shm_name)
+                self.img_array = np.ndarray((self.img_shape[0], self.img_shape[1], 3), dtype=np.uint8, buffer=existing_shm.buf)
+            else:
+                self.img_array = None
             self.app.spawn(start=True)(self.main_image)
         elif self.stream_mode == "webrtc":
             self.app.spawn(start=True)(self.main_webrtc)

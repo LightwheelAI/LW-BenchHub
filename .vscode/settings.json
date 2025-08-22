@@ -95,13 +95,13 @@
     // Python extra paths
     // Note: this is filled up when "./isaaclab.sh -i" is run
     "python.analysis.extraPaths": [
-        "${workspaceFolder}/third_party/IsaacLab/source/isaaclab_rl",
-        "${workspaceFolder}/third_party/IsaacLab/source/isaaclab_tasks",
-        "${workspaceFolder}/third_party/IsaacLab/source/standalone",
-        "${workspaceFolder}/third_party/IsaacLab/source/isaaclab_assets",
-        "${workspaceFolder}/third_party/IsaacLab/source/extensions",
-        "${workspaceFolder}/third_party/IsaacLab/source/isaaclab",
-        "${workspaceFolder}/third_party/IsaacLab/source/isaaclab_mimic",
+        "${workspaceFolder}/third_party/isaac_arena/submodules/IsaacLab/source/isaaclab_rl",
+        "${workspaceFolder}/third_party/isaac_arena/submodules/IsaacLab/source/isaaclab_tasks",
+        "${workspaceFolder}/third_party/isaac_arena/submodules/IsaacLab/source/standalone",
+        "${workspaceFolder}/third_party/isaac_arena/submodules/IsaacLab/source/isaaclab_assets",
+        "${workspaceFolder}/third_party/isaac_arena/submodules/IsaacLab/source/extensions",
+        "${workspaceFolder}/third_party/isaac_arena/submodules/IsaacLab/source/isaaclab",
+        "${workspaceFolder}/third_party/isaac_arena/submodules/IsaacLab/source/isaaclab_mimic",
         "${workspaceFolder}/third_party/robocasa",
         "${workspaceFolder}/third_party/robosuite",
         "${workspaceFolder}/third_party/lw_skrl",

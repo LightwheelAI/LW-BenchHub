@@ -46,6 +46,7 @@ class FloorplanLoader:
         self.usd_suffix = ".usd"
 
     def acquire_usd(self, layout_id: int, style_id: int, scene: str = None, cancel_previous_download: bool = True):
+        print("acquire usd", layout_id, style_id)
         try:
             self.check_version()
             if cancel_previous_download and self._latest_future and self._latest_future.running():
@@ -58,6 +59,7 @@ class FloorplanLoader:
         except Exception as e:
             if e.authenticated_failed():
                 # login and retry
+                print("login and retry")
                 self.headers = login_client.login(force_login=True)
                 return self.acquire_usd(layout_id, style_id, scene, cancel_previous_download)
             print(e)

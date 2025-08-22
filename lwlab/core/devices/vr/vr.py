@@ -10,10 +10,11 @@ import torch
 # NOTE: from robosuit
 from . import transform_utils as T
 from . import consts
-from isaaclab.devices.device_base import DeviceBase
+from isaaclab.devices import DeviceBase, DeviceCfg
 import copy
 import requests
 from lwlab.utils.opentelevision import OpenTeleVision
+from dataclasses import MISSING, dataclass
 
 
 def mat_update(prev_mat, mat, name="UNK"):
@@ -32,13 +33,14 @@ def fast_mat_inv(mat):
 
 # NOTE: from robosuit
 class Device(DeviceBase):
-    def __init__(self, env):
+    def __init__(self, env, cfg):
         """
         Args:
             env (RobotEnv): The environment which contains the robot(s) to control
                             using this device.
         """
         self.env = env
+        self.cfg = cfg
 
         # NOTE: isaaclab robot
         self.robot = env.scene.articulations['robot']
@@ -132,15 +134,11 @@ class VRDevice(Device):
     def __init__(
         self,
         env,
-        img_shape,
-        shm_name,
-        robot_mode="arm",  # or "humanoid" # TODO
+        cfg,
     ):
-        super().__init__(env)
-        # TODO: init OpenTeleVision
+        super().__init__(env, cfg)
         self._additional_callbacks = {}
-        self.robot_mode = robot_mode
-        self.tv = OpenTeleVision(img_shape, shm_name, device_type=self.tv_device_type)
+        self.tv = OpenTeleVision(cfg.img_shape, cfg.shm_name, device_type=self.tv_device_type)
         self._init_preprocessor()
         # 6-DOF variables
         self.x, self.y, self.z = 0, 0, 0
@@ -162,10 +160,6 @@ class VRDevice(Device):
         self.pos_sensitivity = 1.0
         self.rot_sensitivity = 1.0
         self._cumulative_base = np.array([0, 0, 0, 0], dtype=np.float64)
-        # launch a new listener thread to listen to SpaceMouse
-        # self.thread = threading.Thread(target=self.run)
-        # self.thread.daemon = True
-        # self.thread.start()
 
         # also add a keyboard for aux controls
         self.listener = Listener(on_press=self.on_press, on_release=self.on_release)
@@ -218,7 +212,7 @@ class VRDevice(Device):
             return np.array([[1, 0, 0], [0, np.cos(offset), -np.sin(offset)], [0, np.sin(offset), np.cos(offset)]])
         else:
             return np.array([[1, 0, 0, 0], [0, np.cos(offset), -np.sin(offset), 0], [0, np.sin(offset), np.cos(offset), 0], [0, 0, 0, 1]])
-    # 绕y轴旋转
+    # Rotate around y-axis
 
     def get_y_rotation(self, offset, homogeneous=False):
         if not homogeneous:
@@ -226,7 +220,7 @@ class VRDevice(Device):
         else:
             return np.array([[np.cos(offset), 0, np.sin(offset), 0], [0, 1, 0, 0], [-np.sin(offset), 0, np.cos(offset), 0], [0, 0, 0, 1]])
 
-    # 绕z轴旋转
+    # Rotate around z-axis
     def get_z_rotation(self, offset, homogeneous=False):
         if not homogeneous:
             return np.array([[np.cos(offset), -np.sin(offset), 0], [np.sin(offset), np.cos(offset), 0], [0, 0, 1]])
@@ -268,7 +262,6 @@ class VRDevice(Device):
         self.last_thumbstick_state = 0  # 记录上一次thumbstick的状态
         self.base_mode_flag = 1       # 切换的模式变量
 
-    # NOTE: Interface to robosuite
     def start_control(self):
         """
         Method that should be called externally before controller can
@@ -589,18 +582,6 @@ class VRHand(VRDevice):
         vr_left = rel_left_fingers[consts.tip_indices]
         vr_right = rel_right_fingers[consts.tip_indices]
         # return head_mat, abs_left_wrist_mat, abs_right_wrist_mat, vr_left, vr_right
-        # TODO use hamer to get the pose of the hand
-        # mano_left, mano_right, left_rotate, right_rotate = self.get_controller_state_hamer()
-        mano_left, mano_right = None, None
-
-        if mano_left is not None:
-            mano_left, left_rotate = np.array(mano_left), np.array(left_rotate)
-            mano_left = mano_left[consts.tip_indices_mano] - mano_left[0]
-            mano_left = mano_left @ left_rotate @ consts.left_rotation_matrix
-        if mano_right is not None:
-            mano_right, right_rotate = np.array(mano_right), np.array(right_rotate)
-            mano_right = mano_right[consts.tip_indices_mano] - mano_right[0]
-            mano_right = mano_right @ right_rotate @ consts.right_rotation_matrix
 
         # TODO fuse vr hand and hamer hand
         left_fingers, right_fingers = vr_left, vr_right
@@ -673,3 +654,20 @@ class VRHand(VRDevice):
         self._reset_internal_state()
         self._left_delta = np.zeros(6)
         self._right_delta = np.zeros(6)
+
+
+@dataclass
+class VRDeviceCfg(DeviceCfg):
+    img_shape: tuple[int, int] = (720, 1280)
+    shm_name: str = None
+    teleoperation_active_default: bool = False
+
+
+@dataclass
+class VRControllerDeviceCfg(VRDeviceCfg):
+    device_type: type[VRController] = VRController
+
+
+@dataclass
+class VRHandDeviceCfg(VRDeviceCfg):
+    device_type: type[VRHand] = VRHand

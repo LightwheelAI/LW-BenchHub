@@ -20,6 +20,7 @@ from typing import List, Optional
 from isaaclab.utils import configclass
 from isaaclab.assets import ArticulationCfg
 from isaaclab.envs.mdp.recorders.recorders_cfg import RecorderTerm, RecorderTermCfg, ActionStateRecorderManagerCfg
+from isaaclab.devices import DevicesCfg
 
 import lwlab.core.mdp as mdp
 from lwlab.utils.env import ExecuteMode
@@ -127,6 +128,7 @@ class BaseRobotCfg(LwBaseCfg):
     robot_to_fixture_dist: float = 0.20
     robot_base_link: str = None
     observation_cameras: dict = {}
+    teleop_devices: DevicesCfg = DevicesCfg()
 
     def __post_init__(self):
         super().__post_init__()

@@ -19,13 +19,10 @@
 import multiprocessing
 if multiprocessing.get_start_method() != "spawn":
     multiprocessing.set_start_method("spawn", force=True)
-from pathlib import Path
 import argparse
 import os
 import time
-import yaml
-import json
-from datetime import datetime
+from collections.abc import Callable
 from lwlab.utils.log_utils import log_scene_rigid_objects, handle_exception_and_log
 
 from lwlab.utils.log_utils import get_default_logger
@@ -175,6 +172,7 @@ def main():
     app_launcher = AppLauncher(app_launcher_args)
     simulation_app = app_launcher.app
     print(f"isaacsim started in {time.time() - start_time:.2f}s")
+    import omni.log
 
     from lwlab.utils.env import parse_env_cfg, ExecuteMode
 
@@ -264,92 +262,144 @@ def main():
 
     get_default_logger().info(f"env_cfg: {env_cfg}")
 
-    # create controller
-    if args_cli.teleop_device.lower() == "keyboard":
-        device_type = KEYCONTROLLER_MAP[args_cli.teleop_device.lower() + "-" + args_cli.robot.lower().split("-")[0]]
-        teleop_interface = device_type(
-            pos_sensitivity=0.05 * args_cli.sensitivity, rot_sensitivity=0.05 * args_cli.sensitivity,
-            base_sensitivity=0.5 * args_cli.sensitivity, base_yaw_sensitivity=0.8 * args_cli.sensitivity
-        )
-    elif args_cli.teleop_device.lower() == "spacemouse":
-        teleop_interface = Se3SpaceMouse(env,
-                                         pos_sensitivity=0.1 * args_cli.sensitivity, rot_sensitivity=0.2 * args_cli.sensitivity
-                                         )
-    # elif args_cli.teleop_device.lower() == "gamepad":
-    #     teleop_interface = Se3Gamepad(
-    #         pos_sensitivity=0.1 * args_cli.sensitivity, rot_sensitivity=0.1 * args_cli.sensitivity
-    #     )
-    elif args_cli.teleop_device.lower() == "so101leader":
-        from lwlab.core.devices.lerobot import SO101Leader
-        teleop_interface = SO101Leader(env, port=args_cli.port, recalibrate=args_cli.recalibrate)
-    elif args_cli.teleop_device.lower() == "bi_so101leader":
-        from lwlab.core.devices.lerobot import BiSO101Leader
-        teleop_interface = BiSO101Leader(env, left_port=args_cli.left_port, right_port=args_cli.right_port, recalibrate=args_cli.recalibrate)
-    elif args_cli.teleop_device.lower() == "handtracking":
-        from isaacsim.xr.openxr import OpenXRSpec
-
-        teleop_interface = Se3HandTracking(OpenXRSpec.XrHandEXT.XR_HAND_RIGHT_EXT, False, True)
-        teleop_interface.add_callback("RESET", env.reset)
-        viewer = ViewerCfg(eye=(-0.25, -0.3, 0.5), lookat=(0.6, 0, 0), asset_name="viewer")
-        ViewportCameraController(env, viewer)
-
-    elif args_cli.teleop_device.lower() == "dualhandtracking_abs" and args_cli.robot.lower().endswith("hand"):
-        # Create hand tracking device with retargeter
-        teleop_interface = LwOpenXRDevice(
-            env_cfg.xr,
-            retargeters=[],
-            env=env,
-        )
-        teleoperation_active = False
-    elif args_cli.teleop_device.lower().startswith("vr"):
-        image_size = (720, 1280)
-        shm = shared_memory.SharedMemory(
-            create=True,
-            size=image_size[0] * image_size[1] * 3 * np.uint8().itemsize,
-        )
-        vr_device_type = {
-            "vr-controller": VRController,
-            "vr-hand": VRHand,
-        }[args_cli.teleop_device.lower()]
-        teleop_interface = vr_device_type(env,
-                                          img_shape=image_size,
-                                          shm_name=shm.name,)
-    else:
-        raise ValueError(
-            f"Invalid device interface '{args_cli.teleop_device}'. Supported: 'keyboard', 'spacemouse''handtracking'."
-        )
-
     def run_simulation():
-        # add teleoperation key for env reset
+        # Flags for controlling teleoperation flow
         should_reset_recording_instance = False
-        flush_recorder_manager_flag = False
+        teleoperation_active = True
+        flush_recorder_manager_flag = True
 
-        def reset_recording_instance():
+        # Callback handlers
+        def reset_recording_instance() -> None:
+            """
+            Reset the environment to its initial state.
+
+            Sets a flag to reset the environment on the next simulation step.
+
+            Returns:
+                None
+            """
             nonlocal should_reset_recording_instance
             should_reset_recording_instance = True
+            print("Reset triggered - Environment will reset on next step")
 
-        def start_teleoperation():
+        def start_teleoperation() -> None:
+            """
+            Activate teleoperation control of the robot.
+
+            Enables the application of teleoperation commands to the environment.
+
+            Returns:
+                None
+            """
             nonlocal teleoperation_active
             teleoperation_active = True
+            print("Teleoperation activated")
 
-        def stop_teleoperation():
+        def stop_teleoperation() -> None:
+            """
+            Deactivate teleoperation control of the robot.
+
+            Disables the application of teleoperation commands to the environment.
+
+            Returns:
+                None
+            """
             nonlocal teleoperation_active
             teleoperation_active = False
+            print("Teleoperation deactivated")
 
         def flush_recorder_manager():
             nonlocal flush_recorder_manager_flag
-            flush_recorder_manager_flag = True
 
-        if isinstance(teleop_interface, LwOpenXRDevice):
-            teleoperation_active = False
-            teleop_interface.add_callback("RESET", reset_recording_instance)
-            teleop_interface.add_callback("START", start_teleoperation)
-            teleop_interface.add_callback("STOP", stop_teleoperation)
-        else:
-            teleoperation_active = True
-            teleop_interface.add_callback("R", reset_recording_instance)
-            teleop_interface.add_callback("T", flush_recorder_manager)
-        print(teleop_interface)
+        # Create device config if not already in env_cfg
+        teleoperation_callbacks: dict[str, Callable[[], None]] = {
+            "R": reset_recording_instance,
+            "T": flush_recorder_manager,
+            "START": start_teleoperation,
+            "STOP": stop_teleoperation,
+            "RESET": reset_recording_instance,
+            "FLUSH": flush_recorder_manager,
+
+        }
+
+        teleoperation_active = env_cfg.teleop_devices.devices[args_cli.teleop_device].teleoperation_active_default
+        from isaaclab.devices.teleop_device_factory import create_teleop_device
+        teleop_interface = create_teleop_device(
+            env, args_cli.teleop_device, env_cfg.teleop_devices.devices, teleoperation_callbacks
+        )
+
+        # # create controller
+        # if args_cli.teleop_device.lower() == "keyboard":
+        #     device_type = KEYCONTROLLER_MAP[args_cli.teleop_device.lower() + "-" + args_cli.robot.lower().split("-")[0]]
+        #     teleop_interface = device_type(
+        #         pos_sensitivity=0.05 * args_cli.sensitivity, rot_sensitivity=0.05 * args_cli.sensitivity,
+        #         base_sensitivity=0.5 * args_cli.sensitivity, base_yaw_sensitivity=0.8 * args_cli.sensitivity
+        #     )
+        # elif args_cli.teleop_device.lower() == "spacemouse":
+        #     teleop_interface = Se3SpaceMouse(env,
+        #                                     pos_sensitivity=0.1 * args_cli.sensitivity, rot_sensitivity=0.2 * args_cli.sensitivity
+        #                                     )
+        # # elif args_cli.teleop_device.lower() == "gamepad":
+        # #     teleop_interface = Se3Gamepad(
+        # #         pos_sensitivity=0.1 * args_cli.sensitivity, rot_sensitivity=0.1 * args_cli.sensitivity
+        # #     )
+        # elif args_cli.teleop_device.lower() == "so101leader":
+        #     from lwlab.core.devices.lerobot import SO101Leader
+        #     teleop_interface = SO101Leader(env, port=args_cli.port, recalibrate=args_cli.recalibrate)
+        # elif args_cli.teleop_device.lower() == "bi_so101leader":
+        #     from lwlab.core.devices.lerobot import BiSO101Leader
+        #     teleop_interface = BiSO101Leader(env, left_port=args_cli.left_port, right_port=args_cli.right_port, recalibrate=args_cli.recalibrate)
+        # elif args_cli.teleop_device.lower() == "handtracking":
+        #     from isaacsim.xr.openxr import OpenXRSpec
+
+        #     teleop_interface = Se3HandTracking(OpenXRSpec.XrHandEXT.XR_HAND_RIGHT_EXT, False, True)
+        #     teleop_interface.add_callback("RESET", env.reset)
+        #     viewer = ViewerCfg(eye=(-0.25, -0.3, 0.5), lookat=(0.6, 0, 0), asset_name="viewer")
+        #     ViewportCameraController(env, viewer)
+
+        # elif args_cli.teleop_device.lower() == "dualhandtracking_abs" and args_cli.robot.lower().endswith("hand"):
+        #     # Create hand tracking device with retargeter
+        #     teleop_interface = LwOpenXRDevice(
+        #         env_cfg.xr,
+        #         retargeters=[],
+        #         env=env,
+        #     )
+        #     teleoperation_active = False
+        # elif args_cli.teleop_device.lower().startswith("vr"):
+        #     image_size = (720, 1280)
+        #     shm = shared_memory.SharedMemory(
+        #         create=True,
+        #         size=image_size[0] * image_size[1] * 3 * np.uint8().itemsize,
+        #     )
+        #     vr_device_type = {
+        #         "vr-controller": VRController,
+        #         "vr-hand": VRHand,
+        #     }[args_cli.teleop_device.lower()]
+        #     teleop_interface = vr_device_type(env,
+        #                                     img_shape=image_size,
+        #                                     shm_name=shm.name,)
+        # else:
+        #     raise ValueError(
+        #         f"Invalid device interface '{args_cli.teleop_device}'. Supported: 'keyboard', 'spacemouse''handtracking'."
+        #     )
+
+        # if isinstance(teleop_interface, LwOpenXRDevice):
+        #     teleoperation_active = False
+        #     teleop_interface.add_callback("RESET", reset_recording_instance)
+        #     teleop_interface.add_callback("START", start_teleoperation)
+        #     teleop_interface.add_callback("STOP", stop_teleoperation)
+        # else:
+        #     teleoperation_active = True
+        #     teleop_interface.add_callback("R", reset_recording_instance)
+        #     teleop_interface.add_callback("T", flush_recorder_manager)
+
+        if teleop_interface is None:
+            omni.log.error("Failed to create teleop interface")
+            env.close()
+            simulation_app.close()
+            return
+
+        print(f"Using teleop device: {teleop_interface}")
 
         rate_limiter = RateLimiter(args_cli.step_hz)
 
