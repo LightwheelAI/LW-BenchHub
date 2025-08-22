@@ -213,7 +213,12 @@ class G1DecoupledWBCAction(ActionTerm):
         # extract navigate_cmd, stand_cmd, base_height_cmd from actions
         navigate_cmd = actions_clone[:, -5:-2]
         stand_cmd = actions_clone[:, -2:-1]
-        base_height_cmd = 0.7 # actions_clone[:, -1:]
+        base_height_cmd = actions_clone[:, -1:]
+
+        # TODO: Set all base actions to static value to enable standing
+        # Remove this after teleop device for base control is implemented
+        navigate_cmd[:, :] = 0.0
+        base_height_cmd[:, :] = 0.70
 
         self._navigate_cmd = torch.tensor(navigate_cmd)
 
@@ -233,45 +238,22 @@ class G1DecoupledWBCAction(ActionTerm):
         right_hand_action_joint_ids = [32, 33, 38, 39, 40, 42]
         '''
 
-        # Get joint positions from upper body action terms
+        # Get upper body action terms
         left_arm_action_term = self._env.action_manager.get_term("left_arm_action")
         right_arm_action_term = self._env.action_manager.get_term("right_arm_action")
         left_hand_action_term = self._env.action_manager.get_term("left_hand_action")
         right_hand_action_term = self._env.action_manager.get_term("right_hand_action")
 
-        sim_target_full_body_joints = torch.zeros(self.num_envs, 43, device=self.device)
+        # Assemble joint positions from upper body action terms into observation for WBC policy
+        sim_target_full_body_joints = torch.zeros(self.num_envs, self._num_joints, device=self.device)
         sim_target_full_body_joints[:, left_arm_action_term._joint_ids] = left_arm_action_term.processed_actions
         sim_target_full_body_joints[:, right_arm_action_term._joint_ids] = right_arm_action_term.processed_actions
         sim_target_full_body_joints[:, left_hand_action_term._joint_ids] = left_hand_action_term.processed_actions
         sim_target_full_body_joints[:, right_hand_action_term._joint_ids] = right_hand_action_term.processed_actions
 
-        print(f"sim_target_full_body_joints: {sim_target_full_body_joints}")
-
         wbc_obs = prepare_observations(self.num_envs, self._asset.data, self.wbc_g1_joints_order)
-        # sim_target_full_body_joints = actions_clone[:, :self._num_joints]
         wbc_target_full_body_joints = convert_sim_joint_to_wbc_joint(sim_target_full_body_joints, self._asset.data.joint_names, self.wbc_g1_joints_order)
         wbc_target_upper_body_joints = wbc_target_full_body_joints[:, self.robot_model.get_joint_group_indices("upper_body")]
-
-
-        # TESTING: Get other action terms
-        # print(f"ACTION TERMS: {self._env.action_manager._terms}\n\n\n\n")
-
-        left_arm_action_term = self._env.action_manager.get_term("left_arm_action")
-        right_arm_action_term = self._env.action_manager.get_term("right_arm_action")
-        left_hand_action_term = self._env.action_manager.get_term("left_hand_action")
-        right_hand_action_term = self._env.action_manager.get_term("right_hand_action")
-
-        print(f"\nleft_arm action joint ids: {left_arm_action_term._joint_ids}")
-        print(f"right_arm action joint ids: {right_arm_action_term._joint_ids}")
-        print(f"left_hand action joint ids: {left_hand_action_term._joint_ids}")
-        print(f"right_hand action joint ids: {right_hand_action_term._joint_ids}\n")
-        
-        print(f"\nleft_arm_action_term: {left_arm_action_term.processed_actions}")
-        print(f"right_arm_action_term: {right_arm_action_term.processed_actions}")
-        print(f"left_hand_action_term: {left_hand_action_term.processed_actions}")
-        print(f"right_hand_action_term: {right_hand_action_term.processed_actions}\n")
-        
-        
 
         self.wbc_policy.set_observation(wbc_obs)
 
