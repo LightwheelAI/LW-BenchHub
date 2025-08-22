@@ -1,0 +1,5 @@
+_base_: [lerobot_liftobj_state]
+num_envs: 10
+variant: Visual
+enable_cameras: true
+checkpoint: null

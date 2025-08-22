@@ -14,11 +14,11 @@
 
 import numpy as np
 import torch
-from .fixture import Fixture
+from .fixture import ProcGenFixture
 import lwlab.utils.object_utils as OU
 
 
-class Cabinet(Fixture):
+class Cabinet(ProcGenFixture):
     def set_door_state(self, min, max, env, env_ids=None, rng=None):
         pass
 

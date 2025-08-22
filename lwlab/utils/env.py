@@ -459,6 +459,7 @@ def setup_cameras(env):
             eye_in_hand_camera.GetPath()
         )
         viewports["eye_in_hand"] = viewport_eye_in_hand
+    if left_hand_camera is not None:
         viewport_left_hand = create_and_dock_viewport(
             env,
             "DockSpace",
@@ -467,6 +468,7 @@ def setup_cameras(env):
             left_hand_camera.GetPath()
         )
         viewports["left_hand"] = viewport_left_hand
+    if right_hand_camera is not None:
         viewport_right_hand = create_and_dock_viewport(
             env,
             "DockSpace",
@@ -475,6 +477,7 @@ def setup_cameras(env):
             right_hand_camera.GetPath()
         )
         viewports["right_hand"] = viewport_right_hand
+    # if left_shoulder_camera is not None:
         # viewport_left_shoulder = create_and_dock_viewport(
         #     env,
         #     viewport_left_hand.name,
@@ -483,6 +486,7 @@ def setup_cameras(env):
         #     left_shoulder_camera.GetPath()
         # )
         # viewports["left_shoulder"] = viewport_left_shoulder
+    # if right_shoulder_camera is not None:
         # viewport_right_shoulder = create_and_dock_viewport(
         #     env,
         #     viewport_right_hand.name,
@@ -581,6 +585,8 @@ def spawn_robot_vis_helper(env):
 
 
 def destroy_robot_vis_helper(prim_list, env):
+    if not prim_list:
+        return
     for prim in prim_list:
         if prim.GetPrim().IsValid():
             env.sim.stage.RemovePrim(prim.GetPath())
@@ -753,10 +759,10 @@ def check_valid_robot_pose(env, robot_pos, env_ids=None):
             scene_prim = prim
     scene_bbox = usd_utils.get_prim_aabb_bounding_box(scene_prim) if scene_prim else None
 
-    if scene_bbox is not None:
-        if detect_robot_out_of_scene(robot_bbox, scene_bbox):
-            print(f"Robot pose: {robot_pos} is out of the scene bounds: {scene_bbox.GetMin()} - {scene_bbox.GetMax()}")
-            return False
+    # if scene_bbox is not None:
+    #     if detect_robot_out_of_scene(robot_bbox, scene_bbox):
+    #         print(f"Robot pose: {robot_pos} is out of the scene bounds: {scene_bbox.GetMin()} - {scene_bbox.GetMax()}")
+    #         return False
 
     # 3. check if the robot is in overlap with the objects in the scene
     # all rigid prim in the scene except the robot

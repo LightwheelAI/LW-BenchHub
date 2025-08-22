@@ -1,13 +1,13 @@
-from lwlab.core.models.fixtures.fixture import Fixture
+from lwlab.core.models.fixtures.fixture import ProcGenFixture
 import numpy as np
 import lwlab.utils.math_utils.transform_utils as T
 
 
-class Box(Fixture):
+class Box(ProcGenFixture):
     pass
 
 
-class Wall(Fixture):
+class Wall(Box):
     def _get_pos_after_rel_tranformation(self, offset, quat):
         fixture_mat = T.quat2mat(T.convert_quat(quat))
         return self.pos + np.dot(fixture_mat, offset)
@@ -85,5 +85,5 @@ class Wall(Fixture):
         return sites
 
 
-class Floor(Fixture):
+class Floor(Box):
     pass

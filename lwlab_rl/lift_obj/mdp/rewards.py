@@ -176,3 +176,133 @@ def target_qpos_reward(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg):
     lift_object = object_is_lifted(env, 0.97)
     target_qpos = torch.pi / 2 * torch.ones_like(arm_joint_pos)
     return -1 * torch.norm(torch.abs(target_qpos - torch.abs(arm_joint_pos)) / torch.abs(target_qpos), dim=-1) * (1 - lift_object)
+
+
+def object_ee_distance_maniskill(
+    env: ManagerBasedRLEnv,
+    object_cfg: SceneEntityCfg = SceneEntityCfg("object"),
+    ee_frame_cfg: SceneEntityCfg = SceneEntityCfg("ee_frame"),
+) -> torch.Tensor:
+    """Reward the agent for reaching the object using tanh-kernel."""
+    # extract the used quantities (to enable type-hinting)
+    object: RigidObject = env.scene[object_cfg.name]
+    ee_frame: FrameTransformer = env.scene[ee_frame_cfg.name]
+    gripper = ee_frame.data.target_pos_w[..., 0, :]
+    jaw = ee_frame.data.target_pos_w[..., 1, :]
+    # Target object position: (num_envs, 3)
+    cube_pos_w = object.data.root_pos_w
+    # End-effector position: (num_envs, 3)
+    ee_w = (gripper + jaw) / 2
+    # Distance of the end-effector to the object: (num_envs,)
+    object_ee_distance = torch.linalg.norm(cube_pos_w - ee_w, dim=1)
+
+    # 计算reward
+    reward = 1.0 - torch.tanh(5 * object_ee_distance)
+
+    return reward
+
+
+def normalize_vector(x: torch.Tensor, eps=1e-6):
+    """normalizes a given torch tensor x and if the norm is less than eps, set the norm to 0"""
+    norm = torch.linalg.norm(x, axis=1)
+    norm[norm < eps] = 1
+    norm = 1 / norm
+    return torch.multiply(x, norm[:, None])
+
+
+def compute_angle_between(x1: torch.Tensor, x2: torch.Tensor):
+    """Compute angle (radian) between two torch tensors"""
+    x1, x2 = normalize_vector(x1), normalize_vector(x2)
+    dot_prod = torch.clip(torch.einsum("ij,ij->i", x1, x2), -1, 1)
+    return torch.arccos(dot_prod)
+
+
+def quat_to_rotation_matrix(quat):
+    w, x, y, z = quat[..., 0], quat[..., 1], quat[..., 2], quat[..., 3]
+
+    xx, yy, zz = x * x, y * y, z * z
+    xy, xz, yz = x * y, x * z, y * z
+    wx, wy, wz = w * x, w * y, w * z
+
+    rot_matrix = torch.stack([
+        torch.stack([1 - 2 * (yy + zz), 2 * (xy - wz), 2 * (xz + wy)], dim=-1),
+        torch.stack([2 * (xy + wz), 1 - 2 * (xx + zz), 2 * (yz - wx)], dim=-1),
+        torch.stack([2 * (xz - wy), 2 * (yz + wx), 1 - 2 * (xx + yy)], dim=-1)
+    ], dim=-2)
+
+    return rot_matrix
+
+
+def object_is_grasped_maniskill(
+    env: ManagerBasedRLEnv,
+    min_force: float = 0.5,
+    max_angle: float = 110
+) -> torch.Tensor:
+    # (num_envs, num_bodies, num_filter_shapes, 3)
+    gripper_contact_force = env.scene.sensors["gripper_object_contact"]._data.force_matrix_w[:, 0, 0, :]
+    jaw_contact_force = env.scene.sensors["jaw_object_contact"]._data.force_matrix_w[:, 0, 0, :]
+
+    gripper_object_force = torch.linalg.norm(gripper_contact_force, dim=1)
+    jaw_object_force = torch.linalg.norm(jaw_contact_force, dim=1)
+
+    gripper_pose_w = env.scene._articulations['robot'].data.body_pose_w[..., -2, :]
+    jaw_pose_w = env.scene._articulations['robot'].data.body_pose_w[..., -1, :]
+    gripper_quat_w = gripper_pose_w[:, 3:7]  # [num_envs, 4]
+    jaw_quat_w = jaw_pose_w[:, 3:7]          # [num_envs, 4]
+
+    gripper_rot_matrix = quat_to_rotation_matrix(gripper_quat_w)
+    jaw_rot_matrix = quat_to_rotation_matrix(jaw_quat_w)
+
+    ldirection = -gripper_rot_matrix[..., :3, 0]  # [num_envs, 3]
+    rdirection = jaw_rot_matrix[..., :3, 0]     # [num_envs, 3]
+
+    langle = compute_angle_between(ldirection, gripper_contact_force)
+    rangle = compute_angle_between(rdirection, jaw_contact_force)
+
+    # print("langle:", torch.rad2deg(langle))
+    # print("rangle:", torch.rad2deg(rangle))
+    # print("-----------------------------------------")
+    lflag = torch.logical_and(
+        gripper_object_force >= min_force, torch.rad2deg(langle) <= max_angle
+    )
+    rflag = torch.logical_and(
+        jaw_object_force >= min_force, torch.rad2deg(rangle) <= max_angle
+    )
+    is_grasp = torch.logical_and(lflag, rflag)
+    # print(f"is_grasp:{is_grasp}")
+    return is_grasp
+
+
+def object_is_grasped_and_placed_maniskill(
+    env: ManagerBasedRLEnv,
+    min_force: float = 0.5,
+    max_angel: float = 110
+) -> torch.Tensor:
+
+    is_grasp = object_is_grasped_maniskill(env, min_force, max_angel)
+
+    target_qpos = env.scene['robot'].data.joint_pos
+    device = target_qpos.device
+    rest_qpos = torch.tensor(list(env.scene['robot'].cfg.init_state.joint_pos.values()), device=device)
+
+    distance_to_rest_qpos = torch.linalg.norm(
+        target_qpos[:, :-1] - rest_qpos[:-1], axis=-1
+    )
+    place_reward = torch.exp(-2 * distance_to_rest_qpos) * is_grasp
+    # print(f"place_reward:{place_reward}")
+    return place_reward
+
+
+def gripper_is_touching_table_maniskill(
+    env: ManagerBasedRLEnv,
+) -> torch.Tensor:
+
+    gripper_table_force = torch.linalg.norm(env.scene.sensors["gripper_table_contact"]._data.force_matrix_w[:, 0, 0, :], dim=1)
+    jaw_table_force = torch.linalg.norm(env.scene.sensors["jaw_table_contact"]._data.force_matrix_w[:, 0, 0, :], dim=1)
+    touching_table = torch.logical_or(
+        gripper_table_force >= 1e-2,
+        jaw_table_force >= 1e-2,
+    )
+    # print(f"touching_table:{touching_table}")
+
+    return touching_table.float()

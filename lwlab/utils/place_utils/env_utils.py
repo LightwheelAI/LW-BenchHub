@@ -109,7 +109,7 @@ def get_current_layout_stool_rotations(env):
     """
     from lwlab.utils.usd_utils import OpenUsd
 
-    root_prim = env.stage.GetPseudoRoot()
+    root_prim = env.lwlab_arena.stage.GetPseudoRoot()
     stool_prims = OpenUsd.get_prim_by_prefix(root_prim, "stool", only_xform=True)
 
     unique_rots = set()
@@ -188,7 +188,7 @@ def get_island_group_counter_names(env):
     """
     from lwlab.utils.usd_utils import OpenUsd
 
-    root_prim = env.stage.GetPseudoRoot()
+    root_prim = env.lwlab_arena.stage.GetPseudoRoot()
     island_prims = OpenUsd.get_prim_by_suffix(root_prim, "island_group", only_xform=True)
     counter_names = []
     for island_prim in island_prims:
@@ -586,7 +586,7 @@ def _check_cfg_is_valid(cfg):
         ), f"got invaild key \"{k}\" in placement config for {cfg['name']}"
 
 
-def _get_placement_initializer(env, cfg_list, z_offset=0.01):
+def _get_placement_initializer(env, cfg_list, z_offset=0.005):
     """
     Creates a placement initializer for the objects/fixtures based on the specifications in the configurations list.
 
@@ -618,7 +618,7 @@ def _get_placement_initializer(env, cfg_list, z_offset=0.01):
 
         fixture_id = placement.get("fixture", None)
         reference_object = None
-        rotation = placement.get("rotation", np.array([-np.pi / 4, np.pi / 4]))
+        rotation = placement.get("rotation", np.array([-np.pi / 2, np.pi / 2]))
 
         if hasattr(mj_obj, "mirror_placement") and mj_obj.mirror_placement:
             rotation = [-rotation[1], -rotation[0]]
@@ -638,10 +638,13 @@ def _get_placement_initializer(env, cfg_list, z_offset=0.01):
             rotation=rotation,
         )
 
+        x_ranges = []
+        y_ranges = []
+
         if fixture_id is None:
             target_size = placement.get("size", None)
-            x_range = np.array([-target_size[0] / 2, target_size[0] / 2])
-            y_range = np.array([-target_size[1] / 2, target_size[1] / 2])
+            x_ranges.append(np.array([-target_size[0] / 2, target_size[0] / 2]))
+            y_ranges.append(np.array([-target_size[1] / 2, target_size[1] / 2]))
             ref_pos = [0, 0, 0]
             ref_rot = 0.0
         else:
@@ -673,167 +676,167 @@ def _get_placement_initializer(env, cfg_list, z_offset=0.01):
                     and rotation_axis == "z"
                 ):
                     sample_region_kwargs["min_size"] = mj_obj.size
-                # try:
-                reset_region = fixture.sample_reset_region(
+
+                reset_regions = fixture.sample_reset_region(
                     env=env, **sample_region_kwargs
                 )
-                # except:
-                #     raise Exception("Cannot initialize placement.")
+
                 reference_object = fixture.name
 
-            cfg["reset_region"] = reset_region
-            outer_size = reset_region["size"]
-            if fixture_is_type(fixture, FixtureType.TOASTER) or fixture_is_type(
-                fixture, FixtureType.BLENDER
-            ):
-                default_margin = 0.0
-            else:
-                default_margin = 0.04
-            margin = placement.get("margin", default_margin)
-            outer_size = (outer_size[0] - margin, outer_size[1] - margin)
-            assert outer_size[0] > 0 and outer_size[1] > 0
-
-            target_size = placement.get("size", None)
-            offset = placement.get("offset", (0.0, 0.0))
-            inner_xpos, inner_ypos = placement.get("pos", (None, None))
-
-            if ref_dining_counter_mismatch:
-                rel_yaw = fixture.rot - ref_fixture.rot
-
-                target_size = T.rotate_2d_point(target_size, rot=rel_yaw)
-                target_size = (abs(target_size[0]), abs(target_size[1]))
-
-                # rotate the pos tuple
-                # treat "ref" as sentinel 5 (or -5) so it survives rotation
-                placeholder = 5.0
-                raw_pos = placement.get("pos", (None, None))
-
-                numeric_pos = []
-                for v in raw_pos:
-                    if v == "ref":
-                        numeric_pos.append(placeholder)
-                    else:
-                        numeric_pos.append(float(v))
-                rotated = T.rotate_2d_point(np.array(numeric_pos), rot=rel_yaw)
-
-                def unpack(v):
-                    diff = abs(abs(v) - placeholder)
-                    if abs(abs(v) - placeholder) < 1e-2:
-                        return "ref"
-                    return float(np.clip(v, -1.0, 1.0))
-
-                inner_xpos, inner_ypos = unpack(rotated[0]), unpack(rotated[1])
-
-            stool_orientation = False
-
-            # make sure the offset is relative to the reference fixture
-            if fixture_is_type(fixture, FixtureType.DINING_COUNTER) and fixture_is_type(
-                ref_fixture, FixtureType.STOOL
-            ):
-                rel_yaw = np.pi - (fixture.rot - ref_fixture.rot)
-                offset = T.rotate_2d_point(offset, rot=rel_yaw)
-                epsilon = 1e-2
-                off0 = 0.0 if abs(offset[0]) < epsilon else offset[0]
-                off1 = 0.0 if abs(offset[1]) < epsilon else offset[1]
-                offset = (float(off0), float(off1))
-
-                stool_orientation = True
-                inner_xpos_og = inner_xpos
-                inner_ypos_og = inner_ypos
-
-            if target_size is not None:
-                target_size = deepcopy(list(target_size))
-                for size_dim in [0, 1]:
-                    if target_size[size_dim] == "obj":
-                        target_size[size_dim] = mj_obj.size[size_dim] + 0.005
-                    if target_size[size_dim] == "obj.x":
-                        target_size[size_dim] = mj_obj.size[0] + 0.005
-                    if target_size[size_dim] == "obj.y":
-                        target_size[size_dim] = mj_obj.size[1] + 0.005
-                inner_size = np.min((outer_size, target_size), axis=0)
-            else:
-                inner_size = outer_size
-
-            # center inner region within outer region
-            if inner_xpos == "ref":
-                # compute optimal placement of inner region to match up with the reference fixture
-                x_halfsize = outer_size[0] / 2 - inner_size[0] / 2
-                if x_halfsize == 0.0:
-                    inner_xpos = 0.0
+            cfg["reset_regions"] = reset_regions
+            for reset_region in cfg["reset_regions"]:
+                outer_size = reset_region["size"]
+                if fixture_is_type(fixture, FixtureType.TOASTER) or fixture_is_type(
+                    fixture, FixtureType.BLENDER
+                ):
+                    default_margin = 0.0
                 else:
-                    ref_fixture = env.get_fixture(sample_region_kwargs["ref"])
-                    ref_pos = ref_fixture.pos
-                    fixture_to_ref = OU.get_rel_transform(fixture, ref_fixture)[0]
-                    outer_to_ref = fixture_to_ref - reset_region["offset"]
-                    inner_xpos = outer_to_ref[0] / x_halfsize
-                    inner_xpos = np.clip(inner_xpos, a_min=-1.0, a_max=1.0)
-            elif inner_xpos is None:
-                inner_xpos = 0.0
+                    default_margin = 0.04
+                margin = placement.get("margin", default_margin)
+                outer_size = (outer_size[0] - margin, outer_size[1] - margin)
+                assert outer_size[0] > 0 and outer_size[1] > 0
 
-            if inner_ypos == "ref":
-                # compute optimal placement of inner region to match up with the reference fixture
-                y_halfsize = outer_size[1] / 2 - inner_size[1] / 2
-                if y_halfsize == 0.0:
-                    inner_ypos = 0.0
-                else:
-                    ref_fixture = env.get_fixture(sample_region_kwargs["ref"])
-                    ref_pos = ref_fixture.pos
-                    fixture_to_ref = OU.get_rel_transform(fixture, ref_fixture)[0]
-                    outer_to_ref = fixture_to_ref - reset_region["offset"]
-                    inner_ypos = outer_to_ref[1] / y_halfsize
-                    inner_ypos = np.clip(inner_ypos, a_min=-1.0, a_max=1.0)
-            elif inner_ypos is None:
-                inner_ypos = 0.0
+                target_size = placement.get("size", None)
+                offset = placement.get("offset", (0.0, 0.0))
+                inner_xpos, inner_ypos = placement.get("pos", (None, None))
 
-            # make sure that the orientation is around stool reference
-            if stool_orientation and not ref_dining_counter_mismatch:
-                # only skip if both coordinates are "ref"
-                if not (inner_xpos_og == "ref" and inner_ypos_og == "ref"):
+                if ref_dining_counter_mismatch:
+                    rel_yaw = fixture.rot - ref_fixture.rot
+
+                    target_size = T.rotate_2d_point(target_size, rot=rel_yaw)
+                    target_size = (abs(target_size[0]), abs(target_size[1]))
+
+                    # rotate the pos tuple
+                    # treat "ref" as sentinel 5 (or -5) so it survives rotation
+                    placeholder = 5.0
+                    raw_pos = placement.get("pos", (None, None))
+
+                    numeric_pos = []
+                    for v in raw_pos:
+                        if v == "ref":
+                            numeric_pos.append(placeholder)
+                        else:
+                            numeric_pos.append(float(v))
+                    rotated = T.rotate_2d_point(np.array(numeric_pos), rot=rel_yaw)
+
+                    def unpack(v):
+                        diff = abs(abs(v) - placeholder)
+                        if abs(abs(v) - placeholder) < 1e-2:
+                            return "ref"
+                        return float(np.clip(v, -1.0, 1.0))
+
+                    inner_xpos, inner_ypos = unpack(rotated[0]), unpack(rotated[1])
+
+                stool_orientation = False
+
+                # make sure the offset is relative to the reference fixture
+                if fixture_is_type(fixture, FixtureType.DINING_COUNTER) and fixture_is_type(
+                    ref_fixture, FixtureType.STOOL
+                ):
                     rel_yaw = np.pi - (fixture.rot - ref_fixture.rot)
-                    vec = np.array(
-                        [
-                            0.0 if inner_xpos_og == "ref" else inner_xpos_og,
-                            0.0 if inner_ypos_og == "ref" else inner_ypos_og,
-                        ]
-                    )
+                    offset = T.rotate_2d_point(offset, rot=rel_yaw)
+                    epsilon = 1e-2
+                    off0 = 0.0 if abs(offset[0]) < epsilon else offset[0]
+                    off1 = 0.0 if abs(offset[1]) < epsilon else offset[1]
+                    offset = (float(off0), float(off1))
 
-                    cos_yaw = np.cos(rel_yaw)
-                    sin_yaw = np.sin(rel_yaw)
-                    rot_matrix = np.array(
-                        [
-                            [cos_yaw, -sin_yaw],
-                            [sin_yaw, cos_yaw],
-                        ]
-                    )
-                    rotated = rot_matrix @ vec
+                    stool_orientation = True
+                    inner_xpos_og = inner_xpos
+                    inner_ypos_og = inner_ypos
 
-                    # Update only the non-"ref" values
-                    if inner_xpos_og != "ref":
-                        inner_xpos = float(np.clip(rotated[0], -1.0, 1.0))
-                    if inner_ypos_og != "ref":
-                        inner_ypos = float(np.clip(rotated[1], -1.0, 1.0))
+                if target_size is not None:
+                    target_size = deepcopy(list(target_size))
+                    for size_dim in [0, 1]:
+                        if target_size[size_dim] == "obj":
+                            target_size[size_dim] = mj_obj.size[size_dim] + 0.005
+                        if target_size[size_dim] == "obj.x":
+                            target_size[size_dim] = mj_obj.size[0] + 0.005
+                        if target_size[size_dim] == "obj.y":
+                            target_size[size_dim] = mj_obj.size[1] + 0.005
+                    inner_size = np.min((outer_size, target_size), axis=0)
+                else:
+                    inner_size = outer_size
 
-            # offset for inner region
-            intra_offset = (
-                (outer_size[0] / 2 - inner_size[0] / 2) * inner_xpos + offset[0],
-                (outer_size[1] / 2 - inner_size[1] / 2) * inner_ypos + offset[1],
-            )
+                # center inner region within outer region
+                if inner_xpos == "ref":
+                    # compute optimal placement of inner region to match up with the reference fixture
+                    x_halfsize = outer_size[0] / 2 - inner_size[0] / 2
+                    if x_halfsize == 0.0:
+                        inner_xpos = 0.0
+                    else:
+                        ref_fixture = env.get_fixture(sample_region_kwargs["ref"])
+                        ref_pos = ref_fixture.pos
+                        fixture_to_ref = OU.get_rel_transform(fixture, ref_fixture)[0]
+                        outer_to_ref = fixture_to_ref - reset_region["offset"]
+                        inner_xpos = outer_to_ref[0] / x_halfsize
+                        inner_xpos = np.clip(inner_xpos, a_min=-1.0, a_max=1.0)
+                elif inner_xpos is None:
+                    inner_xpos = 0.0
 
-            # center surface point of entire region
-            ref_pos = fixture.pos + [0, 0, reset_region["offset"][2]]
-            ref_rot = fixture.rot
+                if inner_ypos == "ref":
+                    # compute optimal placement of inner region to match up with the reference fixture
+                    y_halfsize = outer_size[1] / 2 - inner_size[1] / 2
+                    if y_halfsize == 0.0:
+                        inner_ypos = 0.0
+                    else:
+                        ref_fixture = env.get_fixture(sample_region_kwargs["ref"])
+                        ref_pos = ref_fixture.pos
+                        fixture_to_ref = OU.get_rel_transform(fixture, ref_fixture)[0]
+                        outer_to_ref = fixture_to_ref - reset_region["offset"]
+                        inner_ypos = outer_to_ref[1] / y_halfsize
+                        inner_ypos = np.clip(inner_ypos, a_min=-1.0, a_max=1.0)
+                elif inner_ypos is None:
+                    inner_ypos = 0.0
 
-            # x, y, and rotational ranges for randomization
-            x_range = (
-                np.array([-inner_size[0] / 2, inner_size[0] / 2])
-                + reset_region["offset"][0]
-                + intra_offset[0]
-            )
-            y_range = (
-                np.array([-inner_size[1] / 2, inner_size[1] / 2])
-                + reset_region["offset"][1]
-                + intra_offset[1]
-            )
+                # make sure that the orientation is around stool reference
+                if stool_orientation and not ref_dining_counter_mismatch:
+                    # only skip if both coordinates are "ref"
+                    if not (inner_xpos_og == "ref" and inner_ypos_og == "ref"):
+                        rel_yaw = np.pi - (fixture.rot - ref_fixture.rot)
+                        vec = np.array(
+                            [
+                                0.0 if inner_xpos_og == "ref" else inner_xpos_og,
+                                0.0 if inner_ypos_og == "ref" else inner_ypos_og,
+                            ]
+                        )
+
+                        cos_yaw = np.cos(rel_yaw)
+                        sin_yaw = np.sin(rel_yaw)
+                        rot_matrix = np.array(
+                            [
+                                [cos_yaw, -sin_yaw],
+                                [sin_yaw, cos_yaw],
+                            ]
+                        )
+                        rotated = rot_matrix @ vec
+
+                        # Update only the non-"ref" values
+                        if inner_xpos_og != "ref":
+                            inner_xpos = float(np.clip(rotated[0], -1.0, 1.0))
+                        if inner_ypos_og != "ref":
+                            inner_ypos = float(np.clip(rotated[1], -1.0, 1.0))
+
+                # offset for inner region
+                intra_offset = (
+                    (outer_size[0] / 2 - inner_size[0] / 2) * inner_xpos + offset[0],
+                    (outer_size[1] / 2 - inner_size[1] / 2) * inner_ypos + offset[1],
+                )
+
+                # center surface point of entire region
+                ref_pos = fixture.pos + [0, 0, reset_region["offset"][2]]
+                ref_rot = fixture.rot
+
+                # x, y, and rotational ranges for randomization
+                x_ranges.append(
+                    np.array([-inner_size[0] / 2, inner_size[0] / 2])
+                    + reset_region["offset"][0]
+                    + intra_offset[0]
+                )
+                y_ranges.append(
+                    np.array([-inner_size[1] / 2, inner_size[1] / 2])
+                    + reset_region["offset"][1]
+                    + intra_offset[1]
+                )
 
         placement_initializer.append_sampler(
             sampler=UniformRandomSampler(
@@ -841,8 +844,8 @@ def _get_placement_initializer(env, cfg_list, z_offset=0.01):
                 reference_pos=ref_pos,
                 reference_rot=ref_rot,
                 z_offset=z_offset,
-                x_range=x_range,
-                y_range=y_range,
+                x_ranges=x_ranges,
+                y_ranges=y_ranges,
                 **sampler_kwargs,
             ),
             sample_args=placement.get("sample_args", None),

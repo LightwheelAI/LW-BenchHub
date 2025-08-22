@@ -95,26 +95,22 @@ class Fixture:
                 continue
             reg_dict = {}
 
-            reg_pos = geom_prim.GetAttribute("xformOp:translate").Get()
-            reg_rot = geom_prim.GetAttribute("xformOp:orient").Get()
-
-            if reg_pos is None or reg_rot is None:
+            reg_pos, reg_quat, reg_scale = usd.get_prim_pos_rot_in_world(geom_prim)
+            if reg_pos is None or reg_quat is None or reg_scale is None:
+                print(f"Error getting prim pos, rot, scale for {g_name} / {prim.GetName()}")
                 continue
             else:
-                reg_quat = [reg_rot.GetReal(), reg_rot.GetImaginary()[0], reg_rot.GetImaginary()[1], reg_rot.GetImaginary()[2]]
-                self._pos = np.array(reg_pos)
-                self._quat = np.array(reg_quat)
-                from lwlab.core.mdp.helpers.rotation_helper import get_euler_xyz
-                reg_euler_rad = get_euler_xyz(np.array(reg_quat))
-                self._euler = reg_euler_rad
-                self._rot = reg_euler_rad
+                reg_pos = np.array(reg_pos)
+                reg_quat = np.array(reg_quat)
+                reg_scale = np.array(reg_scale)
+                prim_pos = np.array(list(prim.GetAttribute("xformOp:translate").Get()))
+                reg_rel_pos = np.array(reg_pos) - prim_pos
 
-            reg_curr_pos = np.array(list(geom_prim.GetAttribute("xformOp:translate").Get()))
-            reg_halfsize = list(geom_prim.GetAttribute("extent").Get()[1])
-            p0 = reg_curr_pos + [-reg_halfsize[0], -reg_halfsize[1], -reg_halfsize[2]]
-            px = reg_curr_pos + [reg_halfsize[0], -reg_halfsize[1], -reg_halfsize[2]]
-            py = reg_curr_pos + [-reg_halfsize[0], reg_halfsize[1], -reg_halfsize[2]]
-            pz = reg_curr_pos + [-reg_halfsize[0], -reg_halfsize[1], reg_halfsize[2]]
+            reg_halfsize = reg_scale / 2
+            p0 = reg_rel_pos + [-reg_halfsize[0], -reg_halfsize[1], -reg_halfsize[2]]
+            px = reg_rel_pos + [reg_halfsize[0], -reg_halfsize[1], -reg_halfsize[2]]
+            py = reg_rel_pos + [-reg_halfsize[0], reg_halfsize[1], -reg_halfsize[2]]
+            pz = reg_rel_pos + [-reg_halfsize[0], -reg_halfsize[1], reg_halfsize[2]]
             # reg_dict["prim"] = geom_prim
             reg_dict["p0"] = p0
             reg_dict["px"] = px
@@ -173,6 +169,10 @@ class Fixture:
 
     def get_reset_region_names(self):
         return ("int", )
+
+    def set_euler(self, euler):
+        self._euler = euler
+        self._rot = euler
 
     # def set_origin(self, origin):
     #     """
@@ -496,11 +496,11 @@ class Fixture:
         h = reg_pz[2] - reg_p0[2]
         return h
 
-    @cached_property
+    @property
     def rot(self):
-        return self._rot[2] if hasattr(self, "_rot") else 3.14  # NOTE get _rot from USD
+        return self._rot[2] if hasattr(self, "_rot") else 0
 
-    @cached_property
+    @property
     def euler(self):
         return self._rot[2] if hasattr(self, "_rot") else 0
 
@@ -538,7 +538,7 @@ class Fixture:
         elif "bbox" in self._regions:
             reg_key = "bbox"
         else:
-            print("fuck assets!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ")
+            print(f"Fixture {self.name} has no reg_main or reg_bbox")
             return [np.array([2.79, -0.625, 0.62]), np.array([3.51, -0.625, 0.62]), np.array([2.79, -0.025, 0.62]), np.array([2.79, -0.625, 1.22])]
 
         sites = [
@@ -676,7 +676,7 @@ class Fixture:
             raise SamplingError(
                 f"Could not find suitable region to sample from for {self.name}"
             )
-        return self.rng.choice(valid_regions)
+        return valid_regions
 
     def set_regions(self, region_dict):
         """
@@ -703,3 +703,7 @@ class Fixture:
             self._regions[name]["px"] = px
             self._regions[name]["py"] = py
             self._regions[name]["pz"] = pz
+
+
+class ProcGenFixture(Fixture):
+    pass

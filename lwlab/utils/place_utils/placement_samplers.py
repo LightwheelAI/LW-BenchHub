@@ -1,9 +1,10 @@
 import collections
-import random
 from copy import copy
+from scipy.spatial.transform import Rotation as R
 
 import numpy as np
 from lwlab.utils.place_utils.usd_object import USDObject
+from lwlab.core.models.fixtures import Fixture
 from lwlab.utils.math_utils.transform_utils import (
     convert_quat,
     euler2mat,
@@ -179,8 +180,8 @@ class UniformRandomSampler(ObjectPositionSampler):
         self,
         name,
         mujoco_objects=None,
-        x_range=(0, 0),
-        y_range=(0, 0),
+        x_ranges=[(0, 0)],
+        y_ranges=[(0, 0)],
         rotation=None,
         rotation_axis="z",
         ensure_object_boundary_in_range=True,
@@ -191,11 +192,13 @@ class UniformRandomSampler(ObjectPositionSampler):
         z_offset=0.0,
         rng=None,
         side="all",
+        max_attempts=5000,
     ):
-        self.x_range = x_range
-        self.y_range = y_range
+        self.x_ranges = x_ranges
+        self.y_ranges = y_ranges
         self.rotation = rotation
         self.rotation_axis = rotation_axis
+        self.max_attempts = max_attempts
 
         if side not in self.valid_sides:
             raise ValueError(
@@ -354,22 +357,6 @@ class UniformRandomSampler(ObjectPositionSampler):
                 mat2quat(euler2mat([0, 0, self.reference_rot])), to="wxyz"
             )
 
-            ### get boundary points ###
-            region_points = np.array(
-                [
-                    [self.x_range[0], self.y_range[0], 0],
-                    [self.x_range[1], self.y_range[0], 0],
-                    [self.x_range[0], self.y_range[1], 0],
-                ]
-            )
-            for i in range(len(region_points)):
-                region_points[i][0:2] = rotate_2d_point(
-                    region_points[i][0:2], rot=self.reference_rot
-                )
-            region_points += base_offset
-
-            from lwlab.core.models.fixtures import Fixture
-
             if (
                 isinstance(obj, USDObject) or isinstance(obj, Fixture)
             ) and self.rotation_axis == "z":
@@ -382,10 +369,47 @@ class UniformRandomSampler(ObjectPositionSampler):
             else:
                 obj_size = None
 
-            for i in range(5000):  # 5000 retries
+            for _ in range(self.max_attempts):  # 5000 retries
+                sample_region_idx = self.rng.choice(len(self.x_ranges))
+                self.x_range = self.x_ranges[sample_region_idx]
+                self.y_range = self.y_ranges[sample_region_idx]
+
+                ### get boundary points ###
+                region_points = np.array(
+                    [
+                        [self.x_range[0], self.y_range[0], 0],
+                        [self.x_range[1], self.y_range[0], 0],
+                        [self.x_range[0], self.y_range[1], 0],
+                    ]
+                )
+                for i in range(len(region_points)):
+                    region_points[i][0:2] = rotate_2d_point(
+                        region_points[i][0:2], rot=self.reference_rot
+                    )
+                region_points += base_offset
+
+                # random rotation
+                quat = self._sample_quat()
+
+                if obj_size is not None and quat is not None:
+                    rot = R.from_quat([quat[1], quat[2], quat[3], quat[0]])  # wxyz -> xyzw
+                    size_vecs = [
+                        [obj_size[0], 0, 0],
+                        [0, obj_size[1], 0],
+                    ]
+                    x_vec = rot.apply(size_vecs[0])
+                    y_vec = rot.apply(size_vecs[1])
+                    x_proj = abs(x_vec[0]) + abs(y_vec[0])
+                    y_proj = abs(x_vec[1]) + abs(y_vec[1])
+                    rotated_obj_size = (x_proj, y_proj, obj_size[2] if len(obj_size) > 2 else 0)
+
+                if (self.x_range[1] - self.x_range[0]) < rotated_obj_size[0] or \
+                   (self.y_range[1] - self.y_range[0]) < rotated_obj_size[1]:
+                    continue
+
                 # sample object coordinates
-                relative_x = self._sample_x(obj_size)
-                relative_y = self._sample_y(obj_size)
+                relative_x = self._sample_x(rotated_obj_size)
+                relative_y = self._sample_y(rotated_obj_size)
 
                 # apply rotation
                 object_x, object_y = rotate_2d_point(
@@ -398,8 +422,6 @@ class UniformRandomSampler(ObjectPositionSampler):
                 if on_top:
                     object_z -= obj.bottom_offset[-1]
 
-                # random rotation
-                quat = self._sample_quat()
                 # multiply this quat by the object's initial rotation if it has the attribute specified
                 if hasattr(obj, "init_quat"):
                     quat = quat_multiply(quat, obj.init_quat)
@@ -453,7 +475,12 @@ class UniformRandomSampler(ObjectPositionSampler):
                     break
 
             if not success:
-                raise Exception("Cannot place all objects ):")
+                debug_info = f"Failed to place object '{obj.task_name}' after {self.max_attempts} attempts\n"
+                debug_info += f"  Object size: {obj.size}\n"
+                debug_info += f"  X range: {self.x_range}\n"
+                debug_info += f"  Y range: {self.y_range}\n"
+                debug_info += f"  Placed objects count: {len(placed_objects)}\n"
+                raise Exception(debug_info)
 
         return placed_objects
 

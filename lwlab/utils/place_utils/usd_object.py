@@ -42,7 +42,11 @@ class USDObject():
         usd.scale_size(scale_factor=self.scale_factor)
         reg_bbox = usd.get_prim_by_name("reg_bbox", only_xform=False)[0]
         reg_size = reg_bbox.GetAttribute("extent").Get()
-        reg_pos = np.array(reg_bbox.GetAttribute("xformOp:translate").Get())
+        reg_pos = reg_bbox.GetAttribute("xformOp:translate").Get()
+        if reg_pos is None:
+            reg_pos = np.array([0, 0, 0])
+        else:
+            reg_pos = np.array(reg_pos)
         if self.rotate_upright:
             usd.rotate_upright()
         usd.export(self.obj_path)

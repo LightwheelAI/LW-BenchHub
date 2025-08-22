@@ -1,14 +1,7 @@
-from collections import OrderedDict
 from enum import IntEnum
-import numpy as np
-import re
 
 
 class LayoutType(IntEnum):
-    """
-    Enum for available layouts in RoboCasa environment
-    """
-
     LAYOUT001 = 1
     LAYOUT002 = 2
     LAYOUT003 = 3
@@ -91,10 +84,6 @@ LAYOUT_GROUPS_TO_IDS = {
 
 
 class StyleType(IntEnum):
-    """
-    Enums for available styles in RoboCasa environment
-    """
-
     STYLE001 = 1
     STYLE002 = 2
     STYLE003 = 3
@@ -158,6 +147,8 @@ class StyleType(IntEnum):
     STYLE060 = 60
 
     # negative values correspond to groups
+    TEST = -1
+    TRAIN = -2
     ALL = -3
 
 
@@ -168,75 +159,16 @@ STYLE_GROUPS_TO_IDS = {
 }
 
 
-def get_layout_path(layout_id):
-    """
-    Get corresponding blueprint filepath (yaml) for a layout
-
-    Args:
-        layout_id (int or LayoutType): layout id (int or enum)
-
-    Return:
-        str: yaml path for specified layout
-    """
-    if (
-        isinstance(layout_id, int)
-        or isinstance(layout_id, np.int64)
-        or isinstance(layout_id, np.int32)
-    ):
-        layout_int_to_name = dict(
-            map(lambda item: (item.value, item.name.lower()), LayoutType)
-        )
-        layout_name = layout_int_to_name[layout_id]
-    elif isinstance(layout_id, LayoutType):
-        layout_name = layout_id.name.lower()
-    else:
-        raise ValueError
-
-    layout_num = int(re.findall(r"\d+", layout_name)[0])
-    is_test_layout = 1 <= layout_num <= 10
-    layout_folder = "test" if is_test_layout else "train"
-    return xml_path_completion(
-        f"scenes/kitchen_layouts/{layout_folder}/{layout_name}.yaml",
-        root=robocasa.models.assets_root,
-    )
-
-
-def get_style_path(style_id):
-    """
-    Get corresponding blueprint filepath (yaml) for a style
-
-    Args:
-        style_id (int or StyleType): style id (int or enum)
-
-    Return:
-        str: yaml path for specified style
-    """
-    if (
-        isinstance(style_id, int)
-        or isinstance(style_id, np.int64)
-        or isinstance(style_id, np.int32)
-    ):
-        style_int_to_name = dict(
-            map(lambda item: (item.value, item.name.lower()), StyleType)
-        )
-        style_name = style_int_to_name[style_id]
-    elif isinstance(style_id, StyleType):
-        style_name = style_id.name.lower()
-    else:
-        raise ValueError
-
-    style_num = int(re.findall(r"\d+", style_name)[0])
-    is_test_style = 1 <= style_num <= 10
-    style_folder = "test" if is_test_style else "train"
-    return xml_path_completion(
-        f"scenes/kitchen_styles/{style_folder}/{style_name}.yaml",
-        root=robocasa.models.assets_root,
-    )
-
-
-def unpack_layout_ids(layout_ids):
+def unpack_layout_ids(layout_ids, split=None):
     if layout_ids is None:
-        layout_ids = LayoutType.ALL
+        if split is None:
+            layout_ids = LayoutType.ALL
+        elif split == "test":
+            layout_ids = LayoutType.TEST
+        elif split == "train":
+            layout_ids = LayoutType.TRAIN
+        else:
+            raise ValueError(f"Invalid split: {split}")
 
     if not isinstance(layout_ids, list):
         layout_ids = [layout_ids]
@@ -254,9 +186,16 @@ def unpack_layout_ids(layout_ids):
     return all_layout_ids
 
 
-def unpack_style_ids(style_ids):
+def unpack_style_ids(style_ids, split=None):
     if style_ids is None:
-        style_ids = StyleType.ALL
+        if split is None:
+            style_ids = StyleType.ALL
+        elif split == "test":
+            style_ids = StyleType.TEST
+        elif split == "train":
+            style_ids = StyleType.TRAIN
+        else:
+            raise ValueError(f"Invalid split: {split}")
 
     if not isinstance(style_ids, list):
         style_ids = [style_ids]

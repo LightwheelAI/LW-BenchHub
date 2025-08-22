@@ -323,8 +323,48 @@ def patch_yaml_load():
     yaml.safe_load = cached_safe_load
 
 
+def patch_reward_manager():
+    from isaaclab.managers.reward_manager import RewardManager
+
+    def compute(self, dt: float) -> torch.Tensor:
+        """Computes the reward signal as a weighted sum of individual terms.
+
+        This function calls each reward term managed by the class and adds them to compute the net
+        reward signal. It also updates the episodic sums corresponding to individual reward terms.
+
+        Args:
+            dt: The time-step interval of the environment.
+
+        Returns:
+            The net reward signal of shape (num_envs,).
+        """
+        # reset computation
+        self._reward_buf[:] = 0.0
+        # iterate over all the reward terms
+        for term_idx, (name, term_cfg) in enumerate(zip(self._term_names, self._term_cfgs)):
+            # skip if weight is zero (kind of a micro-optimization)
+            if term_cfg.weight == 0.0:
+                self._step_reward[:, term_idx] = 0.0
+                continue
+            # compute term's value
+            value = term_cfg.func(self._env, **term_cfg.params) * term_cfg.weight
+            # update total reward
+            self._reward_buf += value
+            # update episodic sum
+            self._episode_sums[name] += value * dt
+
+            # Update current reward for this step.
+            self._step_reward[:, term_idx] = value
+        # Normalization
+        self._reward_buf /= 3
+        return self._reward_buf
+
+    RewardManager.compute = compute
+
+
 patch_configclass()
 patch_recorder_manager_ep_meta()
 patch_recorder_manager_joint_targets()
 patch_step()
 patch_yaml_load()
+patch_reward_manager()

@@ -37,33 +37,41 @@ class KitchenArena:
         enable_fixtures (list of str): any fixtures to enable (some are disabled by default)
     """
 
-    def __init__(self, layout_id, style_id, enable_fixtures=None, usd_simplify=False):
+    def __init__(self, layout_id, style_id, scene_cfg):
         # download floorplan usd
+        self.scene_cfg = scene_cfg
         self._usd_future = floorplan_loader.acquire_usd(layout_id, style_id, cancel_previous_download=True)
         start_time = time.time()
         print(f"load usd", end="...")
         self.usd_path = str(self._usd_future.result())
         del self._usd_future
         print(f"done in {time.time() - start_time:.2f}s")
-        stage = usd.get_stage(self.usd_path)
+        self.stage = usd.get_stage(self.usd_path)
 
         # enable fixtures in usd
-        if enable_fixtures is not None:
-            for fixture in self.enable_fixtures:
-                usd.activate_prim(stage, fixture)
-
-        # usd simplify
-        if usd_simplify:
-            new_stage = usd.usd_simplify(stage, self.usd_path, self.fixture_refs)
+        if self.scene_cfg.enable_fixtures is not None:
+            for fixture in scene_cfg.enable_fixtures:
+                usd.activate_prim(self.stage, fixture)
             dir_name = os.path.dirname(self.usd_path)
             base_name = os.path.basename(self.usd_path)
-            new_path = os.path.join(dir_name, base_name.replace(".usda", "_simplified.usda"))
+            new_path = os.path.join(dir_name, base_name.replace(".usd", "_enabled.usd"))
+            self.stage.GetRootLayer().Export(new_path)
+            self.usd_path = new_path
+
+        # load fixtures
+        self.scene_cfg.fixtures = parse_fixtures(self.stage)
+
+        # setup internal references related to fixtures
+        self.scene_cfg._setup_kitchen_references()
+
+        # usd simplify
+        if self.scene_cfg.usd_simplify:
+            new_stage = usd.usd_simplify(self.stage, self.usd_path, self.scene_cfg.fixture_refs)
+            dir_name = os.path.dirname(self.usd_path)
+            base_name = os.path.basename(self.usd_path)
+            new_path = os.path.join(dir_name, base_name.replace(".usd", "_simplified.usd"))
             new_stage.GetRootLayer().Export(new_path)
             self.usd_path = new_path
-            self.fixtures = self.fixture_refs
-        self.stage = stage
-        # load fixtures
-        self.fixtures = parse_fixtures(stage)
 
     def get_fixture_cfgs(self):
         """
@@ -73,7 +81,7 @@ class KitchenArena:
             list: list of fixture configurations
         """
         fixture_cfgs = []
-        for (name, fxtr) in self.fixtures.items():
+        for (name, fxtr) in self.scene_cfg.fixtures.items():
             cfg = {}
             cfg["name"] = name
             cfg["model"] = fxtr

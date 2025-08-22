@@ -15,6 +15,8 @@
 import os
 from pxr import Usd, UsdPhysics, UsdGeom, UsdSkel, PhysxSchema, Gf
 from lwlab.core.mdp.helpers.transformations import quaternion_from_euler
+import lwlab.utils.math_utils.transform_utils as T
+import math
 
 
 class OpenUsd:
@@ -375,10 +377,14 @@ class OpenUsd:
     @staticmethod
     def get_fixture_placements(root_prim, fixture_cfgs, fixtures):
         valid_fixture_names = []
+        counter_fixture_names = []
         fixture_placements = {}
+        counter_fixture_placements = {}
         for fxr_cfg in fixture_cfgs:
-            if "placement" in fxr_cfg and fxr_cfg["placement"] is not None:
+            if "ProcGenFixture" not in [cls.__name__ for cls in fxr_cfg["model"].__class__.mro()]:
                 valid_fixture_names.append(fxr_cfg["name"])
+            elif fxr_cfg['model'].__class__.__name__ == "Counter":
+                counter_fixture_names.append(fxr_cfg["name"])
         for name in valid_fixture_names:
             prim = OpenUsd.get_prim_by_name(root_prim, name)
             if len(prim) == 0:
@@ -386,9 +392,20 @@ class OpenUsd:
             prim = prim[0]
             fixture_pos = tuple(prim.GetAttribute("xformOp:translate").Get())
             fixture_rot = prim.GetAttribute("xformOp:rotateXYZ").Get()
-            fixture_quat = quaternion_from_euler(fixture_rot[0], fixture_rot[1], fixture_rot[2])
+            fixture_quat = T.mat2quat(T.euler2mat([math.radians(fixture_rot[0]), math.radians(fixture_rot[1]), math.radians(fixture_rot[2])]))
             fixture_placements[name] = (fixture_pos, fixture_quat, fixtures[name])
-        return fixture_placements
+
+        for name in counter_fixture_names:
+            prim = OpenUsd.get_prim_by_name(root_prim, name)
+            if len(prim) == 0:
+                raise ValueError(f"Fixture {name} not found in the scene")
+            prim = prim[0]
+            fixture_pos = tuple(prim.GetAttribute("xformOp:translate").Get())
+            fixture_rot = prim.GetAttribute("xformOp:rotateXYZ").Get()
+            fixture_quat = T.mat2quat(T.euler2mat([math.radians(fixture_rot[0]), math.radians(fixture_rot[1]), math.radians(fixture_rot[2])]))
+            counter_fixture_placements[name] = (fixture_pos, fixture_quat, fixtures[name])
+
+        return fixture_placements, counter_fixture_placements
 
 
 class OpenUsdWrapper:

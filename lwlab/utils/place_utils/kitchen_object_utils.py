@@ -66,14 +66,21 @@ def sample_kitchen_object(
     while not valid_object_sampled:
         if isinstance(object_cfgs["obj_groups"], str) and object_cfgs["obj_groups"].endswith(".usd"):
             filename = object_cfgs["obj_groups"].split("/")[-1].split(".")[0]
+            category = max([g for g in OBJ_GROUPS if filename.startswith(g)], key=len)
             obj_path, obj_name, obj_res = object_loader.acquire_by_registry(
                 "objects",
+                registry_name=[category],
                 file_name=filename,
             )
         else:
+            category = object_cfgs["obj_groups"]
+            if isinstance(category, list):
+                registry_name = [item for c in category for item in OBJ_GROUPS[c]]
+            elif isinstance(category, str):
+                registry_name = OBJ_GROUPS[category]
             obj_path, obj_name, obj_res = object_loader.acquire_by_registry(
                 "objects",
-                registry_name=OBJ_GROUPS[object_cfgs["obj_groups"]],
+                registry_name=registry_name,
                 eqs=None if not object_cfgs["properties"] else object_cfgs["properties"],
                 source=list(source) if source is not None else [],
                 contains=None,
@@ -83,7 +90,7 @@ def sample_kitchen_object(
         obj_info = ObjInfo(
             name=obj_name,
             types=obj_res["property"]["types"],
-            category=object_cfgs["obj_groups"],
+            category=category,
             source=obj_res["source"],
             rotate_upright=rotate_upright,
             obj_path=obj_path,

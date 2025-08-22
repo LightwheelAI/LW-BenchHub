@@ -1,5 +1,5 @@
 #!/bin/bash
-task_config=g1_liftobj_state
+task_config=lerobot_liftobj_state
 env_gpu=0
 policy_gpu=0
 
@@ -13,6 +13,7 @@ else
     export POLICY_GPU=1
 fi
 
+export LWLAB_ENV_MODE="dev"
 python ./lwlab/scripts/rl/train.py \
     --task_config="$task_config" \
     --headless \

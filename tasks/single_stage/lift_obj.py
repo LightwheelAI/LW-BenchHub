@@ -37,8 +37,8 @@ class LiftObj(BaseTaskEnvCfg, RobocasaKitchenEnvCfg):
         """
         super()._setup_kitchen_references()
 
-        self.counter = self.register_fixture_ref("counter", dict(id=self.counter_id, fix_id=1))
-        self.useful_fixture_names = [self.counter.name]
+        self.counter = self.register_fixture_ref("counter", dict(id=self.counter_id, fix_id=2))
+        # self.useful_fixture_names = [self.counter.name]
         self.init_robot_base_ref = self.counter
 
     def _get_obj_cfgs(self):
@@ -48,7 +48,7 @@ class LiftObj(BaseTaskEnvCfg, RobocasaKitchenEnvCfg):
         cfgs.append(
             dict(
                 name="object",
-                obj_groups=os.path.abspath("apple_11"),
+                obj_groups="cube",
                 graspable=True,
                 placement=dict(
                     fixture=self.counter,

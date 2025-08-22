@@ -14,8 +14,8 @@
             "type": "python",
             "request": "launch",
             "args": [
-                "--task_config=g1_liftobj_visual", // policy/skrl/task_config/default.yml
-                "--headless",
+                "--task_config=g1_liftobj_state", // policy/skrl/task_config/default.yml
+                // "--headless",
             ],
             "program": "${workspaceFolder}/lwlab/scripts/rl/train.py",
             "console": "integratedTerminal",
@@ -23,6 +23,7 @@
             "env": {
                 "ENV_GPU": "0",
                 "POLICY_GPU": "0",
+                "LWLAB_ENV_MODE": "dev"
             },
         },
         {
@@ -41,11 +42,14 @@
             "type": "python",
             "request": "launch",
             "args": [
-                "--task_config=g1-hand" , // data_collection/teleop/task_config/default.yml
+                "--task_config=pandaomron" , // data_collection/teleop/task_config/default.yml
             ],
             "program": "${workspaceFolder}/lwlab/scripts/teleop/teleop_main.py",
             "console": "integratedTerminal",
-            "justMyCode": false
+            "justMyCode": false,
+            "env": {
+                "LWLAB_ENV_MODE": "dev"
+            },
         },
         {
             "name": "replay",

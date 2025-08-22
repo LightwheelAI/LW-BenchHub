@@ -1,0 +1,9 @@
+_base_: [rl_base]
+task: LiftObj                # Task name
+robot: Lerobot-RL                 # Robot type
+layout: robocasakitchen-9-8  # Scene layout
+num_envs: 1
+usd_simplify: true # USD simplify enable
+variant: State
+enable_cameras: false
+checkpoint: /home/zsy/workspace/lwlab/policy/skrl/logs/lift_obj/2025-08-22_17-07-09_ppo_torch_ppo_experiment/checkpoints/best_agent.pt

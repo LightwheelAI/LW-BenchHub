@@ -38,3 +38,19 @@ register_rl_env(
     env_cfg_entry_point=f"{__name__}.lift_obj.lift_obj:G1VisualLiftObjRLEnvCfg",
     skrl_cfg_entry_point=f"{lift_obj_agents.__name__}:skrl_ppo_cfg.yaml",
 )
+
+register_rl_env(
+    robot_name="Lerobot-RL",
+    task_name="LiftObj",
+    variant="State",
+    env_cfg_entry_point=f"{__name__}.lift_obj.lift_obj:LerobotStateLiftObjRLEnvCfg",
+    skrl_cfg_entry_point=f"{lift_obj_agents.__name__}:skrl_ppo_cfg.yaml",
+)
+
+register_rl_env(
+    robot_name="Lerobot-RL",
+    task_name="LiftObj",
+    variant="Visual",
+    env_cfg_entry_point=f"{__name__}.lift_obj.lift_obj:LerobotVisualLiftObjRLEnvCfg",
+    skrl_cfg_entry_point=f"{lift_obj_agents.__name__}:skrl_ppo_cfg.yaml",
+)

@@ -130,28 +130,10 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
         self.init_robot_base_ori = [0.0, 0.0, 0.0, 1.0]
 
         self._load_model()
-
-        # activate enable_fixtures in USD
-        if self.enable_fixtures is not None:
-            for fixture in self.enable_fixtures:
-                usd.activate_prim(self.stage, fixture)
-            dir_name = os.path.dirname(self.usd_path)
-            base_name = os.path.basename(self.usd_path)
-            new_path = os.path.join(dir_name, base_name.replace(".usd", "_enabled.usd"))
-            self.stage.GetRootLayer().Export(new_path)
-            self.usd_path = new_path
-
-        if self.usd_simplify:
-            new_stage = usd.usd_simplify(self.stage, self.usd_path, self.fixture_refs)
-            dir_name = os.path.dirname(self.usd_path)
-            base_name = os.path.basename(self.usd_path)
-            new_path = os.path.join(dir_name, base_name.replace(".usd", "_simplified.usd"))
-            new_stage.GetRootLayer().Export(new_path)
-            self.usd_path = new_path
-            self.fixtures = self.fixture_refs
-        del self.stage
-        del self.lwlab_arena.stage
         self.usd_path = self.lwlab_arena.usd_path
+        # self.lwlab_arena.stage can not deepcopy
+        del self.lwlab_arena
+
         # run robocasa fixture initialization ahead of everything else
         super().__post_init__()
         self._init_fixtures()
@@ -207,10 +189,9 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
         self.lwlab_arena = KitchenArena(
             layout_id=self.layout_id,
             style_id=self.style_id,
-            enable_fixtures=self.enable_fixtures
+            scene_cfg=self,
         )
         print(f" done in {time.time() - start_time:.2f}s")
-        self.fixtures = self.lwlab_arena.fixtures
         self.fixture_cfgs = self.lwlab_arena.get_fixture_cfgs()
 
     def _load_model(self):
@@ -225,13 +206,12 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
                 if init_fixture is not None:
                     break
                 self._setup_model()
-        self.stage = self.lwlab_arena.stage
-        self.fxtr_placements = usd.get_fixture_placements(self.stage.GetPseudoRoot(), self.fixture_cfgs, self.fixtures)
-        # for obj_pos, obj_quat, obj in self.fxtr_placements.values():
-        #     assert isinstance(obj, Fixture)
-        #     obj.set_pos(obj_pos)
-        #     # hacky code to set orientation
-        #     obj.set_euler(T.mat2euler(T.quat2mat(T.convert_quat(obj_quat, "xyzw"))))
+        self.fxtr_placements, counter_fxtr_placements = usd.get_fixture_placements(self.lwlab_arena.stage.GetPseudoRoot(), self.fixture_cfgs, self.fixtures)
+        for obj_pos, obj_quat, obj in self.fxtr_placements.values():
+            assert isinstance(obj, Fixture)
+            obj.set_euler(T.mat2euler(T.quat2mat(obj_quat)))
+        for obj_pos, obj_quat, obj in counter_fxtr_placements.values():
+            obj.set_euler(T.mat2euler(T.quat2mat(obj_quat)))
 
         from collections import namedtuple
         dummy_robot = namedtuple("dummy_robot", ["robot_model"])
@@ -244,10 +224,6 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
                 self.ori = T.convert_quat(T.mat2quat(T.euler2mat(ori)), "wxyz")
 
         self.robots = [dummy_robot(DummyRobot())]
-
-        # setup internal references related to fixtures
-        self._setup_kitchen_references()
-        # create and place objects
 
         # TODO: create objects from usd
         self._create_objects()
@@ -310,7 +286,9 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
 
     def _init_fixtures(self):
         # init fixtures for isaac
-        stage = usd.get_stage(self.lwlab_arena.usd_path)
+        if self.usd_simplify:
+            self.fixtures = self.fixture_refs
+        stage = usd.get_stage(self.usd_path)
         root_prim = stage.GetPseudoRoot()
         for fixtr in self.fixtures.values():
             if isinstance(fixtr, IsaacFixture):
@@ -389,7 +367,7 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
 
                     # modify object config to lie inside of container
                     cfg["placement"] = dict(
-                        size=(0.01, 0.01),
+                        size=(container_cfg["info"]["size"][0] / 2, container_cfg["info"]["size"][1] / 2),
                         ensure_object_boundary_in_range=False,
                         sample_args=dict(
                             reference=container_cfg["name"],
@@ -570,7 +548,7 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
                 try:
                     fixtr.update_state(self.env)
                 except Exception as e:
-                    get_error_logger().error(f"Error updating state of {fixtr.folder.split('/')[-1]}: {str(e)}")
+                    get_error_logger().error(f"Error updating state of {fixtr.name}: {str(e)}")
 
     def _check_success(self):
         return torch.tensor([[False]], device=self.env.device).repeat(self.env.num_envs, 1)

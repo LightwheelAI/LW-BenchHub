@@ -188,5 +188,5 @@ class ObjectLoader:
         path_list = url_path.strip("/").split("/")
         object_file_path = path_list[-1]
         object_name = object_file_path.split(".")[0]
-        object_type = path_list[0]
+        object_type = "usd"
         return object_type, object_name, s3_url, CACHE_PATH / object_file_path

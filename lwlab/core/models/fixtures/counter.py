@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .fixture import Fixture
+from .fixture import ProcGenFixture
 from lwlab.utils.usd_utils import OpenUsd as usd
 import numpy as np
 import json
@@ -26,7 +26,7 @@ from lwlab.utils.object_utils import (
 )
 
 
-class Counter(Fixture):
+class Counter(ProcGenFixture):
     def __init__(self, name="counter", prim=None, *args, **kwargs,):
 
         size = tuple(float(x) for x in prim.GetAttribute("size").Get().split(","))
@@ -267,7 +267,7 @@ class Counter(Fixture):
                 g = json.loads(g)
                 top_pos = np.array(g.get("pos"))
                 top_half_size = np.array(g.get("size"))
-                offset = [top_pos[0], top_pos[1], self.size[2] / 2]
+                offset = [top_pos[0], top_pos[1], 0]  # top counter center is at its top!!!
                 size = [top_half_size[0] * 2, top_half_size[1] * 2]
 
                 if (
