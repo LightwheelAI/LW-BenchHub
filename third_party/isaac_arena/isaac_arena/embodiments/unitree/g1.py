@@ -424,8 +424,8 @@ class UnitreeG1ControllerEnvCfg(UnitreeG1EnvCfg):
                     right_arm_action = arm_action  # Robot frame
         left_gripper = torch.tensor([-action["left_gripper"]], device=action['rbase'].device)
         right_gripper = torch.tensor([-action["right_gripper"]], device=action['rbase'].device)
-        return torch.concat([base_action, left_arm_action, right_arm_action,
-                             left_gripper, right_gripper]).unsqueeze(0)
+        return torch.concat([left_arm_action, right_arm_action,
+                             left_gripper, right_gripper, base_action]).unsqueeze(0)
 
 
 class UnitreeG1LocoHandEnvCfg(UnitreeG1LocoEnvCfg):
@@ -603,8 +603,8 @@ class UnitreeG1HandEnvRLCfg(UnitreeG1HandEnvCfg):
 
 class UnitreeG1DecoupledWBCEnvCfg(UnitreeG1ControllerEnvCfg):
     actions: DecoupledWBCActionsCfg = DecoupledWBCActionsCfg()
-    # robot_cfg: ArticulationCfg = G1_GEARWBC_CFG
-    robot_cfg: ArticulationCfg = G1_HIGH_PD_CFG
+    robot_cfg: ArticulationCfg = G1_GEARWBC_CFG
+    # robot_cfg: ArticulationCfg = G1_HIGH_PD_CFG
     robot_name: str = "G1-DecoupledWBC"
     hand_action_mode: str = "handle"
 

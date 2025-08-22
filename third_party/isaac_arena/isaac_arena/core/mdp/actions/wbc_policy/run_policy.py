@@ -30,7 +30,7 @@ def prepare_observations(num_envs: int, robot_data: ArticulationData, wbc_joints
     num_joints = len(robot_data.joint_names)
 
     # Convert joints data from Lab's order to GR00T's order saved in config yaml
-    # assert num_joints == 43
+    assert num_joints == 43
     wbc_joint_pos = np.zeros((num_envs, num_joints))
     wbc_joint_vel = np.zeros((num_envs, num_joints))
     wbc_joint_acc = np.zeros((num_envs, num_joints))

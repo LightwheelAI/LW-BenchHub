@@ -193,7 +193,6 @@ class G1DecoupledWBCAction(ActionTerm):
 
 
     def process_actions(self, actions: torch.Tensor):
-        return
         """Process the input actions and set targets for each task.
 
         Args:
@@ -283,7 +282,7 @@ class G1DecoupledWBCAction(ActionTerm):
 
     def apply_actions(self):
         """Apply the computed joint positions based on the WBC solution."""
-        # self._asset.set_joint_position_target(self._processed_actions, self._joint_ids)
+        self._asset.set_joint_position_target(self._processed_actions, self._joint_ids)
 
     def reset(self, env_ids: Sequence[int] | None = None) -> None:
         """Reset the action term for specified environments.
