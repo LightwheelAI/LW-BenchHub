@@ -176,9 +176,11 @@ def main(usr_args):
     env: ManagerBasedRLEnv = gym.make(env_name, cfg=env_cfg).unwrapped
 
     policy_name = usr_args["policy_name"]
-    get_model = eval_function_decorator(policy_name, "get_model")
-    eval_func = eval_function_decorator(policy_name, "eval")
-    reset_func = eval_function_decorator(policy_name, "reset_model")
+    from isaac_arena.policies.GR00T.deploy_policy import get_model, eval, reset_model
+
+    # get_model = eval_function_decorator(policy_name, "get_model")
+    # eval_func = eval_function_decorator(policy_name, "eval")
+    # reset_func = eval_function_decorator(policy_name, "reset_model")
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     # save_dir = Path(f"eval_result/{task_name}/{policy_name}/{task_config}/{ckpt_setting}/{current_time}")
     # save_dir.mkdir(parents=True, exist_ok=True)
@@ -198,7 +200,7 @@ def main(usr_args):
             eval_video_path.parent.mkdir(parents=True, exist_ok=True)
             with media.VideoWriter(path=eval_video_path, shape=(args_cli.height, args_cli.width), fps=30) as v:
                 obs, _ = env.reset()
-                reset_func(model)
+                reset_model(model)
                 # Get idle action (idle actions are applied to envs without next action)
                 idle_action = torch.zeros(env.action_space.shape)
                 step = 0
@@ -221,7 +223,7 @@ def main(usr_args):
                 v.add_image(obs['policy'][usr_args['head_camera']].cpu().numpy()[0])
                 while simulation_app.is_running() and not simulation_app.is_exiting() and step < step_limit:
                     # initialize actions with idle action so those without next action will not move
-                    has_success = eval_func(env, model, observation, usr_args, v)
+                    has_success = eval(env, model, observation, usr_args, v)
                     step += 1
                     if has_success:
                         suc_num += 1
