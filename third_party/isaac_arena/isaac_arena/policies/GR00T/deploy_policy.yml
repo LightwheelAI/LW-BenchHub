@@ -1,13 +1,13 @@
 # Basic experiment configuration (keep unchanged)
 policy_name: 'gr00t'
-task_name: 'WALKPNPBOX'
-task_config: null
+task_name: 'LiftObj'
+task_config: lwlab
 ckpt_setting: null
 seed: 0
 instruction_type: unseen
 
 # Add Parameters You Need
-model_path: '' # To be provided by the user
+model_path: 'nvidia/GR00T-N1.5-3B' # To be provided by the user
 embodiment_tag: 'new_embodiment'
 action_horizon: 16
 denoising_steps: 4
@@ -15,4 +15,6 @@ gr00t_joints_config_path: 'g1/gr00t_43dof_joint_space.yaml'
 action_joints_config_path: 'g1/43dof_joint_space.yaml'
 state_joints_config_path: 'g1/43dof_joint_space.yaml'
 num_feedback_actions: 16
+policy_device: 'cuda'
+data_config: 'unitree_g1_full_body'
 

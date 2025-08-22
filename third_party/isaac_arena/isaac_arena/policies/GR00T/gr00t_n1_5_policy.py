@@ -23,10 +23,10 @@ from isaaclab.sensors import Camera
 from gr00t.experiment.data_config import DATA_CONFIG_MAP
 from gr00t.model.policy import Gr00tPolicy
 
-from isaac_arena.isaac_arena.policies.gr00t.io_utils import load_robot_joints_config
-from isaac_arena.isaac_arena.policies.gr00t.joints_conversion import remap_policy_joints_to_sim_joints, remap_sim_joints_to_policy_joints
-from isaac_arena.isaac_arena.policies.gr00t.robot_joints import JointsAbsPosition
-from isaac_arena.isaac_arena.policies.gr00t.policy_cfg import GR00TN15Config
+from isaac_arena.policies.GR00T.io_utils import load_robot_joints_config
+from isaac_arena.policies.GR00T.joints_conversion import remap_policy_joints_to_sim_joints, remap_sim_joints_to_policy_joints
+from isaac_arena.policies.GR00T.robot_joints import JointsAbsPosition
+from isaac_arena.policies.GR00T.policy_cfg import GR00TN15Config
 
 
 class Gr00tN15Policy():
@@ -47,7 +47,7 @@ class Gr00tN15Policy():
 
     def _load_policy(self):
         """Load the policy from the model path."""
-        assert os.path.exists(self.args.model_path), f"Model path {self.args.model_path} does not exist"
+        # assert os.path.exists(self.args.model_path), f"Model path {self.args.model_path} does not exist"
 
         # Use the same data preprocessor as the loaded fine-tuned ckpts
         self.data_config = DATA_CONFIG_MAP[self.args.data_config]

@@ -17,7 +17,7 @@ import numpy as np
 import torch
 from typing import Dict, List
 
-from isaac_arena.isaac_arena.robot_joints import JointsAbsPosition
+from isaac_arena.policies.GR00T.robot_joints import JointsAbsPosition
 
 
 def remap_sim_joints_to_policy_joints(

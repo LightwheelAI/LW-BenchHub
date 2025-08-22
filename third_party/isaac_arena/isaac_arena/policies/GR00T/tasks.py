@@ -15,6 +15,7 @@
 
 from enum import Enum
 
+
 class EvalTaskConfig(Enum):
     NUTPOURING = (
         "Isaac-NutPour-GR1T2-ClosedLoop-v0",
@@ -53,6 +54,13 @@ class EvalTaskConfig(Enum):
         "Walk toward the table, squat down, pick up the box from the table and stand up.",
         "navigate_squat_pick_mimic_generated_500_v1_action_noise_003.hdf5",
         5
+    )
+    LIFTOBJ = (
+        "Isaac-Navigate-PickPlace-G1-Scene-2-Abs-v0",
+        "/home/gr00t/GR00T-N1-2B-tuned-Walk-Pnp-Box-task",
+        "pick up the object.",
+        "navigate_pickplace_scene_2_mimic_generated_500_v6_action_noise_003.hdf5",
+        6
     )
 
     def __init__(self, task: str, model_path: str, language_instruction: str, hdf5_name: str, task_index: int):

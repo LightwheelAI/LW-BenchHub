@@ -77,7 +77,8 @@ def load_json(file_path: str | Path, **kwargs) -> Dict[str, Any]:
 
 def load_robot_joints_config(yaml_path: str | Path) -> Dict[str, Any]:
     """Load robot joint configuration from YAML file"""
-    with open(yaml_path, encoding="utf-8") as f:
+    BASE_DIR = Path(__file__).parent
+    with open(BASE_DIR / yaml_path, encoding="utf-8") as f:
         config = yaml.safe_load(f)
     return config.get("joints", {})
 

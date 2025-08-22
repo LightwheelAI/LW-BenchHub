@@ -1,0 +1,46 @@
+# =========================
+# Basic Settings
+# =========================
+disable_fabric: false
+num_envs: 1
+device: cpu
+sensitivity: 1.0
+step_hz: 50
+
+# =========================
+# Robot Settings
+# =========================
+robot: PandaOmron-Rel
+robot_scale: 1.0
+
+# =========================
+# Task & Scene Settings
+# =========================
+layout: robocasakitchen
+usd_simplify: false
+use_fabric: false
+
+# =========================
+# Data Collection Settings
+# =========================
+record: false
+dataset_file: ./datasets/dataset.hdf5
+num_demos: 1
+enable_log: false
+
+# =========================
+# Teleoperation Device Settings
+# =========================
+enable_pinocchio: false
+teleop_device: keyboard
+first_person_view: false
+enable_optimization: true
+enable_multiple_viewports: false
+
+# =========================
+# Video Saving Settings
+# =========================
+enable_cameras: false
+save_video: false
+video_save_dir: ./videos
+video_fps: 30

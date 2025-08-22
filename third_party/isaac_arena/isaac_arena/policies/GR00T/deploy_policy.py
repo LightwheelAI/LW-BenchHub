@@ -8,12 +8,14 @@ sys.path.append(parent_directory)
 
 import torch
 
-from isaac_arena.isaac_arena.policies.gr00t.gr00t_n1_5_policy import Gr00tN15Policy
-from isaac_arena.isaac_arena.policies.gr00t.policy_cfg import GR00TN15Config
-from isaac_arena.isaac_arena.policies.gr00t.robot_joints import JointsAbsPosition
-from isaac_arena.isaac_arena.policies.gr00t.io_utils import load_robot_joints_config
-from isaac_arena.isaac_arena.policies.gr00t.joints_conversion import \
-    (remap_sim_joints_to_policy_joints, remap_policy_joints_to_sim_joints)
+from isaac_arena.policies.GR00T.gr00t_n1_5_policy import Gr00tN15Policy
+from isaac_arena.policies.GR00T.policy_cfg import GR00TN15Config
+from isaac_arena.policies.GR00T.robot_joints import JointsAbsPosition
+from isaac_arena.policies.GR00T.io_utils import load_robot_joints_config
+from isaac_arena.policies.GR00T.joints_conversion import (
+    remap_sim_joints_to_policy_joints,
+    remap_policy_joints_to_sim_joints
+)
 
 
 # TODO(xinjie.yao): change to better design, a hack
@@ -44,6 +46,7 @@ def encode_obs(observation, language_instruction):
     }
     return observations
 
+
 def decode_action(robot_action_policy):
     robot_action_sim = remap_policy_joints_to_sim_joints(
         robot_action_policy, gr00t_joints_config, g1_state_joints_config, simulation_device
@@ -53,6 +56,7 @@ def decode_action(robot_action_policy):
     base_height_command = robot_action_policy["action.base_height_command"]
     navigate_command = robot_action_policy["action.navigate_command"]
     return full_body_target_joints_pos, base_height_command, navigate_command
+
 
 def get_policy_config(usr_args):
     return GR00TN15Config(
@@ -64,9 +68,11 @@ def get_policy_config(usr_args):
         num_feedback_actions=usr_args["num_feedback_actions"],
     )
 
+
 def get_model(usr_args):
     policy_config = get_policy_config(usr_args)
     return Gr00tN15Policy(policy_config), policy_config
+
 
 def eval(TASK_ENV, model, observation):
     # TODO(xinjie.yao): change to better design, a hack
@@ -99,6 +105,7 @@ def eval(TASK_ENV, model, observation):
         rollout_action[:, -5:-2] = torch.from_numpy(navigate_command[:, i])
         TASK_ENV.take_action(rollout_action)
     # ============================
+
 
 def reset_model(model):
     # Note (xinjie.yao): single shot policy, no need to reset

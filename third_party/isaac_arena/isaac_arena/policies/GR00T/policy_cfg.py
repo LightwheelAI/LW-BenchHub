@@ -17,9 +17,11 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from isaac_arena.isaac_arena.policies.gr00t.tasks import EvalTaskConfig
+from isaac_arena.policies.GR00T.tasks import EvalTaskConfig
 
 # Pulling args from Gr00tN1ClosedLoopArguments into a data class
+
+
 @dataclass
 class GR00TN15Config():
     # model specific parameters
@@ -65,11 +67,23 @@ class GR00TN15Config():
             )
         },
     )
+    data_config: str = field(
+        default="unitree_g1_full_body",
+        metadata={
+            "description": "Name of the data config to use for the policy."
+        },
+    )
     # Closed loop specific parameters
     num_feedback_actions: int = field(
         default=16,
         metadata={
             "description": "Number of feedback actions to execute per rollout (can be less than action_horizon)."
+        },
+    )
+    policy_device: str = field(
+        default="cuda",
+        metadata={
+            "description": "Device to use for the policy."
         },
     )
 
@@ -81,16 +95,16 @@ class GR00TN15Config():
         if self.task == "":
             self.task = config.task
 
-        import os
-        if self.dataset_path == "":
-            if self.model_path == "":
-                self.model_path = config.model_path
-            assert Path(self.model_path).exists(), "model_path does not exist."
-            # If model path is relative, return error
-            if not os.path.isabs(self.model_path):
-                raise ValueError("model_path must be an absolute path. Do not use relative paths.")
-        else:
-            assert Path(self.dataset_path).exists(), "dataset_path does not exist."
+        # import os
+        # if self.dataset_path == "":
+        #     if self.model_path == "":
+        #         self.model_path = config.model_path
+        #     assert Path(self.model_path).exists(), "model_path does not exist."
+        #     # If model path is relative, return error
+        #     if not os.path.isabs(self.model_path):
+        #         raise ValueError("model_path must be an absolute path. Do not use relative paths.")
+        # else:
+        #     assert Path(self.dataset_path).exists(), "dataset_path does not exist."
 
         if self.language_instruction == "":
             self.language_instruction = config.language_instruction
@@ -102,7 +116,7 @@ class GR00TN15Config():
         assert Path(self.gr00t_joints_config_path).exists(), "gr00t_joints_config_path does not exist"
         assert Path(self.action_joints_config_path).exists(), "action_joints_config_path does not exist"
         assert Path(self.state_joints_config_path).exists(), "state_joints_config_path does not exist"
-        assert Path(self.model_path).exists(), "model_path does not exist. Do not use relative paths."
+        # assert Path(self.model_path).exists(), "model_path does not exist. Do not use relative paths."
         # embodiment_tag
         assert self.embodiment_tag in [
             "gr1",
