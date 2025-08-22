@@ -67,6 +67,8 @@ class G1DecoupledWBCAction(ActionTerm):
         # Note(xinjie.yao): below are for mimic x WBC only
         self._is_navigating = False
         self._navigation_goal_reached = False
+        # TODO(xinjie.yao): a better way to read from robot/cfg
+        self._default_base_height_cmd = 0.75
 
         self._wbc_version = "homie"
         config = BaseConfig()
@@ -89,23 +91,11 @@ class G1DecoupledWBCAction(ActionTerm):
             # lin_vel_cmd_x, lin_vel_cmd_y, ang_vel_cmd
             "navigate_cmd": np.tile(np.array([[0., 0., 0.]]), (self.num_envs, 1)),
             # base_height_cmd: 0.75 as pelvis height
-            "base_height_command": np.tile(np.array([0.75]), (self.num_envs, 1)),
+            "base_height_command": np.tile(np.array([self._default_base_height_cmd]), (self.num_envs, 1)),
             # toggle_policy_action: 0 for disable policy, 1 for enable policy
+            # Note (xinjie.yao): always enabled in the policy
             "toggle_policy_action": np.tile(np.array([0]), (self.num_envs, 1)),
         }
-
-        # self._wbc_goal = {
-        #     "target_upper_body_pose": self.current_upper_body_pose.reshape([self.num_envs, -1]),
-        #     # lin_vel_cmd_x, lin_vel_cmd_y, ang_vel_cmd
-        #     "navigate_cmd": np.array([[0., 0., 0.]]).reshape([self.num_envs, -1]),
-        #     # base_height_cmd: 0.75 as pelvis height
-        #     # NOTE: 0 does not support squatting motion
-        #     "base_height_command": np.array([0.75]).reshape([self.num_envs, -1]),
-        #     # stand_cmd: 0 for disable tapping, 1 for enable tapping
-        #     "toggle_stand_command": np.array([[0]]).reshape([self.num_envs, -1]),
-        #     # toggle_policy_action: 0 for disable policy, 1 for enable policy
-        #     "toggle_policy_action": np.array([[0]]).reshape([self.num_envs, -1]),
-        # }
 
     # Properties.
     @property
@@ -139,11 +129,6 @@ class G1DecoupledWBCAction(ActionTerm):
         return 3
 
     @property
-    def stand_cmd_dim(self) -> int:
-        """Dimension of stand command."""
-        return 1
-
-    @property
     def base_height_cmd_dim(self) -> int:
         """Dimension of base height command."""
         return 1
@@ -151,7 +136,7 @@ class G1DecoupledWBCAction(ActionTerm):
     @property
     def action_dim(self) -> int:
         """Dimension of the action space (based on number of tasks and pose dimension)."""
-        return 3
+        return 3 + 1 # 3 for navigate_cmd, 1 for base_height_cmd
 
     @property
     def raw_actions(self) -> torch.Tensor:
@@ -176,9 +161,8 @@ class G1DecoupledWBCAction(ActionTerm):
         return self._wbc_goal
 
 
-    def set_wbc_goal(self, navigate_cmd, stand_cmd, base_height_cmd):
+    def set_wbc_goal(self, navigate_cmd, base_height_cmd):
         self._wbc_goal["navigate_cmd"] = navigate_cmd
-        self._wbc_goal["toggle_stand_command"] = stand_cmd
         self._wbc_goal["base_height_command"] = base_height_cmd
 
     # """
@@ -210,15 +194,16 @@ class G1DecoupledWBCAction(ActionTerm):
         WBC closedloop
         **************************************************
         '''
-        # extract navigate_cmd, stand_cmd, base_height_cmd from actions
-        navigate_cmd = actions_clone[:, -5:-2]
-        navigate_cmd[:, :] = 0
-        stand_cmd = actions_clone[:, -2:-1]
-        base_height_cmd = 0.7 # actions_clone[:, -1:]
+        # extract navigate_cmd, base_height_cmd from actions
+        print(f"actions_clone: {actions_clone}")
+        navigate_cmd = actions_clone[:, -4:-1]
+
+        base_height_cmd = actions_clone[:, -1:]
 
         self._navigate_cmd = torch.tensor(navigate_cmd)
 
-        self.set_wbc_goal(navigate_cmd, stand_cmd, base_height_cmd)
+        self.set_wbc_goal(navigate_cmd, base_height_cmd)
+        print(f"self._wbc_goal: {self._wbc_goal}")
         self.wbc_policy.set_goal(self._wbc_goal)
 
         '''
@@ -246,8 +231,6 @@ class G1DecoupledWBCAction(ActionTerm):
         sim_target_full_body_joints[:, left_hand_action_term._joint_ids] = left_hand_action_term.processed_actions
         sim_target_full_body_joints[:, right_hand_action_term._joint_ids] = right_hand_action_term.processed_actions
 
-        print(f"sim_target_full_body_joints: {sim_target_full_body_joints}")
-
         wbc_obs = prepare_observations(self.num_envs, self._asset.data, self.wbc_g1_joints_order)
         # sim_target_full_body_joints = actions_clone[:, :self._num_joints]
         wbc_target_full_body_joints = convert_sim_joint_to_wbc_joint(sim_target_full_body_joints, self._asset.data.joint_names, self.wbc_g1_joints_order)
@@ -261,18 +244,6 @@ class G1DecoupledWBCAction(ActionTerm):
         right_arm_action_term = self._env.action_manager.get_term("right_arm_action")
         left_hand_action_term = self._env.action_manager.get_term("left_hand_action")
         right_hand_action_term = self._env.action_manager.get_term("right_hand_action")
-
-        print(f"\nleft_arm action joint ids: {left_arm_action_term._joint_ids}")
-        print(f"right_arm action joint ids: {right_arm_action_term._joint_ids}")
-        print(f"left_hand action joint ids: {left_hand_action_term._joint_ids}")
-        print(f"right_hand action joint ids: {right_hand_action_term._joint_ids}\n")
-        
-        print(f"\nleft_arm_action_term: {left_arm_action_term.processed_actions}")
-        print(f"right_arm_action_term: {right_arm_action_term.processed_actions}")
-        print(f"left_hand_action_term: {left_hand_action_term.processed_actions}")
-        print(f"right_hand_action_term: {right_hand_action_term.processed_actions}\n")
-        
-        
 
         self.wbc_policy.set_observation(wbc_obs)
 
