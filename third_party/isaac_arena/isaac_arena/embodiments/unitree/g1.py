@@ -621,7 +621,7 @@ class UnitreeG1DecoupledWBCEnvCfg(UnitreeG1ControllerEnvCfg):
 
         if action['rsqueeze'] > 0.5:
             # linear x + turning yaw
-            base_action[:3] = torch.tensor([action['rbase'][0], 0, action['rbase'][1], 0.75], device=action['rbase'].device)
+            base_action[:3] = torch.tensor([action['rbase'][0], 0, action['rbase'][1]], device=action['rbase'].device)
         else:
             # linear x + linear y
             base_action[:3] = torch.tensor([action['rbase'][0], action['rbase'][1], 0,], device=action['rbase'].device)
