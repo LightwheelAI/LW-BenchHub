@@ -181,9 +181,9 @@ class BaseTaskEnvCfg(LwBaseCfg):
         # self.viewer.origin_type = "asset_root"
         # self.viewer.asset_name = "robot"
         # simulation settings
-        self.sim.dt = 1 / 100  # physics frequency: 100Hz
+        self.sim.dt = 1 / 200  # physics frequency: 100Hz
         self.sim.render_interval = 4  # render frequency: 25Hz
-        self.decimation = 2  # action frequency: 50Hz
+        self.decimation = 4  # action frequency: 50Hz
         self.sim.physx.bounce_threshold_velocity = 0.2
         self.sim.physx.bounce_threshold_velocity = 0.01
         self.sim.physx.friction_correlation_distance = 0.00625

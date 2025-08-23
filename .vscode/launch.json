@@ -65,7 +65,7 @@
             "args": [
                 "--task_config=g1-controller" , // data_collection/teleop/task_config/default.yml
             ],
-            "program": "${workspaceFolder}/lwlab/scripts/teleop/teleop_main_g1_wbc_testing.py",
+            "program": "${workspaceFolder}/lwlab/scripts/teleop/teleop_main.py",
             "console": "integratedTerminal",
             "justMyCode": false
         },        
