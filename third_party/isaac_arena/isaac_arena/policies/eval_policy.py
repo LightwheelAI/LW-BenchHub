@@ -223,7 +223,7 @@ def main(usr_args):
                 v.add_image(obs['policy'][usr_args['head_camera']].cpu().numpy()[0])
                 while simulation_app.is_running() and not simulation_app.is_exiting() and step < step_limit:
                     # initialize actions with idle action so those without next action will not move
-                    has_success = eval(env, model, observation, usr_args, v)
+                    has_success = eval(env, model, observation)
                     step += 1
                     if has_success:
                         suc_num += 1

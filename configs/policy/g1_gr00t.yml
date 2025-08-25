@@ -1,5 +1,5 @@
 _base_: [policy_base]
-robot: G1-Hand
+robot: G1-Loco-Hand
 left_camera: left_hand_camera
 right_camera: right_hand_camera
 head_camera: first_person_camera

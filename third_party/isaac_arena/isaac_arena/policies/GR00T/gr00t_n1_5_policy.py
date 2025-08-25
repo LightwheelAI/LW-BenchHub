@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import os
-from typing import Tuple
+from typing import Dict, Tuple
 
 import numpy as np
 
@@ -65,33 +65,19 @@ class Gr00tN15Policy():
         )
 
     def get_new_goal(
-        self, current_state: JointsAbsPosition, ego_camera: Camera, language_instruction: str
+        self, observations: Dict
     ) -> Tuple[JointsAbsPosition, np.ndarray, np.ndarray]:
         """
         Run policy prediction on the given observations. Produce a new action goal for the robot.
 
         Args:
-            current_state: robot proprioceptive state observation
+            observations: robot proprioceptive state observation
             ego_camera: camera sensor observation
             language_instruction: language instruction for the task
 
         Returns:
             A dictionary containing the inferred action for robot joints.
         """
-        rgb = ego_camera.data.output["rgb"]
-        # Retrieve joint positions as proprioceptive states and remap to policy joint orders
-        robot_state_policy = remap_sim_joints_to_policy_joints(current_state, self.gr00t_joints_config)
-
-        # Pack inputs to dictionary and run the inference
-        observations = {
-            "annotation.human.task_description": [language_instruction],  # list of strings
-            "video.ego_view": rgb.reshape(-1, 1, 480, 640, 3),  # numpy array of shape (N, 1, 480, 640, 3)
-            "state.left_arm": robot_state_policy["left_arm"].reshape(-1, 1, 7),  # numpy array of shape (N, 1, 7)
-            "state.right_arm": robot_state_policy["right_arm"].reshape(-1, 1, 7),  # numpy array of shape (N, 1, 7)
-            "state.left_hand": robot_state_policy["left_hand"].reshape(-1, 1, 7),  # numpy array of shape (N, 1, 7)
-            "state.right_hand": robot_state_policy["right_hand"].reshape(-1, 1, 7),  # numpy array of shape (N, 1, 7)
-            "state.waist": robot_state_policy["waist"].reshape(-1, 1, 3),  # numpy array of shape (N, 1, 3)
-        }
 
         robot_action_policy = self.policy.get_action(observations)
 

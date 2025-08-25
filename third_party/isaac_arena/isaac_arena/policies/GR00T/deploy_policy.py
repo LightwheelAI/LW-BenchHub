@@ -28,7 +28,7 @@ num_joints = len(g1_state_joints_config)
 # Encode observation for the model
 def encode_obs(observation, language_instruction):
     # TODO(xinjie.yao): check if this is correct
-    full_body_joints = observation["joint_action"]["vector"]
+    full_body_joints = observation["joint_action"]["vector"].reshape(1, -1)
     rgb = observation["observation"]["head_camera"]["rgb"]
 
     robot_state_sim = JointsAbsPosition(
@@ -38,11 +38,14 @@ def encode_obs(observation, language_instruction):
     # Pack inputs to dictionary and run the inference
     observations = {
         "annotation.human.action.task_description": [language_instruction],  # list of strings
-        "video.ego_view": rgb.reshape(-1, 1, 256, 256, 3),  # numpy array of shape (N, 1, 256, 256, 3)
+        "video.rs_view": rgb.transpose([1, 0, 2]).reshape(-1, 1, 480, 640, 3),  # (N, 1, 480, 640, 3)
         "state.left_arm": robot_state_policy["left_arm"].reshape(-1, 1, 7),  # numpy array of shape (N, 1, 7)
         "state.right_arm": robot_state_policy["right_arm"].reshape(-1, 1, 7),  # numpy array of shape (N, 1, 7)
-        "state.left_hand": robot_state_policy["left_hand"].reshape(-1, 1, 6),  # numpy array of shape (N, 1, 6)
-        "state.right_hand": robot_state_policy["right_hand"].reshape(-1, 1, 6),  # numpy array of shape (N, 1, 6)
+        "state.left_hand": robot_state_policy["left_hand"].reshape(-1, 1, 7),  # numpy array of shape (N, 1, 6)
+        "state.right_hand": robot_state_policy["right_hand"].reshape(-1, 1, 7),  # numpy array of shape (N, 1, 6)
+        "state.waist": robot_state_policy["waist"].reshape(-1, 1, 3),  # numpy array of shape (N, 1, 3)
+        "state.left_leg": robot_state_policy["left_leg"].reshape(-1, 1, 6),  # numpy array of shape (N, 1, 6)
+        "state.right_leg": robot_state_policy["right_leg"].reshape(-1, 1, 6),  # numpy array of shape (N, 1, 6)
     }
     return observations
 
@@ -76,7 +79,7 @@ def get_model(usr_args):
 
 def eval(TASK_ENV, model, observation):
     # TODO(xinjie.yao): change to better design, a hack
-    policy_config = model.args
+    policy_config = model[1]
     language_instruction = policy_config.language_instruction
 
     # TODO(xinjie.yao): change to better design to extract a language instruction from the task environment, a hack
@@ -86,7 +89,7 @@ def eval(TASK_ENV, model, observation):
 
     observations = encode_obs(observation, language_instruction)
     # ======== Get Action ========
-    robot_action_policy = model.get_action(observations)
+    robot_action_policy = model[0].get_new_goal(observations)
     full_body_target_joints_pos, base_height_command, navigate_command = decode_action(robot_action_policy)
     # TODO(xinjie.yao): check with the new action term definition
     assert full_body_target_joints_pos.shape[0] == TASK_ENV.action_space.shape[0], f"Full body target joints pos shape: {full_body_target_joints_pos.shape}, num envs: {TASK_ENV.action_space.shape[0]}"
