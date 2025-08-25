@@ -185,7 +185,7 @@ def main():
     import gymnasium as gym
     import numpy as np
     from lwlab.core.devices import VRController, VRHand, LwOpenXRDevice, KEYCONTROLLER_MAP
-    from isaaclab.devices import Se3Keyboard, Se3SpaceMouse
+    from isaaclab.devices import Se3Keyboard, Se3SpaceMouse, Se3SpaceMouseCfg
     if app_launcher_args.get("xr"):
         from isaacsim.xr.openxr import OpenXRSpec
     from isaaclab.envs import ViewerCfg, ManagerBasedRLEnv
@@ -273,7 +273,7 @@ def main():
     get_default_logger().info(f"env_cfg: {env_cfg}")
 
     # create controller
-    if args_cli.teleop_device.lower() == "keyboard":
+    if True: # args_cli.teleop_device.lower() == "keyboard":
         # device_type = KEYCONTROLLER_MAP[args_cli.teleop_device.lower() + "-" + args_cli.robot.lower().split("-")[0]]
         device_type = KEYCONTROLLER_MAP["keyboard-pandaomron"]
         teleop_interface = device_type(
@@ -281,9 +281,7 @@ def main():
             base_sensitivity=0.5 * args_cli.sensitivity, base_yaw_sensitivity=0.8 * args_cli.sensitivity
         )
     elif args_cli.teleop_device.lower() == "spacemouse":
-        teleop_interface = Se3SpaceMouse(env,
-                                         pos_sensitivity=0.1 * args_cli.sensitivity, rot_sensitivity=0.2 * args_cli.sensitivity
-                                         )
+        teleop_interface = Se3SpaceMouse(Se3SpaceMouseCfg(pos_sensitivity=0.2, rot_sensitivity=0.5))
     # elif args_cli.teleop_device.lower() == "gamepad":
     #     teleop_interface = Se3Gamepad(
     #         pos_sensitivity=0.1 * args_cli.sensitivity, rot_sensitivity=0.1 * args_cli.sensitivity
@@ -412,9 +410,44 @@ def main():
             
             # print(actions.shape)
 
-            # actions_upper = torch.randn(env.num_envs, 59) * 0.1
-            # actions_lower = torch.zeros(env.num_envs, 5)
-            # actions = torch.cat([actPions_upper, actions_lower], dim=1)
+            """
+            left/right arm pos/quat (wzyx) (holding arms out in front of the body):
+
+            left_wrist_pos: [0.20248358 0.17661604 0.13682538]
+            left_wrist_quat: [ 0.99800018  0.04580273 -0.03275206  0.02872376]
+
+            right_wrist_pos: [ 0.21232468 -0.18499057  0.13347319]
+            right_wrist_quat: [ 0.99572691 -0.05724299 -0.05909783 -0.04193568]
+            """
+
+            """
+            [ left hand, right hand,
+              left arm pos,
+              left arm quat,
+              right arm pos,
+              right arm quat ]
+            """
+            actions_upper = torch.tensor(
+                [1, 1,
+                 0.20248358, 0.17661604, 0.13682538, 
+                 0.99800018,  0.04580273, -0.03275206,  0.02872376,
+                 0.21232468, -0.18499057,  0.13347319,
+                 0.99572691, -0.05724299, -0.05909783, -0.04193568]
+            ).unsqueeze(0)
+
+            # Create a [:2] tensor where the values cycle between -1 to 1 continuously for the hand actions
+            t = time.time()
+            cycle = torch.tensor([np.sin(t), np.cos(t)])
+            actions_upper[:, :2] = cycle
+            # Add some noise to the wrist poses
+            noise_std = 0.05
+            noise = noise_std * torch.randn_like(actions_upper)
+            noise[:, 0:2] = 0
+            actions_upper = actions_upper + noise
+
+            actions_lower = torch.zeros(env.num_envs, 4)
+            actions = torch.cat([actions_upper, actions_lower], dim=1)
+            actions[:, -1] = 0.7
 
             teleop_time = time.time() - teleop_start
             frame_analyzer.record_stage('teleop_advance', teleop_time)

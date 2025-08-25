@@ -29,9 +29,6 @@ class DecoupledWBCActionsCfg:
 
     # Sequential action terms. Upper body actions are used for WBC policy (base_action).
     # The following ordering must be enforced for WBC policy to function correctly.
-
-    left_arm_action: mdp.DifferentialInverseKinematicsActionCfg = MISSING
-    right_arm_action: mdp.DifferentialInverseKinematicsActionCfg = MISSING
     left_hand_action: mdp.ActionTermCfg = MISSING
     right_hand_action: mdp.ActionTermCfg = MISSING
     base_action: G1DecoupledWBCActionCfg = MISSING

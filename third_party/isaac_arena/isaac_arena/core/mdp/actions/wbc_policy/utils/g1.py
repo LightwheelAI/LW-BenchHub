@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
+from pathlib import Path
 from typing import Literal
 
 from isaac_arena.core.mdp.actions.wbc_policy.utils.robot_model import RobotModel
@@ -36,6 +38,13 @@ def instantiate_g1_robot_model(
     Returns:
         RobotModel: Configured G1 robot model
     """
+    groot_root = Path(__file__).resolve().parent.parent
+    robot_model_config = {
+        "asset_path": os.path.join(groot_root, "robot_model/g1"),
+        "urdf_path": os.path.join(
+            groot_root, "robot_model/g1/g1_29dof_with_hand.urdf"
+        ),
+    }
 
     assert waist_location in [
         "lower_body",
@@ -51,6 +60,8 @@ def instantiate_g1_robot_model(
         robot_model_supplemental_info = G1SupplementalInfoWaistLowerAndUpperBody()
 
     robot_model = RobotModel(
+        robot_model_config["urdf_path"],
+        robot_model_config["asset_path"],
         supplemental_info=robot_model_supplemental_info,
     )
     return robot_model

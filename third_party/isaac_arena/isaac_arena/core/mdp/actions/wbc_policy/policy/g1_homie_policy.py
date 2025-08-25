@@ -158,7 +158,7 @@ class G1HomiePolicy(Policy):
         # Create single observation
         single_obs = np.zeros((num_envs, single_obs_dim), dtype=np.float32)
         single_obs[:, 0:3] = self.cmd[:3] * self.config["cmd_scale"]
-        single_obs[:, 3:4] = np.array([self.height_cmd])
+        single_obs[:, 3:4] = np.array([self.height_cmd.cpu()])
         single_obs[:, 4:8] = np.concatenate([np.array([self.freq_cmd]), self.roll_cmd, self.pitch_cmd, self.yaw_cmd], axis=0)
         single_obs[:, 8:11] = omega_scaled
         single_obs[:, 11:14] = gravity_orientation.T
@@ -213,7 +213,7 @@ class G1HomiePolicy(Policy):
             goal: Dictionary containing the goal for the policy
         """
         if "navigate_cmd" in goal:
-            self.cmd[:] = goal["navigate_cmd"]
+            self.cmd[:] = goal["navigate_cmd"].cpu().numpy()
 
         if "toggle_policy_action" in goal:
             if goal["toggle_policy_action"]:

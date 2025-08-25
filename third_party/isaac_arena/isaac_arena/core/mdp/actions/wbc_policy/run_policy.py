@@ -15,6 +15,10 @@ def convert_sim_joint_to_wbc_joint(sim_joint_data: np.ndarray, sim_joint_names: 
     num_envs = sim_joint_data.shape[0]
     wbc_joint_data = np.zeros((num_envs, num_joints))
 
+    # Check if sim_joint_data is a numpy array, if not, convert from torch tensor to numpy
+    if not isinstance(sim_joint_data, np.ndarray):
+        sim_joint_data = sim_joint_data.cpu().numpy()
+
     for sim_joint_name in sim_joint_names:
         sim_joint_index = sim_joint_names.index(sim_joint_name)
         assert sim_joint_name in wbc_joints_order, f"Joint {sim_joint_name} not found in loco_manip_g1_joints_order"

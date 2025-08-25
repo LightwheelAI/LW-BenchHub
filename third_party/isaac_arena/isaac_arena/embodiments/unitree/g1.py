@@ -612,6 +612,8 @@ class UnitreeG1ControllerDecoupledWBCEnvCfg(UnitreeG1ControllerEnvCfg):
     def __post_init__(self):
         super().__post_init__()
         self.actions.base_action = G1DecoupledWBCActionCfg(asset_name="robot", joint_names=[".*"])
+        self.actions.left_arm_action = None
+        self.actions.right_arm_action = None
         self.init_robot_base_height = 0.75
 
     def preprocess_device_action(self, action: dict[str, torch.Tensor], device) -> torch.Tensor:
@@ -679,5 +681,4 @@ class UnitreeG1ControllerDecoupledWBCEnvCfg(UnitreeG1ControllerEnvCfg):
                     right_arm_action = arm_action  # Robot frame
         left_gripper = torch.tensor([-action["left_gripper"]], device=action['rbase'].device)
         right_gripper = torch.tensor([-action["right_gripper"]], device=action['rbase'].device)
-        return torch.concat([left_arm_action, right_arm_action,
-                             left_gripper, right_gripper, base_action]).unsqueeze(0)
+        return torch.concat([left_gripper, right_gripper, left_arm_action, right_arm_action, base_action]).unsqueeze(0)

@@ -49,8 +49,6 @@ class JointPositionMapAction(JointPositionAction):
             )
         self._processed_actions = self.cfg.post_process_fn(self._processed_actions, self._joint_names)
 
-        print(f"Joint Position Map Action processed_actions: {self._processed_actions}")
-
     def apply_actions(self):
         # processed_actions = self.cfg.post_process_fn(self.processed_actions, self._joint_names)
         self._asset.set_joint_position_target(self._processed_actions, joint_ids=self._joint_ids)

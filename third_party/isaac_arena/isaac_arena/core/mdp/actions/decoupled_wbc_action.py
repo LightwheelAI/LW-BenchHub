@@ -16,6 +16,7 @@ import yaml
 import os
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
+from scipy.spatial.transform import Rotation as R
 
 from isaaclab.utils import configclass
 import isaaclab.utils.math as math_utils
@@ -23,10 +24,10 @@ from isaaclab.assets.articulation import Articulation
 from isaaclab.envs import ManagerBasedEnv
 from isaaclab.managers.action_manager import ActionTerm, ActionTermCfg
 
-
 from isaac_arena.core.mdp.actions.wbc_policy.config.configs import BaseConfig
 from isaac_arena.core.mdp.actions.wbc_policy.utils.g1 import instantiate_g1_robot_model
 from isaac_arena.core.mdp.actions.wbc_policy.policy.wbc_policy_factory import get_wbc_policy
+from isaac_arena.core.mdp.actions.wbc_policy.policy.g1_wbc_upperbody_controller import G1WBCUpperbodyController
 from isaac_arena.core.mdp.actions.wbc_policy.run_policy import prepare_observations, postprocess_actions, convert_sim_joint_to_wbc_joint
 
 from dataclasses import MISSING
@@ -97,6 +98,12 @@ class G1DecoupledWBCAction(ActionTerm):
             "toggle_policy_action": np.tile(np.array([0]), (self.num_envs, 1)),
         }
 
+        self.upperbody_controller = G1WBCUpperbodyController(
+            robot_model=self.robot_model,
+            body_active_joint_groups=["arms"],
+            control_hands=False,
+        )
+
     # Properties.
     @property
     def num_joints(self) -> int:
@@ -136,7 +143,7 @@ class G1DecoupledWBCAction(ActionTerm):
     @property
     def action_dim(self) -> int:
         """Dimension of the action space (based on number of tasks and pose dimension)."""
-        return 3 + 1 # 3 for navigate_cmd, 1 for base_height_cmd
+        return 7 + 7 + 3 + 1 # 7 for left arm pos/quat, 7 for right arm pos/quat, 3 for navigate_cmd, 1 for base_height_cmd
 
     @property
     def raw_actions(self) -> torch.Tensor:
@@ -174,6 +181,17 @@ class G1DecoupledWBCAction(ActionTerm):
     # """
     # Operations.
     # """
+    
+    def compute_upperbody_joint_positions(self, body_data):
+        if self.upperbody_controller.in_warmup:
+            for _ in range(50):
+                target_robot_joints = self.upperbody_controller.inverse_kinematics(body_data)
+
+            self.upperbody_controller.in_warmup = False
+        else:
+            target_robot_joints = self.upperbody_controller.inverse_kinematics(body_data)
+
+        return target_robot_joints
 
 
     def process_actions(self, actions: torch.Tensor):
@@ -191,22 +209,51 @@ class G1DecoupledWBCAction(ActionTerm):
 
         '''
         **************************************************
-        WBC closedloop
+        WBC lower body commands
         **************************************************
         '''
-
-        # extract navigate_cmd, base_height_cmd from actions
-        print(f"actions_clone: {actions_clone}")
+        # Extract navigate_cmd, base_height_cmd from actions
         navigate_cmd = actions_clone[:, -4:-1]
-
         base_height_cmd = actions_clone[:, -1:]
-
 
         self._navigate_cmd = torch.tensor(navigate_cmd)
 
         self.set_wbc_goal(navigate_cmd, base_height_cmd)
-        print(f"self._wbc_goal: {self._wbc_goal}")
         self.wbc_policy.set_goal(self._wbc_goal)
+
+        '''
+        **************************************************
+        Upper body PINK controller
+        **************************************************
+        '''
+        # Extract upper body left/right arm pos/quat from actions
+        left_arm_pos = actions_clone[:, :3].squeeze(0)
+        left_arm_quat = actions_clone[:, 3:7].squeeze(0)
+        right_arm_pos = actions_clone[:, 7:10].squeeze(0)
+        right_arm_quat = actions_clone[:, 10:14].squeeze(0)
+
+        # Convert from pos/quat to 4x4 transform matrix
+        # Scipy requires quat xyzw, IsaacLab uses wxyz so a conversion is needed
+        left_arm_quat = np.roll(left_arm_quat, -1)
+        right_arm_quat = np.roll(right_arm_quat, -1)
+        left_rotmat = R.from_quat(left_arm_quat).as_matrix()
+        right_rotmat = R.from_quat(right_arm_quat).as_matrix()
+
+        left_arm_pose = np.eye(4)
+        left_arm_pose[:3, :3] = left_rotmat
+        left_arm_pose[:3, 3] = left_arm_pos
+    
+        right_arm_pose = np.eye(4)
+        right_arm_pose[:3, :3] = right_rotmat
+        right_arm_pose[:3, 3] = right_arm_pos
+
+        # Run PINK IK to get target upper body joint positions
+        body_data = {"left_wrist_yaw_link": left_arm_pose, "right_wrist_yaw_link": right_arm_pose}
+        target_robot_joints_mujoco = self.compute_upperbody_joint_positions(body_data)
+
+        # Reformat the joint position tensor to the correct order for G1 robot in IsaacLab
+        target_upper_body_joints = target_robot_joints_mujoco[self.robot_model.get_joint_group_indices("upper_body")]
+        target_upper_body_joints = torch.tensor(target_upper_body_joints, device=self.device, dtype=torch.float32).unsqueeze(0)
 
         '''
         **************************************************
@@ -222,15 +269,12 @@ class G1DecoupledWBCAction(ActionTerm):
         '''
 
         # Get upper body action terms
-        left_arm_action_term = self._env.action_manager.get_term("left_arm_action")
-        right_arm_action_term = self._env.action_manager.get_term("right_arm_action")
         left_hand_action_term = self._env.action_manager.get_term("left_hand_action")
         right_hand_action_term = self._env.action_manager.get_term("right_hand_action")
 
-        # Assemble joint positions from upper body action terms into observation for WBC policy
+        # Assemble joint positions from upper body action terms and Pink IK into observation for WBC policy
         sim_target_full_body_joints = torch.zeros(self.num_envs, self._num_joints, device=self.device)
-        sim_target_full_body_joints[:, left_arm_action_term._joint_ids] = left_arm_action_term.processed_actions
-        sim_target_full_body_joints[:, right_arm_action_term._joint_ids] = right_arm_action_term.processed_actions
+        sim_target_full_body_joints[:, self.robot_model.get_joint_group_indices("upper_body")] = target_upper_body_joints
         sim_target_full_body_joints[:, left_hand_action_term._joint_ids] = left_hand_action_term.processed_actions
         sim_target_full_body_joints[:, right_hand_action_term._joint_ids] = right_hand_action_term.processed_actions
 
