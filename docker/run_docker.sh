@@ -101,15 +101,16 @@ then
 
     set +x
 
-    su $DOCKER_RUN_USER_NAME
+    # bash /isaac-sim/python.sh -m pip install --user -e /workspaces/lwlab/third_party/robocasa
+    # For some reason robocasa assets are not installed in the correct location, so we need to copy them manually.
+    cp -r /workspaces/lwlab/third_party/robocasa/robocasa/models/assets/ /isaac-sim/kit/python/lib/python3.11/site-packages/robocasa/models
+    chmod -R 777 /isaac-sim/kit/python/lib/python3.11/site-packages/robocasa/models/assets/
 
     # For some reason we need to reinstall robocasa once we have the correct user.
-    bash /isaac-sim/python.sh -m pip install --user -e /workspaces/lwlab/third_party/robocasa
-    # MACROS NEEDED?
-    # chmod
-    # python
-    # Assets
-    cp -r /workspaces/lwlab/third_party/robocasa/robocasa/models/assets/ /isaac-sim/kit/python/lib/python3.11/site-packages/robocasa/models/assets/
+    su $DOCKER_RUN_USER_NAME -c "/isaac-sim/python.sh -m pip install --user -e /workspaces/lwlab/third_party/robocasa/"
+
+    # Run as user until exit
+    su $DOCKER_RUN_USER_NAME
 
     exit
 fi
