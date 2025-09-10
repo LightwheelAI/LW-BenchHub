@@ -153,8 +153,11 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
 
         # run robocasa fixture initialization ahead of everything else
         super().__post_init__()
+        print("HERE: About to init fixtures")
         self._init_fixtures()
+        print("HERE: About to spawn objects")
         self._spawn_objects()
+        print("HERE: Done with init fixtures and spawn objects")
 
         def __setattr__(self, key, value):
             if key == "microwave":
@@ -673,7 +676,9 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
         return torch.tensor([[False]], device=self.env.device).repeat(self.env.num_envs, 1)
 
     def _spawn_objects(self):
+        print("HERE: Spawning objects")
         for pos, rot, obj in self.object_placements.values():
+            print(f"HERE: Spawning object {obj.name}")
             xml_path = obj.folder
             path_attr = "robocasa/models/assets/"
             if platform.system() == "Windows":

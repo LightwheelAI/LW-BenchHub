@@ -1,3 +1,6 @@
 [submodule "third_party/robocasa"]
 	path = third_party/robocasa
 	url = https://github.com/LightwheelAI/robocasa.git
+[submodule "third_party/isaac_arena"]
+	path = third_party/isaac_arena
+	url = git@github.com:isaac-sim/isaac_arena.git
