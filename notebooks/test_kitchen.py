@@ -4,6 +4,9 @@
 import argparse
 from pathlib import Path
 
+
+import torch
+import tqdm
 import pinocchio
 
 from isaaclab.app import AppLauncher
@@ -14,8 +17,6 @@ app_launcher_args = parser.parse_args([])
 
 app_launcher = AppLauncher(app_launcher_args)
 simulation_app = app_launcher.app
-
-
 
 import gymnasium as gym
 
@@ -148,15 +149,13 @@ class ObjectWrapper(Object):
 
 #%% Wrap fixtures to arena objects
 
-import tqdm
-
 def get_arena_prim_path(fixture: Fixture) -> str:
     return "{ENV_REGEX_NS}/" + f"{fixture.name}"
 
 print("Converting fixtures to arena objects")
 arena_objects = []
 num_success = 0
-MAX_OBJECTS = 10
+MAX_OBJECTS = 10000
 for fixture_name, fixture in tqdm.tqdm(kitchen_cfg.fixtures.items()):
     print(f"trying to convert {fixture_name} to an arena object")
     try:
@@ -165,7 +164,7 @@ for fixture_name, fixture in tqdm.tqdm(kitchen_cfg.fixtures.items()):
             prim_path=get_arena_prim_path(fixture), #get_prim_path(fixture),
             usd_path=get_usd_path(fixture),
             # object_type=ObjectType.RIGID,
-            object_type=ObjectType.BASE,
+            object_type=ObjectType.BASE, # NEED AUTOMATIC DETECTION OF THE OBJECT TYPE.
         )
         arena_object.set_initial_pose(
             Pose(
@@ -173,6 +172,7 @@ for fixture_name, fixture in tqdm.tqdm(kitchen_cfg.fixtures.items()):
                 rotation_wxyz=(1.0, 0.0, 0.0, 0.0), # FOR SOME REASON THE KITCHEN QUAT IS NOT SET
             )
         )
+        print(f"Pose for {fixture_name}: pos={fixture.pos}, quat={fixture.quat}")
     except Exception as e:
         print(f"failed to convert {fixture_name} to an arena object")
         print(e)
@@ -184,19 +184,6 @@ for fixture_name, fixture in tqdm.tqdm(kitchen_cfg.fixtures.items()):
         break
 
 print(f"Successfully converted {num_success} out of {len(kitchen_cfg.fixtures)} fixtures")
-
-#%%
-
-# 
-# fixture.pos
-# fixture.quat
-for fixture_name, fixture in kitchen_cfg.fixtures.items():
-    print(f"fixture_name: {fixture_name}")
-    if hasattr(fixture, "quat"):
-        print(f"fixture.quat: {fixture.quat}")
-    if hasattr(fixture, "pos"):
-        print(f"fixture.pos: {fixture.pos}")
-
 
 #%%
 
@@ -255,53 +242,14 @@ builder = ArenaEnvBuilder(isaac_arena_environment, args_cli)
 env = builder.make_registered()
 env.reset()
 
-
 #%%
 
-import torch
-import tqdm
-
 # Run some zero actions.
-NUM_STEPS = 100
+env.reset()
+NUM_STEPS = 1
 for _ in tqdm.tqdm(range(NUM_STEPS)):
     with torch.inference_mode():
         actions = torch.zeros(env.action_space.shape, device=env.unwrapped.device)
         env.step(actions)
-
-
-#%%
-
-# iterate over all the fixtures
-# Inspect the fixtures
-for fixture_name, fixture in kitchen_cfg.fixtures.items():
-    print(fixture_name)
-    print(type(fixture))
-
-#%%
-
-# try to wrap another fixture!
-paper_towel = kitchen_cfg.fixtures["paper_towel_main_group"]
-arena_paper_towel = ObjectWrapper(
-    name="paper_tower",
-    prim_path=get_prim_path(paper_towel),
-    usd_path=get_usd_path(paper_towel),
-    object_type=ObjectType.RIGID,
-)
-
-arena_paper_towel.set_initial_pose(
-    Pose(
-        position_xyz=(0.34705, 0.0, 0.13254),
-        rotation_wxyz=(1, 0, 0, 0),
-    )
-)
-
-
-#%%
-
-fixture = kitchen_cfg.fixtures["stack_1_main_group_1"]
-usd_path = get_usd_path(fixture)
-print(f"usd_path: {usd_path}")
-prim_path = get_prim_path(fixture)
-print(f"prim_path: {prim_path}")
 
 #%%
