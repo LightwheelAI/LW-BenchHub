@@ -32,6 +32,8 @@ from isaaclab.app import AppLauncher
 
 from lwlab.utils.isaaclab_utils import get_robot_joint_target_from_scene
 
+from lwlab.utils.log_utils import get_default_logger, get_logger
+
 # add argparse arguments
 parser = argparse.ArgumentParser(description="Replay demonstrations in Isaac Lab environments.")
 parser.add_argument("--num_envs", type=int, default=1, help="Number of environments to replay episodes.")
@@ -96,11 +98,16 @@ import contextlib
 import gymnasium as gym
 import torch
 
-from isaaclab.devices import Se3Keyboard
+
+if not args_cli.headless:
+    # from isaaclab.devices import Se3Keyboard
+    from lwlab.core.devices.keyboard.se3_keyboard import Se3Keyboard
 from isaaclab.utils.datasets import EpisodeData, HDF5DatasetFileHandler
 from isaaclab_tasks.utils.parse_cfg import parse_env_cfg
 
 is_paused = False
+
+obj_state_logger = get_logger("obj_state_logger")
 
 
 def play_cb():
@@ -130,8 +137,8 @@ def compare_states(state_from_dataset, runtime_state, runtime_env_index) -> (boo
     for asset_type in ["articulation", "rigid_object"]:
         for asset_name in runtime_state[asset_type].keys():
             for state_name in runtime_state[asset_type][asset_name].keys():
-                runtime_asset_state = runtime_state[asset_type][asset_name][state_name][runtime_env_index]
-                dataset_asset_state = state_from_dataset[asset_type][asset_name][state_name]
+                runtime_asset_state = runtime_state[asset_type][asset_name][state_name][runtime_env_index].squeeze(0)
+                dataset_asset_state = state_from_dataset[asset_type][asset_name][state_name].squeeze(0)
                 if len(dataset_asset_state) != len(runtime_asset_state):
                     raise ValueError(f"State shape of {state_name} for asset {asset_name} don't match")
                 for i in range(len(dataset_asset_state)):
@@ -299,9 +306,13 @@ def main():
         with (
             contextlib.suppress(KeyboardInterrupt),
             media.VideoWriter(path=replay_mp4_path, shape=(video_height, video_width), fps=30) as v,
-            h5py.File(save_dir / f"isaac_replay_action_{args_cli.replay_mode}_pose_divergence.hdf5", "w") as pose_divergence_f
+            h5py.File(save_dir / f"isaac_replay_action_{args_cli.replay_mode}_pose_divergence.hdf5", "w") as pose_divergence_f,
+            h5py.File(save_dir / f"isaac_replay_action_{args_cli.replay_mode}_obj_pose_divergence.hdf5", "w") as obj_divergence_f,
+            h5py.File(save_dir / f"isaac_replay_action_{args_cli.replay_mode}_obj_force.hdf5", "w") as obj_force_f
         ):
             pose_divergence_f.create_group("data")
+            obj_divergence_f.create_group("data")
+            obj_force_f.create_group("data")
             env_episode_data_map = {index: EpisodeData() for index in range(num_envs)}
             first_loop = True
             has_next_action = True
@@ -367,6 +378,8 @@ def main():
                             joint_pos_list = []
                             joint_target_list = []
                             gt_joint_target_list = []
+                            obj_states = {}
+                            obj_force_states = {}
                             replayed_episode_count += 1
                             episode_name = episode_names[next_episode_index]
                             print(f"{replayed_episode_count :4}: Loading #{next_episode_index} episode {episode_name} to env_{env_id}")
@@ -420,6 +433,56 @@ def main():
 
                 obs, _, ter, _, _ = env.step(actions)
 
+                # Collect rigid object states - store in lists for batch processing
+                env_objs = env.scene.rigid_objects
+                all_keys = list(env_objs.keys())
+
+                current_obj_state = env.scene.get_state(is_relative=True)["rigid_object"]
+                # runtime_state[asset_type][asset_name][state_name][runtime_env_index].squeeze(0)
+
+                for obj_name in all_keys:
+                    # Initialize object state tracking lists if not exists
+                    if obj_name not in obj_states:
+                        obj_states[obj_name] = {
+                            'obj_root_pose': [],
+                            'obj_root_vel': [],
+                            'ref_root_pose': [],
+                            'ref_root_vel': []
+                        }
+                    if obj_name not in obj_force_states:
+                        obj_force_states[obj_name] = {
+                            'obj_force': [],
+                        }
+
+                    obj_root_pose = current_obj_state[obj_name]["root_pose"].cpu().numpy()
+                    obj_root_vel = current_obj_state[obj_name]["root_velocity"].cpu().numpy()
+                    # Append current object states to lists (will be written to hdf5 at episode end)
+                    obj_states[obj_name]['obj_root_pose'].append(obj_root_pose)
+                    obj_states[obj_name]['obj_root_vel'].append(obj_root_vel)
+                    if f'{obj_name}_contact' in env.scene.sensors:
+                        # Get force data for specific environment and create a copy to avoid reference issues
+                        temp_force = env.scene.sensors[f'{obj_name}_contact']._data.net_forces_w[:, 0, :].cpu().numpy().copy()
+                        obj_force_states[obj_name]['obj_force'].append(temp_force)
+                        get_default_logger().info(f"Obj {obj_name} force shape: {temp_force.shape}, force: {temp_force}")
+                    else:
+                        get_default_logger().warning(f"Sensor {f'{obj_name}_contact'} not found")
+
+                    # Get corresponding reference states from dataset for current step
+                    if obj_name in env_episode_data_map[env_id]._data['states']['rigid_object']:
+                        current_state_idx = env_episode_data_map[env_id].next_state_index
+                        total_states = len(env_episode_data_map[env_id]._data['states']['rigid_object'][obj_name]['root_pose'])
+
+                        if current_state_idx < total_states:
+                            # Get the specific state for current step, ensuring correct indexing
+                            ref_root_pose = env_episode_data_map[env_id]._data['states']['rigid_object'][obj_name]['root_pose'][current_state_idx].unsqueeze(0).cpu().numpy()
+                            ref_root_vel = env_episode_data_map[env_id]._data['states']['rigid_object'][obj_name]['root_velocity'][current_state_idx].unsqueeze(0).cpu().numpy()
+
+                            # Append reference states to lists (will be written to hdf5 at episode end)
+                            obj_states[obj_name]['ref_root_pose'].append(ref_root_pose)
+                            obj_states[obj_name]['ref_root_vel'].append(ref_root_vel)
+                        else:
+                            get_default_logger().warning(f"State index {current_state_idx} out of range for {obj_name} (total: {total_states})")
+
                 ee_poses.append(obs['policy']['ee_pose'].cpu().numpy())
                 joint_pos_list.append(obs["policy"]["joint_pos"].cpu().numpy())
                 if args_cli.replay_mode == "joint_target":
@@ -457,8 +520,8 @@ def main():
                     if not args_cli.without_image:
                         cv2.imshow("replay", full_image[..., ::-1])
                         cv2.waitKey(1)
+                state_from_dataset = env_episode_data_map[0].get_next_state()
                 if state_validation_enabled:
-                    state_from_dataset = env_episode_data_map[0].get_next_state()
                     if state_from_dataset is not None:
                         print(
                             f"Validating states at action-index: {env_episode_data_map[0].next_state_index - 1 :4}",
@@ -474,6 +537,49 @@ def main():
                 if ter:
                     has_success = True
                     env_episode_data_map[env_id]._next_action_index += 9999999999
+            if "obj_force_states" in locals() and obj_force_states:
+                for obj_name, obj_force_data in obj_force_states.items():
+                    if len(obj_force_data['obj_force']) > 0:
+                        obj_force_array = np.concatenate(obj_force_data['obj_force'], axis=0)
+                        obj_force_f.create_dataset(f"data/{episode_name}/{obj_name}/obj_force", data=obj_force_array[:])
+                    else:
+                        get_default_logger().warning(f"Object {obj_name} has no force data")
+                        continue
+
+            if 'obj_states' in locals() and obj_states:
+                get_default_logger().info(f"Processing {len(obj_states)} objects for episode {episode_name}")
+                for obj_name, obj_data in obj_states.items():
+                    if obj_data['obj_root_pose'] and obj_data['ref_root_pose']:
+                        # Convert accumulated lists to numpy arrays for batch processing
+                        obj_root_pose_array = np.concatenate(obj_data['obj_root_pose'], axis=0)
+                        obj_root_vel_array = np.concatenate(obj_data['obj_root_vel'], axis=0)
+                        ref_root_pose_array = np.concatenate(obj_data['ref_root_pose'], axis=0)
+                        ref_root_vel_array = np.concatenate(obj_data['ref_root_vel'], axis=0)
+
+                        # Ensure arrays have the same length before calculating divergences
+                        min_length = min(len(obj_root_pose_array), len(ref_root_pose_array))
+
+                        if min_length > 0:
+                            obj_root_pose_array = obj_root_pose_array[:min_length]
+                            obj_root_vel_array = obj_root_vel_array[:min_length]
+                            ref_root_pose_array = ref_root_pose_array[:min_length]
+                            ref_root_vel_array = ref_root_vel_array[:min_length]
+
+                            # Calculate divergences between simulation and reference data
+                            obj_root_pose_divergence = obj_root_pose_array - ref_root_pose_array
+                            obj_root_vel_divergence = obj_root_vel_array - ref_root_vel_array
+
+                            # Batch write all object state data to hdf5 file at once
+                            obj_divergence_f.create_dataset(f"data/{episode_name}/{obj_name}/obj_root_pose", data=obj_root_pose_array[:])
+                            obj_divergence_f.create_dataset(f"data/{episode_name}/{obj_name}/ref_root_pose", data=ref_root_pose_array[:])
+                            obj_divergence_f.create_dataset(f"data/{episode_name}/{obj_name}/obj_root_pose_divergence", data=obj_root_pose_divergence[:])
+                            obj_divergence_f.create_dataset(f"data/{episode_name}/{obj_name}/obj_root_vel", data=obj_root_vel_array[:])
+                            obj_divergence_f.create_dataset(f"data/{episode_name}/{obj_name}/ref_root_vel", data=ref_root_vel_array[:])
+                            obj_divergence_f.create_dataset(f"data/{episode_name}/{obj_name}/obj_root_vel_divergence", data=obj_root_vel_divergence[:])
+                        else:
+                            get_default_logger().warning(f"No valid data for object {obj_name}, skipping divergence calculation")
+                    else:
+                        get_default_logger().warning(f"Object {obj_name} has no data: obj_pose={len(obj_data['obj_root_pose'])}, ref_pose={len(obj_data['ref_root_pose'])}")
 
             # save pose divergence to hdf5
             with open(replay_json_path, 'w') as f:
