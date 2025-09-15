@@ -10,7 +10,10 @@
             ],
             "program": "${workspaceFolder}/lwlab/scripts/teleop/teleop_launcher.py",
             "console": "integratedTerminal",
-            "justMyCode": false
+            "justMyCode": false,
+            "env": {
+                "LW_API_ENDPOINT":"http://api-dev.lightwheel.net:30807"
+            },
         },
 
         {
@@ -34,6 +37,7 @@
             "env": {
                 "ENV_GPU": "0",
                 "POLICY_GPU": "0",
+                "LW_API_ENDPOINT":"http://api-dev.lightwheel.net:30807"
             },
         },
         {
@@ -50,7 +54,8 @@
             "env": {
                 "ENV_GPU": "0",
                 "POLICY_GPU": "0",
-                "LWLAB_ENV_MODE": "dev"
+                "LW_API_ENDPOINT":"http://api-dev.lightwheel.net:30807"
+
             },
         },
         {
@@ -62,18 +67,24 @@
             ],
             "program": "${workspaceFolder}/lwlab/scripts/teleop/teleop_main.py",
             "console": "integratedTerminal",
-            "justMyCode": false
+            "justMyCode": false,
+            "env": {
+                "LW_API_ENDPOINT":"http://api-dev.lightwheel.net:30807"
+            },
         },
         {
             "name": "teleop-g1-hand",
             "type": "python",
             "request": "launch",
             "args": [
-                "--task_config=pandaomron" , // data_collection/teleop/task_config/default.yml
+                "--task_config=g1-hand" , // data_collection/teleop/task_config/default.yml
             ],
             "program": "${workspaceFolder}/lwlab/scripts/teleop/teleop_main.py",
             "console": "integratedTerminal",
             "justMyCode": false,
+            "env": {
+                "LW_API_ENDPOINT":"http://api-dev.lightwheel.net:30807"
+            },
         },
         {
             "name": "replay",

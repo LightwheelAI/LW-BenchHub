@@ -16,7 +16,7 @@ robot_scale: 1.0
 # =========================
 # Task & Scene Settings
 # =========================
-task: CupcakeCleanup
+task: OpenDrawer
 layout: robocasakitchen
 usd_simplify: false
 use_fabric: false

@@ -1,4 +1,4 @@
 _base_: [teleop_base]
 record: false
-task: CupcakeCleanup
+task: OpenDishwasher
 layout: robocasakitchen-4-2
