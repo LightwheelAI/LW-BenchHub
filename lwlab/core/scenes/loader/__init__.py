@@ -17,7 +17,7 @@ ENV_MODE = os.environ.get("LWLAB_ENV_MODE", "prod")
 
 hosts = {
     "prod": "https://api.lightwheel.net",
-    "dev": "http://usdcache-dev.lightwheel.net:30807",
+    "dev": "https://api-dev.lightwheel.net",
 }[ENV_MODE]
 
 from .login import Login
