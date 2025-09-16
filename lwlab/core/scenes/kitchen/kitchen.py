@@ -107,7 +107,6 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
             self.set_ep_meta(self.replay_cfgs["ep_meta"])
         self.obj_registries = (
             "objaverse",
-            "lightwheel"
         )
         self.obj_instance_split = None
         self.fixture_refs = {}
@@ -408,7 +407,9 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
 
                     # add in the new object to the model
                     addl_obj_cfgs.append(container_cfg)
+                    self.obj_registries = ("lightwheel", "objaverse")
                     model, info = EnvUtils.create_obj(self, container_cfg)
+                    self.obj_registries = ("objaverse",)
                     container_cfg["info"] = info
                     self.objects[model.name] = model
                     # self.model.merge_objects([model])
@@ -673,7 +674,7 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
         return torch.tensor([[False]], device=self.env.device).repeat(self.env.num_envs, 1)
 
     def _spawn_objects(self):
-        for pos, rot, obj in self.object_placements.values():
+        for obj_name, (pos, rot, obj) in self.object_placements.items():
             xml_path = obj.folder
             path_attr = "robocasa/models/assets/"
             if platform.system() == "Windows":
@@ -681,6 +682,8 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
             xml_path = Path(xml_path[xml_path.rfind(path_attr) + len(path_attr):])
             usd_name = xml_path.stem
             usd_cache_path = object_loader.acquire_object(str(xml_path), "USD")
+            if usd_cache_path is None:
+                raise ValueError(f"Failed to acquire object {obj_name} from {xml_path}")
             obj_cfg = RigidObjectCfg(
                 prim_path=f"{{ENV_REGEX_NS}}/Scene/{obj.name}",
                 init_state=RigidObjectCfg.InitialStateCfg(pos=pos, rot=rot),
