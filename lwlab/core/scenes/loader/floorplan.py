@@ -24,7 +24,7 @@ from tqdm import tqdm
 from .exception import ApiException
 CACHE_PATH = Path("~/.cache/lwlab/floorplan/").expanduser()
 CACHE_PATH.mkdir(parents=True, exist_ok=True)
-from . import ENV_MODE, login_client
+from . import login_client
 
 
 class FloorplanLoader:

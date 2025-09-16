@@ -13,16 +13,12 @@
 # limitations under the License.
 
 import os
-ENV_MODE = os.environ.get("LWLAB_ENV_MODE", "prod")
+LW_API_ENDPOINT = os.environ.get("LW_API_ENDPOINT", "https://api.lightwheel.net")
 
-hosts = {
-    "prod": "https://api.lightwheel.net",
-    "dev": "https://api-dev.lightwheel.net",
-}[ENV_MODE]
 
 from .login import Login
-login_client = Login(hosts)
+login_client = Login(LW_API_ENDPOINT)
 from .object import ObjectLoader
-object_loader = ObjectLoader(hosts)
+object_loader = ObjectLoader(LW_API_ENDPOINT)
 from .floorplan import FloorplanLoader
-floorplan_loader = FloorplanLoader(hosts)
+floorplan_loader = FloorplanLoader(LW_API_ENDPOINT)

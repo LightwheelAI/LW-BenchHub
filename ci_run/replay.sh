@@ -2,7 +2,7 @@
 
 DATASET_FILE=$1
 REPLAY_MODE=$2
-export LWLAB_ENV_MODE="dev"
+export LW_API_ENDPOINT="https://api-dev.lightwheel.net"
 HDF5_FILENAME=$(basename "${DATASET_FILE}")
 DATASET_DIR=/output
 

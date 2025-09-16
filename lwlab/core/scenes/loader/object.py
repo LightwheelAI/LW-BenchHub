@@ -19,7 +19,7 @@ from .exception import ApiException
 
 CACHE_PATH = Path("~/.cache/lwlab/object/").expanduser()
 CACHE_PATH.mkdir(parents=True, exist_ok=True)
-from . import ENV_MODE, login_client
+from . import login_client
 
 
 class ObjectLoader:

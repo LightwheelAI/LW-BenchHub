@@ -36,7 +36,7 @@ from lwlab.core.models.fixtures.fixture import Fixture as IsaacFixture
 from lwlab.utils.env import set_camera_follow_pose
 from lwlab.utils.usd_utils import OpenUsd as usd
 from lwlab.utils.env import ExecuteMode
-from ..loader import floorplan_loader, object_loader, ENV_MODE
+from ..loader import floorplan_loader, object_loader, LW_API_ENDPOINT
 
 from lwlab.utils.log_utils import get_error_logger
 
@@ -468,7 +468,7 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
             {k: v.name for (k, v) in self.fixture_refs.items()}
         )
         ep_meta["usd_simplify"] = self.usd_simplify
-        ep_meta["LWLAB_ENV_MODE"] = ENV_MODE
+        ep_meta["LW_API_ENDPOINT"] = LW_API_ENDPOINT
         # ep_meta["init_robot_base_pos"] = list(self.init_robot_base_pos)
         # ep_meta["init_robot_base_ori"] = list(self.init_robot_base_ori)
         # export actual init pose if available in this episode, otherwise omit
