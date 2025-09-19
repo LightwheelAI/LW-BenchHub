@@ -82,7 +82,8 @@ print("Step 3 - Isaac Arena - Compile the environment")
 from isaaclab.scene import InteractiveSceneCfg
 
 from isaac_arena.assets.asset_registry import AssetRegistry
-from isaac_arena.assets.object import Object, ObjectType
+from isaac_arena.assets.object import Object
+from isaac_arena.assets.background import Background
 from isaac_arena.geometry.pose import Pose
 from isaac_arena.scene.scene import Scene
 from isaac_arena.embodiments.franka.franka import FrankaEmbodiment
@@ -94,12 +95,10 @@ from isaac_arena.assets.object_reference import OpenableObjectReference
 
 
 # Wrap the background
-# TODO(alexmillane, 2025.09.17): We should switch this for a background!
-kitchen_background = Object(
-    name="background",
-    prim_path="{ENV_REGEX_NS}/background",
+kitchen_background = Background(
+    name="kitchen",
     usd_path=env_cfg.usd_path,
-    object_type=ObjectType.BASE,
+    object_min_z=0.1,
 )
 
 # Collect all the (distractor) objects
@@ -121,7 +120,7 @@ for position_xyz, rotation_xyzw, obj in env_cfg.object_placements.values():
 # Create a reference to the task-relavent object (the dishwasher)
 dishwasher = OpenableObjectReference(
     name="dishwasher",
-    prim_path="{ENV_REGEX_NS}/background/dishwasher_left_group",
+    prim_path="{ENV_REGEX_NS}/kitchen/dishwasher_left_group",
     parent_asset=kitchen_background,
     openable_joint_name = "door_joint",
     openable_open_threshold = 0.5
@@ -174,4 +173,3 @@ for _ in tqdm.tqdm(range(NUM_STEPS)):
         env.step(actions)
 
 #%%
-

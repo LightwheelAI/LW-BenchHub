@@ -47,6 +47,9 @@ RUN /isaac-sim/python.sh -m pip install --upgrade pip && \
   /isaac-sim/python.sh -m pip install \
   vuer[all]
 
+# Lightwheel server
+ENV LW_API_ENDPOINT="https://api-dev.lightwheel.net"
+
 # Thirdparty deps (not editable)
 RUN /isaac-sim/python.sh -m pip install -e \
   /workspaces/lwlab/third_party/robosuite \
