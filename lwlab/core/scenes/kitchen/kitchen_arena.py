@@ -41,17 +41,12 @@ class KitchenArena:
             self.floorplan_version = self.scene_cfg.cache_usd_version["floorplan_version"]
         else:
             self.floorplan_version = None
-        print("Loading floorplan")
         self.load_floorplan(layout_id, style_id, self.scene_cfg.EXCLUDE_LAYOUTS)
-        print("Done loading floorplan")
-        print(f"Getting stage: {self.usd_path}")
         self.stage = usd.get_stage(self.usd_path)
-        print("Done getting stage")
+
         # enable fixtures in usd
-        print(f"self.scene_cfg.enable_fixtures {self.scene_cfg.enable_fixtures}")
         if self.scene_cfg.enable_fixtures is not None:
             for fixture in scene_cfg.enable_fixtures:
-                print(f"Activating fixture: {fixture.name}")
                 usd.activate_prim(self.stage, fixture)
             dir_name = os.path.dirname(self.usd_path)
             base_name = os.path.basename(self.usd_path)

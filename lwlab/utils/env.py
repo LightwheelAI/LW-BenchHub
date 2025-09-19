@@ -209,7 +209,6 @@ def parse_env_cfg(
         scene_type = "USD"
     else:
         scene_type, *_ = scene_name.split("-", 1)
-    print(f"Loading scene config for {scene_type.capitalize()}")
     scene_env_cfg = load_robocasa_cfg_cls_from_registry("scene", scene_type.capitalize(), "env_cfg_entry_point")
 
     if not for_rl:

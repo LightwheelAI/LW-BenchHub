@@ -129,8 +129,6 @@ class Fixture:
         else:
             reg_pos = np.array(reg_pos)
             reg_quat = np.array(reg_quat)
-            print(f"prim name: {prim.GetName()}")
-            print(f"prim size: {prim.GetAttribute('size').Get()}")
             reg_halfsize = np.fromstring(prim.GetAttribute("size").Get(), sep=',') / 2
             reg_rel_pos = T.quat2mat(T.convert_quat(reg_quat, to="xyzw")).T @ (np.array(reg_pos) - self.pos)
             reg_dict = {}

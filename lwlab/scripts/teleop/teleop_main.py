@@ -274,12 +274,6 @@ def main():
                     object_init_offset = [float(v) for v in args_cli.object_init_offset]
                 except Exception:
                     pass
-
-            print(f"args_cli.task: {args_cli.task}")
-            print(f"args_cli.robot: {args_cli.robot}")
-            print(f"args_cli.layout: {args_cli.layout}")
-
-
             env_cfg = parse_env_cfg(
                 task_name=args_cli.task,
                 robot_name=args_cli.robot,
