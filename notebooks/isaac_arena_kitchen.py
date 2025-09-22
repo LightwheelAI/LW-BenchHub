@@ -5,6 +5,8 @@ print("Step 1 - Starting up Isaac Sim")
 
 import argparse
 
+import torch
+
 import pinocchio
 
 from isaaclab.app import AppLauncher
@@ -75,11 +77,12 @@ if '_usd_path' in InteractiveSceneCfg.__dataclass_fields__:
     del InteractiveSceneCfg.__dataclass_fields__['_usd_path']
 
 
-#%% 
+#%%
 
 print("Step 3 - Isaac Arena - Compile the environment")
 
 from isaaclab.scene import InteractiveSceneCfg
+from isaaclab.devices.teleop_device_factory import create_teleop_device
 
 from isaac_arena.assets.asset_registry import AssetRegistry
 from isaac_arena.assets.object import Object
@@ -92,6 +95,7 @@ from isaac_arena.environments.compile_env import ArenaEnvBuilder
 from isaac_arena.cli.isaac_arena_cli import get_isaac_arena_cli_parser
 from isaac_arena.tasks.open_door_task import OpenDoorTask
 from isaac_arena.assets.object_reference import OpenableObjectReference
+from isaac_arena.teleop_devices.spacemouse import SpacemouseTeleopDevice
 
 
 # Wrap the background
@@ -123,53 +127,69 @@ dishwasher = OpenableObjectReference(
     prim_path="{ENV_REGEX_NS}/kitchen/dishwasher_left_group",
     parent_asset=kitchen_background,
     openable_joint_name = "door_joint",
-    openable_open_threshold = 0.5
 )
 
 # Compose the scene
 scene = Scene([kitchen_background, *objects, dishwasher])
 
 # Create the task
-task = OpenDoorTask(dishwasher)
+task = OpenDoorTask(dishwasher, openness_threshold=0.95, reset_openness=0.45)
 
 # Get the robot
 embodiment = FrankaEmbodiment(
     # In front of the dishwasher
     initial_pose=Pose(
-        position_xyz=(1.25, -3.0, 0.0),
+        position_xyz=(1.0, -3.0, 0.0),
         rotation_wxyz=(0.0, 0.0, 0.0, 1.0),
     )
 )
+
+# Teleop
+spacemouse = SpacemouseTeleopDevice(pos_sensitivity=0.25, rot_sensitivity=0.25)
 
 isaac_arena_environment = IsaacArenaEnvironment(
     name="toaster_kitchen",
     embodiment=embodiment,
     scene=scene,
     task=task,
+    teleop_device=spacemouse,
 )
 
 args_parser = get_isaac_arena_cli_parser()
 args_cli = args_parser.parse_args([])
 
 builder = ArenaEnvBuilder(isaac_arena_environment, args_cli)
-env = builder.make_registered()
+env, cfg = builder.make_registered_and_return_cfg()
 env.reset()
+
+
+print("Trying to start teleop")
+teleop_interface = None
+try:
+    teleop_interface = create_teleop_device("spacemouse", cfg.teleop_devices.devices)
+    teleop_interface.reset()
+    print("Teleop started successfully.")
+except OSError as e:
+    print(f"Couldn't find teleop device: {e}")
+    print("Continuing without teleop device.")
 
 #%%
 
-import torch
-import tqdm
-
 print("Step 4 - Isaac Arena - Run the environment")
 
-# Open the dishwasher to show we can interact with the scene.
-dishwasher.open(env, env_ids=None, percentage=0.45)
+import tqdm
 
-# Run some zero actions.
-NUM_STEPS = 100
+NUM_STEPS = 100 if teleop_interface is None else 1000000
+step = 0
 for _ in tqdm.tqdm(range(NUM_STEPS)):
     with torch.inference_mode():
-        actions = torch.zeros(env.action_space.shape, device=env.unwrapped.device)
+        if teleop_interface is not None:
+            action = teleop_interface.advance()
+            actions = action.repeat(env.num_envs, 1)
+        else:
+            actions = torch.zeros(env.action_space.shape, device=env.unwrapped.device)
         env.step(actions)
+    step += 1
+
 
 #%%
