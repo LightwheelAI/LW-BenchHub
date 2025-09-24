@@ -148,7 +148,7 @@ embodiment = FrankaEmbodiment(
 spacemouse = SpacemouseTeleopDevice(pos_sensitivity=0.25, rot_sensitivity=0.25)
 
 isaac_arena_environment = IsaacArenaEnvironment(
-    name="toaster_kitchen",
+    name="lwlab_kitchen",
     embodiment=embodiment,
     scene=scene,
     task=task,
