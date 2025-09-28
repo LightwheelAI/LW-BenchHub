@@ -1,9 +1,9 @@
 # Git related files
-.git/
-.gitignore
-.gitattributes
-.gitmodules
-**/.git
+# .git/
+# .gitignore
+# .gitattributes
+# .gitmodules
+# **/.git
 
 # Other version control files
 .svn/
