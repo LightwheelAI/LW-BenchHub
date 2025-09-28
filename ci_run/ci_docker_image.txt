@@ -1,1 +1,1 @@
-harbor.lightwheel.net/robot/lwlab:ci_feb16d11
+harbor.lightwheel.net/robot/lwlab:release_github_c21c460a
