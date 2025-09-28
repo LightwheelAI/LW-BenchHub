@@ -120,6 +120,9 @@ RUN rm -rf /workspace/lwlab/docker
 
 RUN mkdir -p /workspace/lwlab/third_party/ && mv /workspace/third_party_origin_bak/* /workspace/lwlab/third_party/
 
+RUN git config --global --add safe.directory /workspace/lwlab
+RUN git config --global --add safe.directory /workspace/lwlab/third_party/IsaacLab
+
 WORKDIR /workspace/lwlab
 RUN source activate $ENV_NAME && \
     pip install -e .  --extra-index-url https://mirrors.aliyun.com/pypi/simple/
