@@ -1,1 +1,1 @@
-harbor.lightwheel.net/robot/lwlab:ci_github_e5f55586
+harbor.lightwheel.net/robot/lwlab:ci_github_accel_2dde9385
