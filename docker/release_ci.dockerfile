@@ -129,4 +129,7 @@ RUN source activate $ENV_NAME && \
 
 WORKDIR /workspace/lwlab
 
+# ！! unset proxy after all git operations are done !!
+RUN git config --global --unset http.proxy
+
 ENTRYPOINT ["/bin/bash", "-c", "-i"]
