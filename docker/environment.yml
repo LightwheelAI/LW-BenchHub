@@ -14,8 +14,5 @@ dependencies:
     - dex_retargeting==0.5.0
     - meshcat==0.3.2
     - casadi==3.7.0
-    - vuer[all]==0.0.60
-    - pin-pink==3.1.0
-    - onnxruntime
     - numpy
     
