@@ -1,4 +1,4 @@
-FROM isaaclab:test
+FROM harbor.lightwheel.net/robot/lwlab:isaaclab_base5.0
 
 ENV CONDA_DIR=/opt/conda
 ENV ENV_NAME=lwlab
