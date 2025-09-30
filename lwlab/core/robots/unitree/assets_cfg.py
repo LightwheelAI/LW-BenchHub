@@ -489,10 +489,10 @@ G1_GEARWBC_CFG = ArticulationCfg(
             joint_names_expr=[
                 ".*_hand_.*",
             ],
-            effort_limit=2.0,
-            velocity_limit=10.0,
-            stiffness=4.0,
-            damping=0.2,
+            effort_limit=20.0,
+            velocity_limit=2.0,
+            stiffness=10.0,
+            damping=1,
             armature=0.03,
             friction=0.03
         ),
