@@ -436,7 +436,9 @@ class UniformRandomSampler(ObjectPositionSampler):
                 # ensure object placed fully in region
                 if self.ensure_object_boundary_in_range and not obj_in_region(
                     obj,
-                    obj_pos=[object_x, object_y, object_z],
+                    obj_pos=[object_x + obj.bounded_region["reg_offset"][0],
+                             object_y + obj.bounded_region["reg_offset"][1],
+                             object_z],
                     obj_quat=quat,
                     p0=region_points[0],
                     px=region_points[1],
@@ -456,7 +458,9 @@ class UniformRandomSampler(ObjectPositionSampler):
                             continue
                         if objs_intersect(
                             obj=obj,
-                            obj_pos=[object_x, object_y, object_z],
+                            obj_pos=[object_x + obj.bounded_region["reg_offset"][0],
+                                     object_y + obj.bounded_region["reg_offset"][1],
+                                     object_z],
                             obj_quat=quat,
                             other_obj=other_obj,
                             other_obj_pos=[x, y, z],

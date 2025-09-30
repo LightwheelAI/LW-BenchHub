@@ -664,7 +664,7 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
             rot = Tn.convert_quat(rot, to="wxyz")  # xyzw->wxyz
             obj_cfg = RigidObjectCfg(
                 prim_path=f"{{ENV_REGEX_NS}}/Scene/{obj.task_name}",
-                init_state=RigidObjectCfg.InitialStateCfg(pos=pos + rot_mat @ obj.bounded_region["reg_offset"], rot=rot),
+                init_state=RigidObjectCfg.InitialStateCfg(pos=pos, rot=rot),
                 spawn=sim_utils.UsdFileCfg(
                     usd_path=obj.obj_path,
                     # TODO: huge bug!!! this value will be regarded as contact reporter force_threshold, so set it to False
