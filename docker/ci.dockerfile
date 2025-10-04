@@ -4,13 +4,18 @@ ENV CONDA_DIR=/opt/conda
 ENV ENV_NAME=lwlab
 ENV PATH="$CONDA_DIR/bin:$CONDA_DIR/envs/$ENV_NAME/bin:$PATH"
 
-# RUN mkdir -p /root/.ssh && \
-#     chmod 700 /root/.ssh
+RUN mkdir -p /root/.ssh && \
+    chmod 700 /root/.ssh
 # COPY docker/.ssh/id_rsa /root/.ssh/id_rsa
 # COPY docker/.ssh/id_rsa.pub /root/.ssh/id_rsa.pub
-# COPY docker/.ssh/known_hosts /root/.ssh/known_hosts
+COPY docker/.ssh/known_hosts /root/.ssh/known_hosts
+RUN chmod 644 /root/.ssh/known_hosts
 # RUN chmod 600 /root/.ssh/id_rsa && \
 #     chmod 644 /root/.ssh/id_rsa.pub && \
+#     chmod 644 /root/.ssh/known_hosts
+
+# RUN mkdir -p /root/.ssh && \
+#     ssh-keyscan -p 2022 git.lightwheel.ai >> /root/.ssh/known_hosts && \
 #     chmod 644 /root/.ssh/known_hosts
 
 RUN source $CONDA_DIR/etc/profile.d/conda.sh && \
