@@ -35,7 +35,7 @@ if [[ $COMMIT_ID =~ ^[0-9a-f]{7,40}$ ]]; then
 
     # Fetch latest changes
     echo "Fetching latest changes..."
-    git fetch origin
+    git fetch --all
 
     # Check if the commit exists
     if ! git rev-parse --verify "$COMMIT_ID" >/dev/null 2>&1; then
