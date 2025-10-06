@@ -33,7 +33,7 @@ class ActionsCfg:
 
 
 class BaseLERobotEnvCfg(BaseRobotCfg):
-    robot_cfg: ArticulationCfg = SO101_FOLLOWER_YELLOW_CFG
+    robot_cfg: ArticulationCfg = SO101_FOLLOWER_CFG
     robot_name: str = "LeRobot-RL"
     robot_scale: float = 1.0
     actions: ActionsCfg = ActionsCfg()

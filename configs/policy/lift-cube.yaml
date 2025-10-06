@@ -1,0 +1,17 @@
+_base_:
+  - rl_base
+task: LiftObj                # Task name
+robot: LeRobot-AbsJointGripper-RL             # Robot type
+layout: robocasakitchen-9-8  # Scene layout
+num_envs: 1
+usd_simplify: false # USD simplify enable
+enable_cameras: true
+video: false
+distributed: false
+seed: 42
+width: 480
+height: 480
+remote_protocal: ipc
+for_rl: false
+variant: Visual
+concatenate_terms: false
