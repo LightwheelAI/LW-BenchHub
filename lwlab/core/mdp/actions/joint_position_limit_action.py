@@ -34,7 +34,7 @@ class JointPositionLimitAction(JointPositionAction):
     cfg: "JointPositionLimitActionCfg"
 
     def process_actions(self, actions: torch.Tensor):
-        dynamic_reset_gripper_effort_limit_sim(self._env, 'so101_leader')
+        dynamic_reset_gripper_effort_limit_sim(self._env, 'so101leader')
         # store the raw actions
         self._raw_actions[:] = actions
         # apply the affine transformations
