@@ -302,6 +302,11 @@ def main():
             teleop_interface = vr_device_type(env,
                                               img_shape=image_size,
                                               shm_name=shm.name,)
+        elif args_cli.teleop_device.lower().startswith("joylo"):
+            from lwlab.core.devices.joylo import Joylo
+            teleop_interface = Joylo(
+                env
+            )
         else:
             raise ValueError(
                 f"Invalid device interface '{args_cli.teleop_device}'. Supported: 'keyboard', 'spacemouse''handtracking'."

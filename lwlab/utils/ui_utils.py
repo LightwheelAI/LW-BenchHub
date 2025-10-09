@@ -237,7 +237,7 @@ def setup_cameras(env, viewports=None):
     if first_person_camera is not None:
         import omni.kit.viewport.utility as vp_utils
 
-        viewport = vp_utils.get_active_viewport()
+        viewport = vp_utils.get_viewport_from_window_name()
         viewport.set_active_camera(first_person_camera.GetPath())
         viewport.set_texture_resolution((1280, 720))
     if eye_in_hand_camera is not None:
