@@ -416,3 +416,70 @@ def hide_ui_windows(sim_app):
         window = ui.Workspace.get_window(name)
         if window is not None:
             window.visible = False
+
+
+def setup_batch_name_gui(initial_batch_name='default-batch'):
+    """Setup GUI window for displaying and editing batch name"""
+    import omni.ui as ui
+
+    global batch_name_gui
+
+    class BatchNameGUI:
+        def __init__(self, initial_batch_name):
+            self.batch_name = initial_batch_name
+            self.original_batch_name = initial_batch_name
+            self.window = None
+            self.batch_name_input = None
+            self.batch_name_label = None
+            self.create_window()
+
+        def create_window(self):
+            """Create the batch name GUI window"""
+            self.window = ui.Window(
+                "Batch Name Control",
+                width=400,
+                height=150,
+                flags=ui.WINDOW_FLAGS_NO_SCROLLBAR
+            )
+
+            with self.window.frame:
+                with ui.VStack(spacing=10):
+                    # Current batch name display
+                    with ui.HStack():
+                        ui.Label("Current Batch Name:", width=150)
+                        self.batch_name_label = ui.Label(
+                            self.batch_name,
+                            style={"color": 0xFF00FF00}
+                        )
+
+                    # Batch name input
+                    with ui.HStack():
+                        ui.Label("New Batch Name:", width=150)
+                        self.batch_name_input = ui.StringField()
+                        self.batch_name_input.model.set_value(self.batch_name)
+
+                    # Buttons
+                    with ui.HStack():
+                        update_btn = ui.Button("Update Batch Name")
+                        update_btn.set_clicked_fn(self.update_batch_name)
+
+                        reset_btn = ui.Button("Reset")
+                        reset_btn.set_clicked_fn(self.reset_batch_name)
+
+        def update_batch_name(self):
+            """Update the batch name"""
+            new_batch_name = self.batch_name_input.model.get_value_as_string()
+            if new_batch_name and new_batch_name != self.batch_name:
+                self.batch_name = new_batch_name
+                self.batch_name_label.text = self.batch_name
+                print(f"Batch name updated to: {new_batch_name}")
+
+        def reset_batch_name(self):
+            """Reset batch name to original value"""
+            self.batch_name_input.model.set_value(self.original_batch_name)
+            self.batch_name = self.original_batch_name
+            self.batch_name_label.text = self.original_batch_name
+            print(f"Batch name reset to: {self.original_batch_name}")
+
+    batch_name_gui = BatchNameGUI(initial_batch_name)
+    return batch_name_gui

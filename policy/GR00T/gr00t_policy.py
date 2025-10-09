@@ -19,7 +19,6 @@ except ImportError as e:
     print(f"gr00t not found, please install gr00t first: {e}")
 
 
-
 class GR00TPolicy(BasePolicy):
     """GR00T Policy Implementation"""
 

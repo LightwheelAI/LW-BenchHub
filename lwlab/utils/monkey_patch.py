@@ -489,6 +489,64 @@ def patch_reward_manager():
     RewardManager.compute = compute
 
 
+def patch_create_teleop_device():
+    import isaaclab.devices.teleop_device_factory as teleop_device_factory
+    from isaaclab.devices import DeviceBase, DeviceCfg
+    from collections.abc import Callable
+    from isaaclab.devices.teleop_device_factory import DEVICE_MAP, RETARGETER_MAP
+    import inspect
+    import omni
+
+    def create_teleop_device(env, device_name: str, devices_cfg: dict[str, DeviceCfg], callbacks: dict[str, Callable] | None = None) -> DeviceBase:
+        if device_name not in devices_cfg:
+            raise ValueError(f"Device '{device_name}' not found in teleop device configurations")
+
+        device_cfg = devices_cfg[device_name]
+        callbacks = callbacks or {}
+
+        # Check if device config type is supported
+        cfg_type = type(device_cfg)
+        if cfg_type not in DEVICE_MAP:
+            raise ValueError(f"Unsupported device configuration type: {cfg_type.__name__}")
+
+        # Get the constructor for this config type
+        constructor = DEVICE_MAP[cfg_type]
+
+        # Try to create retargeters if they are configured
+        retargeters = []
+        if hasattr(device_cfg, "retargeters") and device_cfg.retargeters is not None:
+            try:
+                # Create retargeters based on configuration
+                for retargeter_cfg in device_cfg.retargeters:
+                    cfg_type = type(retargeter_cfg)
+                    if cfg_type in RETARGETER_MAP:
+                        retargeters.append(RETARGETER_MAP[cfg_type](retargeter_cfg))
+                    else:
+                        raise ValueError(f"Unknown retargeter configuration type: {cfg_type.__name__}")
+
+            except NameError as e:
+                raise ValueError(f"Failed to create retargeters: {e}")
+
+        # Check if the constructor accepts retargeters parameter
+        constructor_params = inspect.signature(constructor).parameters
+        params = {}
+        if "retargeters" in constructor_params and retargeters:
+            params["retargeters"] = retargeters
+        if "env" in constructor_params:
+            params["env"] = env
+
+        device = constructor(cfg=device_cfg, **params)
+
+        # Register callbacks
+        for key, callback in callbacks.items():
+            device.add_callback(key, callback)
+
+        omni.log.info(f"Created teleoperation device: {device_name}")
+        return device
+
+    teleop_device_factory.create_teleop_device = create_teleop_device
+
+
 patch_reset()
 patch_configclass()
 patch_recorder_manager_ep_meta()
@@ -496,3 +554,4 @@ patch_recorder_manager_joint_targets()
 patch_step()
 patch_yaml_load()
 patch_reward_manager()
+patch_create_teleop_device()

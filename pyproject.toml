@@ -19,6 +19,7 @@ dependencies = [
     "tqdm",
     "vuer[all]==0.0.60",
     "onnxruntime",
+    "zmq"
 ]
 
 [project.optional-dependencies]

@@ -62,6 +62,7 @@ import select
 import sys
 import copy
 from datetime import datetime
+from collections.abc import Callable
 from lwlab.utils.log_utils import log_scene_rigid_objects, handle_exception_and_log, get_default_logger
 from lwlab.utils.env import ExecuteMode
 from isaaclab.app import AppLauncher
@@ -239,6 +240,53 @@ def optimize_rendering(env):
 def main():
     """Running keyboard teleoperation with Isaac Lab manipulation environment."""
 
+    teleoperation_active = None
+    should_reset_recording_instance = None
+    should_reset_env_instance = None
+    should_reset_env_keep_placement = None
+    flush_recorder_manager_flag = None
+    rollback_to_checkpoint_flag = None
+
+    def reset_recording_instance():
+        print("reset recording instance", flush=True)
+        nonlocal should_reset_recording_instance
+        should_reset_recording_instance = True
+
+    def reset_env_instance_no_keep_placement():
+        print("reset env instance", flush=True)
+        nonlocal should_reset_env_instance
+        should_reset_env_instance = True
+        nonlocal should_reset_env_keep_placement
+        should_reset_env_keep_placement = False
+
+    def reset_env_instance_keep_placement():
+        print("reset env instance keep placement", flush=True)
+        nonlocal should_reset_env_instance
+        should_reset_env_instance = True
+        nonlocal should_reset_env_keep_placement
+        should_reset_env_keep_placement = True
+
+    def start_teleoperation():
+        nonlocal teleoperation_active
+        teleoperation_active = True
+
+    def stop_teleoperation():
+        nonlocal teleoperation_active
+        teleoperation_active = False
+
+    def flush_recorder_manager():
+        nonlocal flush_recorder_manager_flag
+        flush_recorder_manager_flag = True
+
+    def call_save_checkpoint():
+        frame_index = save_checkpoint(env, args_cli.checkpoint_path)
+        if isinstance(teleop_interface, VRController):
+            teleop_interface.set_checkpoint_frame_idx(frame_index)
+
+    def rollback_to_checkpoint():
+        nonlocal rollback_to_checkpoint_flag
+        rollback_to_checkpoint_flag = True
+
     def save_metrics(env):
         """Save metrics data to JSON file"""
         metrics_data = {}
@@ -258,59 +306,98 @@ def main():
     def create_teleop_interface(env):
         """Create teleoperation interface based on device type."""
         env_cfg = env.cfg
-        if args_cli.teleop_device.lower() == "keyboard":
-            if args_cli.headless:
-                teleop_interface = None
-            else:
-                device_type = KEYCONTROLLER_MAP[args_cli.teleop_device.lower() + "-" + args_cli.robot.lower().split("-")[0]]
-                teleop_interface = device_type(
-                    pos_sensitivity=0.05 * args_cli.sensitivity, rot_sensitivity=0.05 * args_cli.sensitivity,
-                    base_sensitivity=0.5 * args_cli.sensitivity, base_yaw_sensitivity=0.8 * args_cli.sensitivity
-                )
-        elif args_cli.teleop_device.lower() == "spacemouse":
-            teleop_interface = Se3SpaceMouse(env,
-                                             pos_sensitivity=0.1 * args_cli.sensitivity, rot_sensitivity=0.2 * args_cli.sensitivity
-                                             )
-        # elif args_cli.teleop_device.lower() == "gamepad":
-        #     teleop_interface = Se3Gamepad(
-        #         pos_sensitivity=0.1 * args_cli.sensitivity, rot_sensitivity=0.1 * args_cli.sensitivity
-        #     )
-        elif args_cli.teleop_device.lower() == "so101leader":
-            from lwlab.core.devices.lerobot import SO101Leader
-            teleop_interface = SO101Leader(env, port=args_cli.port, recalibrate=args_cli.recalibrate)
-        elif args_cli.teleop_device.lower() == "bi_so101leader":
-            from lwlab.core.devices.lerobot import BiSO101Leader
-            teleop_interface = BiSO101Leader(env, left_port=args_cli.left_port, right_port=args_cli.right_port, recalibrate=args_cli.recalibrate)
-        elif args_cli.teleop_device.lower() == "dualhandtracking_abs" and args_cli.robot.lower().endswith("hand"):
-            # Create hand tracking device with retargeter
-            teleop_interface = LwOpenXRDevice(
-                env_cfg.xr,
-                retargeters=[],
-                env=env,
-            )
-            teleoperation_active = False
-        elif args_cli.teleop_device.lower().startswith("vr"):
-            image_size = (720, 1280)
-            shm = shared_memory.SharedMemory(
-                create=True,
-                size=image_size[0] * image_size[1] * 3 * np.uint8().itemsize,
-            )
-            vr_device_type = {
-                "vr-controller": VRController,
-                "vr-hand": VRHand,
-            }[args_cli.teleop_device.lower()]
-            teleop_interface = vr_device_type(env,
-                                              img_shape=image_size,
-                                              shm_name=shm.name,)
-        elif args_cli.teleop_device.lower().startswith("joylo"):
-            from lwlab.core.devices.joylo import Joylo
-            teleop_interface = Joylo(
-                env
+        nonlocal teleoperation_active
+
+        teleoperation_callbacks: dict[str, Callable[[], None]] = {
+            "X": reset_recording_instance,
+            "Y": reset_env_instance_no_keep_placement,
+            "R": reset_env_instance_keep_placement,
+            "T": flush_recorder_manager,
+            "M": call_save_checkpoint,
+            "N": rollback_to_checkpoint,
+            # Add new shortcut: quick rewind 10 frames
+            "B": lambda: quick_rewind(env, 10),
+        }
+
+        if hasattr(env_cfg, "teleop_devices") and args_cli.teleop_device in env_cfg.teleop_devices.devices:
+            teleoperation_active = True
+            teleop_interface = create_teleop_device(
+                env, args_cli.teleop_device, env_cfg.teleop_devices.devices, teleoperation_callbacks
             )
         else:
-            raise ValueError(
-                f"Invalid device interface '{args_cli.teleop_device}'. Supported: 'keyboard', 'spacemouse''handtracking'."
-            )
+            if args_cli.teleop_device.lower() == "keyboard":
+                if args_cli.headless:
+                    teleop_interface = None
+                else:
+                    device_type = KEYCONTROLLER_MAP[args_cli.teleop_device.lower() + "-" + args_cli.robot.lower().split("-")[0]]
+                    teleop_interface = device_type(
+                        pos_sensitivity=0.05 * args_cli.sensitivity, rot_sensitivity=0.05 * args_cli.sensitivity,
+                        base_sensitivity=0.5 * args_cli.sensitivity, base_yaw_sensitivity=0.8 * args_cli.sensitivity
+                    )
+            elif args_cli.teleop_device.lower() == "spacemouse":
+                teleop_interface = Se3SpaceMouse(env,
+                                                 pos_sensitivity=0.1 * args_cli.sensitivity, rot_sensitivity=0.2 * args_cli.sensitivity
+                                                 )
+            # elif args_cli.teleop_device.lower() == "gamepad":
+            #     teleop_interface = Se3Gamepad(
+            #         pos_sensitivity=0.1 * args_cli.sensitivity, rot_sensitivity=0.1 * args_cli.sensitivity
+            #     )
+            elif args_cli.teleop_device.lower() == "so101leader":
+                from lwlab.core.devices.lerobot import SO101Leader
+                teleop_interface = SO101Leader(env, port=args_cli.port, recalibrate=args_cli.recalibrate)
+            elif args_cli.teleop_device.lower() == "bi_so101leader":
+                from lwlab.core.devices.lerobot import BiSO101Leader
+                teleop_interface = BiSO101Leader(env, left_port=args_cli.left_port, right_port=args_cli.right_port, recalibrate=args_cli.recalibrate)
+            elif args_cli.teleop_device.lower() == "dualhandtracking_abs" and args_cli.robot.lower().endswith("hand"):
+                # Create hand tracking device with retargeter
+                teleop_interface = LwOpenXRDevice(
+                    env_cfg.xr,
+                    retargeters=[],
+                    env=env,
+                )
+                teleoperation_active = False
+            elif args_cli.teleop_device.lower().startswith("vr"):
+                image_size = (720, 1280)
+                shm = shared_memory.SharedMemory(
+                    create=True,
+                    size=image_size[0] * image_size[1] * 3 * np.uint8().itemsize,
+                )
+                vr_device_type = {
+                    "vr-controller": VRController,
+                    "vr-hand": VRHand,
+                }[args_cli.teleop_device.lower()]
+                teleop_interface = vr_device_type(env,
+                                                  img_shape=image_size,
+                                                  shm_name=shm.name,)
+            else:
+                raise ValueError(
+                    f"Invalid device interface '{args_cli.teleop_device}'. Supported: 'keyboard', 'spacemouse''handtracking'."
+                )
+
+            # Add callbacks to teleop device
+            if not args_cli.headless and isinstance(teleop_interface, LwOpenXRDevice):
+                teleoperation_active = False
+                teleoperation_callbacks: dict[str, Callable[[], None]] = {
+                    "RESET": reset_recording_instance,
+                    "START": start_teleoperation,
+                    "STOP": stop_teleoperation,
+                    "SAVE": lambda: save_checkpoint(env, args_cli.checkpoint_path),
+                    "LOAD": lambda: load_checkpoint(env, args_cli.checkpoint_path),
+                    # Add new shortcut: quick rewind 10 frames
+                    "REWIND": lambda: quick_rewind(env, 10),
+                }
+            elif teleop_interface is not None:
+                teleoperation_active = True
+                for key, callback in teleoperation_callbacks.items():
+                    try:
+                        teleop_interface.add_callback(key, callback)
+                    except (ValueError, TypeError) as e:
+                        omni.log.warn(f"Failed to add callback for key {key}: {e}")
+            else:
+                teleoperation_active = False
+
+        print(teleop_interface)
+
         return teleop_interface
 
     def create_env_config(initial_state=None, object_cfgs=None, cache_usd_version=None, scene_name=None):
@@ -463,74 +550,16 @@ def main():
     def run_simulation(env, teleop_interface):
         env_cfg = env.cfg
         # add teleoperation key for env reset
+        nonlocal should_reset_recording_instance
+        nonlocal flush_recorder_manager_flag
+        nonlocal rollback_to_checkpoint_flag
+        nonlocal should_reset_env_instance
+        nonlocal should_reset_env_keep_placement
         should_reset_recording_instance = False
         flush_recorder_manager_flag = False
         rollback_to_checkpoint_flag = False
         should_reset_env_instance = False
         should_reset_env_keep_placement = True  # Default to keep placement
-
-        def reset_recording_instance():
-            print("reset recording instance", flush=True)
-            nonlocal should_reset_recording_instance
-            should_reset_recording_instance = True
-
-        def reset_env_instance_no_keep_placement():
-            print("reset env instance", flush=True)
-            nonlocal should_reset_env_instance
-            should_reset_env_instance = True
-            nonlocal should_reset_env_keep_placement
-            should_reset_env_keep_placement = False
-
-        def reset_env_instance_keep_placement():
-            print("reset env instance keep placement", flush=True)
-            nonlocal should_reset_env_instance
-            should_reset_env_instance = True
-            nonlocal should_reset_env_keep_placement
-            should_reset_env_keep_placement = True
-
-        def start_teleoperation():
-            nonlocal teleoperation_active
-            teleoperation_active = True
-
-        def stop_teleoperation():
-            nonlocal teleoperation_active
-            teleoperation_active = False
-
-        def flush_recorder_manager():
-            nonlocal flush_recorder_manager_flag
-            flush_recorder_manager_flag = True
-
-        def call_save_checkpoint():
-            frame_index = save_checkpoint(env, args_cli.checkpoint_path)
-            if isinstance(teleop_interface, VRController):
-                teleop_interface.set_checkpoint_frame_idx(frame_index)
-
-        def rollback_to_checkpoint():
-            nonlocal rollback_to_checkpoint_flag
-            rollback_to_checkpoint_flag = True
-
-        if not args_cli.headless and isinstance(teleop_interface, LwOpenXRDevice):
-            teleoperation_active = False
-            teleop_interface.add_callback("RESET", reset_recording_instance)
-            teleop_interface.add_callback("START", start_teleoperation)
-            teleop_interface.add_callback("STOP", stop_teleoperation)
-            teleop_interface.add_callback("SAVE", lambda: save_checkpoint(env, args_cli.checkpoint_path))
-            teleop_interface.add_callback("LOAD", lambda: load_checkpoint(env, args_cli.checkpoint_path))
-            # Add new shortcut: quick rewind 10 frames
-            teleop_interface.add_callback("REWIND", lambda: quick_rewind(env, 10))
-        elif teleop_interface is not None:
-            teleoperation_active = True
-            teleop_interface.add_callback("X", reset_recording_instance)
-            teleop_interface.add_callback("Y", reset_env_instance_no_keep_placement)
-            teleop_interface.add_callback("R", reset_env_instance_keep_placement)
-            teleop_interface.add_callback("T", flush_recorder_manager)
-            teleop_interface.add_callback("M", call_save_checkpoint)
-            teleop_interface.add_callback("N", rollback_to_checkpoint)
-            # Add new shortcut: quick rewind 10 frames
-            teleop_interface.add_callback("B", lambda: quick_rewind(env, 10))
-        else:
-            teleoperation_active = False
-        print(teleop_interface)
 
         rate_limiter = RateLimiter(args_cli.step_hz)
 
@@ -799,6 +828,7 @@ def main():
     from isaaclab.managers import TerminationTermCfg as DoneTerm
     import isaaclab_tasks  # noqa: F401
     from isaaclab_tasks.manager_based.manipulation.lift import mdp
+    from isaaclab.devices.teleop_device_factory import create_teleop_device
     from multiprocessing import Process, shared_memory
     from lwlab.utils.video_recorder import VideoRecorder, get_camera_images
     from lwlab.utils.teleop_utils import save_checkpoint, load_checkpoint, quick_rewind
@@ -856,84 +886,18 @@ def main():
         destroy_robot_vis_helper,
         update_checkers_status,
         update_task_desc,
-        hide_ui_windows
+        hide_ui_windows,
+        setup_batch_name_gui
     )
 
     # Global variable for batch name GUI
     batch_name_gui = None
 
-    def setup_batch_name_gui():
-        """Setup GUI window for displaying and editing batch name"""
-        import omni.ui as ui
-
-        global batch_name_gui
-
-        class BatchNameGUI:
-            def __init__(self):
-                self.batch_name = getattr(args_cli, 'batch_name', 'default-batch')
-                self.window = None
-                self.batch_name_input = None
-                self.batch_name_label = None
-                self.create_window()
-
-            def create_window(self):
-                """Create the batch name GUI window"""
-                self.window = ui.Window(
-                    "Batch Name Control",
-                    width=400,
-                    height=150,
-                    flags=ui.WINDOW_FLAGS_NO_SCROLLBAR
-                )
-
-                with self.window.frame:
-                    with ui.VStack(spacing=10):
-                        # Current batch name display
-                        with ui.HStack():
-                            ui.Label("Current Batch Name:", width=150)
-                            self.batch_name_label = ui.Label(
-                                self.batch_name,
-                                style={"color": 0xFF00FF00}
-                            )
-
-                        # Batch name input
-                        with ui.HStack():
-                            ui.Label("New Batch Name:", width=150)
-                            self.batch_name_input = ui.StringField()
-                            self.batch_name_input.model.set_value(self.batch_name)
-
-                        # Buttons
-                        with ui.HStack():
-                            update_btn = ui.Button("Update Batch Name")
-                            update_btn.set_clicked_fn(self.update_batch_name)
-
-                            reset_btn = ui.Button("Reset")
-                            reset_btn.set_clicked_fn(self.reset_batch_name)
-
-            def update_batch_name(self):
-                """Update the batch name"""
-                new_batch_name = self.batch_name_input.model.get_value_as_string()
-                if new_batch_name and new_batch_name != self.batch_name:
-                    self.batch_name = new_batch_name
-                    self.batch_name_label.text = self.batch_name
-                    # Update args_cli
-                    args_cli.batch_name = new_batch_name
-                    print(f"Batch name updated to: {new_batch_name}")
-
-            def reset_batch_name(self):
-                """Reset batch name to original value"""
-                original_batch_name = getattr(args_cli, 'batch_name', 'default-batch')
-                self.batch_name_input.model.set_value(original_batch_name)
-                self.batch_name = original_batch_name
-                self.batch_name_label.text = original_batch_name
-                print(f"Batch name reset to: {original_batch_name}")
-
-        batch_name_gui = BatchNameGUI()
-        return batch_name_gui
-
     if not args_cli.headless:
         hide_ui_windows(simulation_app)
         # Setup batch name GUI
-        setup_batch_name_gui()
+        # TODO disable batch name GUI for now, since it's not used in teleop
+        # batch_name_gui = setup_batch_name_gui(getattr(args_cli, 'batch_name', 'default-batch'))
 
     print("Starting teleoperation - will check for task signals during execution")
 

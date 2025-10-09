@@ -675,9 +675,19 @@ class VRDevice(Device):
                 if "T" in self._additional_callbacks:
                     self._additional_callbacks["T"]()
             elif key.char == "x":
+                self.started = False
+                self._reset_state = 1
+                self._enabled = False
+                self._reset_internal_state()
+                self._cumulative_base = np.array([0, 0, 0, 0], dtype=np.float64)
                 if "X" in self._additional_callbacks:
                     self._additional_callbacks["X"]()
             elif key.char == "y":
+                self.started = False
+                self._reset_state = 1
+                self._enabled = False
+                self._reset_internal_state()
+                self._cumulative_base = np.array([0, 0, 0, 0], dtype=np.float64)
                 if "Y" in self._additional_callbacks:
                     self._additional_callbacks["Y"]()
 

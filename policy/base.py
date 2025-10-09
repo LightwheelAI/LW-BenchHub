@@ -60,7 +60,7 @@ class BasePolicy(ABC):
 
         if 'joint_mapping' in usr_args:
             # action = action.squeeze(0)
-            action = action[...,usr_args['joint_mapping']]
+            action = action[..., usr_args['joint_mapping']]
 
         obs, _, terminated, _, _ = task_env.step(action)
         return obs, terminated
