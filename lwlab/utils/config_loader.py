@@ -15,6 +15,8 @@
 import yaml
 from pathlib import Path
 import argparse
+import importlib.metadata
+from pathlib import Path
 from lwlab import CONFIGS_PATH
 
 
@@ -31,6 +33,19 @@ class ConfigLoader:
         for yml_path in self.configs_root.rglob("*.yaml"):
             name = yml_path.stem
             self.yml_meta[name] = yml_path.resolve()
+
+        entry_points = importlib.metadata.entry_points()
+        lwlab_modules = entry_points.select(group="lwlab_modules")
+        for entry_point in lwlab_modules:
+            if entry_point.name == "config_search_path":
+                additional_config_path = entry_point.load().__path__[0]
+                for yml_path in Path(additional_config_path).rglob("*.yml"):
+                    name = yml_path.stem
+                    self.yml_meta[name] = yml_path.resolve()
+                for yml_path in Path(additional_config_path).rglob("*.yaml"):
+                    name = yml_path.stem
+                    self.yml_meta[name] = yml_path.resolve()
+                break
 
     def load(self, name, loaded_files=None):
         if name not in self.yml_meta:
