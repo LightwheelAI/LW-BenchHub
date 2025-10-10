@@ -1014,9 +1014,10 @@ class UnitreeG1ControllerDecoupledWBCEnvCfg(UnitreeG1ControllerEnvCfg):
             # Left squeeze pressed and Right squeeze pressed: right joystick up/down to control base_height_cmd (relative to current height)
             if action['rsqueeze'] > 0.5:
                 # joystaick returns -1 to 1, remap to a smaller range
-                base_action[3] = self.init_robot_base_height + 0.5 * torch.tensor([action['rbase'][0]], device=action['rbase'].device)
+                base_action[3] = self.init_robot_base_height + 0.01 * torch.tensor([action['rbase'][0]], device=action['rbase'].device)
                 # Clip base_action[3] to be within 0.5 to 1.0
-                base_action[3] = torch.clamp(base_action[3], min=0.2, max=1.)
+                base_action[3] = torch.clamp(base_action[3], min=0.2, max=0.75)
+                self.init_robot_base_height = base_action[3]
 
         _cumulative_base, base_quat = math_utils.subtract_frame_transforms(device.robot.data.root_com_pos_w[0],
                                                                            device.robot.data.root_com_quat_w[0],
