@@ -400,7 +400,7 @@ def main():
 
         return teleop_interface
 
-    def create_env_config(initial_state=None, object_cfgs=None, cache_usd_version=None, scene_name=None):
+    def create_env_config(object_cfgs=None, cache_usd_version=None, scene_name=None):
         """Create environment configuration based on task type."""
         import omni.usd
         omni.usd.get_context().new_stage()
@@ -459,7 +459,6 @@ def main():
                     seed=args_cli.seed,
                     sources=args_cli.sources,
                     object_projects=args_cli.object_projects,
-                    initial_state=initial_state,
                     headless_mode=args_cli.headless,
                 )
                 if hasattr(args_cli, "reset_objects_enabled"):
@@ -488,15 +487,12 @@ def main():
         set_seed(env_cfg.seed, new_env)
         return new_env
 
-    def reset_env(env, teleop_interface, viewports, keep_placement=True, initial_state=None):
+    def reset_env(env, teleop_interface, viewports, keep_placement=True):
         """Reset environment by creating a new one with fresh configuration."""
-        initial_state = None
         cache_usd_version = None
         object_cfgs = None
         scene_name = None
         if keep_placement:
-            # if initial_state is None:
-            #     initial_state = copy.deepcopy(env.recorder_manager.get_episode(0).data["initial_state"])
             if "robocasalibero" in env.cfg.usd_path:
                 scene_name = "robocasalibero"
             else:
@@ -508,14 +504,12 @@ def main():
             from lwlab.utils.robocasa_utils import convert_fixture_to_name
             for obj in object_cfgs:
                 obj["placement"] = convert_fixture_to_name(obj["placement"])
-        else:
-            initial_state = None
-            # Close current environment
+
+        # Close current environment
         env.close()
-        print(f"reset env, initial_state: {initial_state}, object_cfgs: {object_cfgs}, scene_name: {scene_name}")
+        print(f"reset env, object_cfgs: {object_cfgs}, scene_name: {scene_name}")
         # Create fresh configuration using the same logic
-        new_env = create_env_config(initial_state=initial_state,
-                                    cache_usd_version=cache_usd_version,
+        new_env = create_env_config(cache_usd_version=cache_usd_version,
                                     object_cfgs=object_cfgs,
                                     scene_name=scene_name)
 
@@ -598,7 +592,6 @@ def main():
         vis_helper_prims = []
 
         # simulate environment
-        initial_state = None
         while simulation_app.is_running():
             if _check_no_task_signal():
                 print(colored("No task available signal received, stopping teleoperation", "yellow"))
@@ -634,7 +627,6 @@ def main():
                 destroy_robot_vis_helper(vis_helper_prims, env)
                 if should_reset_env_instance:
                     env, teleop_interface, viewports, overlay_window = reset_env(env, teleop_interface, viewports=viewports,
-                                                                                 initial_state=initial_state,
                                                                                  keep_placement=should_reset_env_keep_placement)
                     env_cfg = env.cfg
                     should_reset_env_instance = False
@@ -681,8 +673,6 @@ def main():
                 if args_cli.enable_log:
                     try:
                         env.step(actions)
-                        if initial_state is None:
-                            initial_state = copy.deepcopy(env.recorder_manager.get_episode(0).data["initial_state"])
                         if hasattr(env_cfg, 'get_warning_text'):
                             update_checkers_status(env, env_cfg.get_warning_text())
                     except Exception as e:
@@ -710,8 +700,6 @@ def main():
                             continue
                         obs, *_ = env.step(actions)
                         carb.profiler.end(1)
-                    if initial_state is None:
-                        initial_state = copy.deepcopy(env.recorder_manager.get_episode(0).data["initial_state"])
                     step_time = time.time() - step_start
                     frame_analyzer.record_stage('env_step', step_time)
 

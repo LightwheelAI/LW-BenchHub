@@ -1041,7 +1041,7 @@ def create_obj(env, cfg, version=None):
 
 
 def sample_object_placements(env, need_retry=True):
-    if env.initial_state is not None or env.is_replay_mode:
+    if env.is_replay_mode:
         return env._load_placement()
 
     if not need_retry:

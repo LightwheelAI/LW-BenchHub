@@ -253,17 +253,6 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
 
     def _load_placement(self):
         objects_placement = {}
-        if self.initial_state and self.initial_state.get("rigid_object", None):
-            rigid_objects_group = self.initial_state["rigid_object"]
-            for obj_name in rigid_objects_group.keys():
-                if obj_name not in self.objects.keys():
-                    continue
-                obj_group = rigid_objects_group[obj_name]
-                objects_placement[obj_name] = (
-                    tuple(obj_group["root_pose"][0][0:3].tolist()), np.array([obj_group["root_pose"][0][4], obj_group["root_pose"][0][5], obj_group["root_pose"][0][6], obj_group["root_pose"][0][3]], dtype=np.float32), self.objects[obj_name]
-                )
-            return objects_placement
-
         import h5py
         ep_names = self.replay_cfgs["ep_names"]
         if len(ep_names) > 1:
@@ -330,10 +319,10 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
                         obj_rot = self.fix_object_pose_cfg[obj_name]["rot"]
                     self.object_placements[obj_name] = (obj_pos, obj_rot, obj_placement[2])
 
-        if not self.is_replay_mode:
-            self.init_robot_base_pos_anchor, self.init_robot_base_ori_anchor = self.get_robot_anchor()
-            self.robot_cfg.init_state.pos = self.init_robot_base_pos_anchor
-            self.robot_cfg.init_state.rot = Tn.convert_quat(Tn.mat2quat(Tn.euler2mat(self.init_robot_base_ori_anchor)), to="wxyz")
+        # replay mode also need this step, to make sure the same robot config step
+        self.init_robot_base_pos_anchor, self.init_robot_base_ori_anchor = self.get_robot_anchor()
+        self.robot_cfg.init_state.pos = self.init_robot_base_pos_anchor
+        self.robot_cfg.init_state.rot = Tn.convert_quat(Tn.mat2quat(Tn.euler2mat(self.init_robot_base_ori_anchor)), to="wxyz")
 
     def set_ep_meta(self, meta):
         self._ep_meta = meta
