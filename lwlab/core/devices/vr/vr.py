@@ -929,11 +929,12 @@ class VRController(VRDevice):
         if left_controller_state["b_button"]:
             if self.is_body_moving_last_frame:
                 self.is_body_moving = False
-                body_lin_vel_w = self.env.scene.articulations["robot"].data.body_lin_vel_w
-                for i in range(body_lin_vel_w.shape[1]):
-                    if abs(np.linalg.norm(body_lin_vel_w[0, i, :])) > 0.00001:  # TODO: 0.00001 is a magic number, need to be tuned, 0.0001 is tested to be unsuitable
+                joint_vel = self.env.scene.articulations["robot"].data.joint_vel
+                for i in range(joint_vel.shape[1]):
+                    get_vr_logger().info("joint %s vel: %s", self.env.scene.articulations["robot"].joint_names[i], joint_vel[0, i])
+                    if abs(joint_vel[0, i]) > 0.01:  # Check joint velocity threshold
                         self.is_body_moving = True
-                        get_vr_logger().info("body %s has non zero vel: %s", self.env.scene.articulations["robot"].body_names[i], body_lin_vel_w[0, i, :])
+                        get_vr_logger().info("joint %s has non zero vel: %s", self.env.scene.articulations["robot"].joint_names[i], joint_vel[0, i])
             self.is_body_moving_last_frame = self.is_body_moving
 
             if self.is_body_moving:
