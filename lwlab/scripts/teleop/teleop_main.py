@@ -279,7 +279,7 @@ def main():
         flush_recorder_manager_flag = True
 
     def call_save_checkpoint():
-        frame_index = save_checkpoint(env, args_cli.checkpoint_path)
+        frame_index = save_checkpoint(teleop_interface.env, args_cli.checkpoint_path)
         if isinstance(teleop_interface, VRController):
             teleop_interface.set_checkpoint_frame_idx(frame_index)
 
@@ -319,7 +319,7 @@ def main():
             "M": call_save_checkpoint,
             "N": rollback_to_checkpoint,
             # Add new shortcut: quick rewind 10 frames
-            "B": lambda: quick_rewind(env, 10),
+            "B": lambda: quick_rewind(teleop_interface.env, 10),
         }
 
         if hasattr(env_cfg, "teleop_devices") and args_cli.teleop_device in env_cfg.teleop_devices.devices:
@@ -381,10 +381,10 @@ def main():
                     "RESET": reset_recording_instance,
                     "START": start_teleoperation,
                     "STOP": stop_teleoperation,
-                    "SAVE": lambda: save_checkpoint(env, args_cli.checkpoint_path),
-                    "LOAD": lambda: load_checkpoint(env, args_cli.checkpoint_path),
+                    "SAVE": lambda: save_checkpoint(teleop_interface.env, args_cli.checkpoint_path),
+                    "LOAD": lambda: load_checkpoint(teleop_interface.env, args_cli.checkpoint_path),
                     # Add new shortcut: quick rewind 10 frames
-                    "REWIND": lambda: quick_rewind(env, 10),
+                    "REWIND": lambda: quick_rewind(teleop_interface.env, 10),
                 }
             elif teleop_interface is not None:
                 teleoperation_active = True
@@ -564,7 +564,7 @@ def main():
             teleop_interface.reset()
         # auto load checkpoint if enabled
         if getattr(args_cli, "auto_load_checkpoint", False) and os.path.exists(args_cli.checkpoint_path):
-            load_checkpoint()
+            load_checkpoint(env, args_cli.checkpoint_path)
 
         viewports = None
         overlay_window = None
@@ -676,6 +676,7 @@ def main():
                         if hasattr(env_cfg, 'get_warning_text'):
                             update_checkers_status(env, env_cfg.get_warning_text())
                     except Exception as e:
+                        import traceback
                         print(f"Error during env step: {traceback.format_exc()}")
                         handle_exception_and_log(e, log_path)
                         break
