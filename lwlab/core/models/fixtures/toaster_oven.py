@@ -192,6 +192,18 @@ class ToasterOven(Fixture):
                 self.set_joint_state(env=env, min=value, max=value, joint_names=[joint], env_ids=env_ids)
                 return name
 
+        # Try tray{level}, fallback to tray0
+        for level in [rack_level, 0]:
+            joint = f"tray{level}_joint"
+            if joint in env.scene.articulations[self.name].data.joint_names:
+                name = f"tray{level}"
+                if name not in self._tray:
+                    self._tray[name] = torch.tensor([value], device=self.device).repeat(self.num_envs)
+                else:
+                    self._tray[name][env_ids] = value
+                self.set_joint_state(env=env, min=value, max=value, joint_names=[joint], env_ids=env_ids)
+                return name
+
         raise ValueError(
             f"No rack or tray found for level {rack_level}, and fallback to level 0 also failed."
         )
