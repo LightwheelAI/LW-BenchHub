@@ -15,6 +15,8 @@
 from isaaclab.envs import ManagerBasedRLEnvCfg
 from .fixture import Fixture
 import numpy as np
+import torch
+import lwlab.utils.object_utils as OU
 from .fixture_types import FixtureType
 
 
@@ -53,6 +55,59 @@ class Fridge(Fixture):
         elif entity == "freezer":
             joint_names = self._freezer_door_joint_names
         return super().is_closed(env, joint_names, th)
+
+    def check_rack_contact(self, env, object_name, rack_index=None, compartment="firdge", reg_type=("shelf"),):
+        """
+        Check if an object is in contact with a specific shelf or drawer in the fridge.
+
+        Args:
+            env (Kitchen): the environment the fridge belongs to
+            object_name (str): name of the object to check
+            rack_index (int or None): if set, selects a specific shelf/drawer by index
+                (0 = lowest, -1 = highest, -2 = second highest)
+            compartment (str): "fridge" or "freezer" — which compartment to query
+            reg_type (tuple or str): can be combination of shelf or drawer. specifies
+                whether to use shelves or drawers, or both
+
+        Returns:
+            bool: True if the object is in contact with the specified shelf/drawer, False otherwise
+        """
+        region_names = [
+            name
+            for name in self.get_reset_regions(env)]
+        inside = torch.tensor([False], dtype=torch.bool, device=env.device).repeat(env.num_envs)
+        for i in range(env.num_envs):
+            obj_pos = torch.mean(env.scene.rigid_objects[object_name].data.body_com_pos_w, dim=1)[i]
+            obj_z = obj_pos[2]
+            filtered_region_names = []
+            for region_name in region_names:
+                reg = self._regions[region_name]
+                p0, pz = reg["p0"], reg["pz"]
+
+                region_min_z = self.pos[2] + p0[2]
+                region_max_z = self.pos[2] + pz[2]
+
+                is_drawer = "drawer" in region_name
+                if is_drawer:
+                    restricted_max_z = region_max_z
+                else:
+                    restricted_max_z = region_min_z + 0.9 * (region_max_z - region_min_z)
+                is_filtered_region = (restricted_max_z >= obj_z) and (region_min_z <= obj_z)
+                if is_filtered_region:
+                    filtered_region_names.append(region_name)
+
+            if not filtered_region_names:
+                return inside
+            orig_get_int = self.get_int_sites
+
+            def get_int_sites_filtered(relative=False):
+                sites = orig_get_int(relative=relative)
+                return {rn: sites[rn] for rn in filtered_region_names}
+
+            self.get_int_sites = get_int_sites_filtered
+            inside[i] = OU.obj_inside_of(env, object_name, self.name, partial_check=False)[i]
+            self.get_int_sites = orig_get_int
+        return inside
 
     def open_door(self, env, env_ids=None, min=0.9, max=1, entity="fridge"):
         joint_names = None
