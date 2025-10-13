@@ -90,13 +90,13 @@ then
 
     # # Re-install isaaclab (note that the deps have been installed in the Dockerfile)
     # echo "Re-installing isaaclab packages from mounted repo"
-    # for DIR in /workspaces/isaac_arena/submodules/IsaacLab/source/isaaclab*/; do
+    # for DIR in /workspaces/IsaacLab-Arena/submodules/IsaacLab/source/isaaclab*/; do
     #     echo "Installing $DIR"
     #     pip install --no-deps -e "$DIR"
     # done
     # # Re-doing symlink (we do this in the Dockerfile, but we overwrite with the mapping).
-    # if [ ! -d "/workspaces/isaac_arena/submodules/IsaacLab/_isaac_sim" ]; then
-    #     ln -s /isaac-sim/ /workspaces/isaac_arena/submodules/IsaacLab/_isaac_sim
+    # if [ ! -d "/workspaces/IsaacLab-Arena/submodules/IsaacLab/_isaac_sim" ]; then
+    #     ln -s /isaac-sim/ /workspaces/IsaacLab-Arena/submodules/IsaacLab/_isaac_sim
     # fi
 
     set +x
@@ -156,8 +156,8 @@ else
                     "--env" "OMNI_USER=\$omni-api-token"
                     "--env" "OMNI_PASS=$OMNI_PASS"
                     # Setting envs for XR: https://isaac-sim.github.io/IsaacLab/v2.1.0/source/how-to/cloudxr_teleoperation.html#run-isaac-lab-with-the-cloudxr-runtime
-                    # "--env" "XDG_RUNTIME_DIR=/workspaces/isaac_arena/submodules/IsaacLab/openxr/run"
-                    # "--env" "XR_RUNTIME_JSON=/workspaces/isaac_arena/submodules/IsaacLab/openxr/share/openxr/1/openxr_cloudxr.json"
+                    # "--env" "XDG_RUNTIME_DIR=/workspaces/IsaacLab-Arena/submodules/IsaacLab/openxr/run"
+                    # "--env" "XR_RUNTIME_JSON=/workspaces/IsaacLab-Arena/submodules/IsaacLab/openxr/share/openxr/1/openxr_cloudxr.json"
                     "--entrypoint" "/workspaces/lwlab/docker/run_docker.sh"
                     )
 

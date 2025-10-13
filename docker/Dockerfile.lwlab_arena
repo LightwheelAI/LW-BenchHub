@@ -40,7 +40,10 @@ RUN ${ISAACLAB_PATH}/isaaclab.sh -i
 RUN /isaac-sim/python.sh -m pip install --upgrade pip && \
   /isaac-sim/python.sh -m pip install \
   pytest \
-  jupyter
+  jupyter \
+  typing_extensions \
+  onnxruntime
+
 
 # lwlabs deps
 RUN /isaac-sim/python.sh -m pip install --upgrade pip && \
@@ -54,7 +57,7 @@ ENV LW_API_ENDPOINT="https://api-dev.lightwheel.net"
 RUN /isaac-sim/python.sh -m pip install -e \
   /workspaces/lwlab/third_party/robosuite \
   /workspaces/lwlab/third_party/robocasa \
-  /workspaces/lwlab/third_party/isaac_arena
+  /workspaces/lwlab/third_party/IsaacLab-Arena
 
 # Install isaac-arena
 RUN /isaac-sim/python.sh -m pip install -e /workspaces/lwlab/

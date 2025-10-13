@@ -87,7 +87,7 @@ from isaaclab.devices.teleop_device_factory import create_teleop_device
 from isaac_arena.assets.asset_registry import AssetRegistry
 from isaac_arena.assets.object import Object
 from isaac_arena.assets.background import Background
-from isaac_arena.geometry.pose import Pose
+from isaac_arena.utils.pose import Pose
 from isaac_arena.scene.scene import Scene
 from isaac_arena.embodiments.franka.franka import FrankaEmbodiment
 from isaac_arena.environments.isaac_arena_environment import IsaacArenaEnvironment
@@ -145,14 +145,14 @@ embodiment = FrankaEmbodiment(
 )
 
 # Teleop
-spacemouse = SpacemouseTeleopDevice(pos_sensitivity=0.25, rot_sensitivity=0.25)
+# spacemouse = SpacemouseTeleopDevice(pos_sensitivity=0.25, rot_sensitivity=0.25)
 
 isaac_arena_environment = IsaacArenaEnvironment(
     name="lwlab_kitchen",
     embodiment=embodiment,
     scene=scene,
     task=task,
-    teleop_device=spacemouse,
+    # teleop_device=spacemouse,
 )
 
 args_parser = get_isaac_arena_cli_parser()
