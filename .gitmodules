@@ -1,3 +1,6 @@
 [submodule "third_party/IsaacLab"]
 	path = third_party/IsaacLab
 	url = https://github.com/isaac-sim/IsaacLab.git
+[submodule "third_party/IsaacLab-Arena"]
+	path = third_party/IsaacLab-Arena
+	url = https://github.com/isaac-sim/IsaacLab-Arena.git
