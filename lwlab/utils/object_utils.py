@@ -1,8 +1,10 @@
+import re
 import numpy as np
 import torch
 import lwlab.utils.math_utils.transform_utils.numpy_impl as T
 import os
 from isaaclab.utils.math import matrix_from_quat, euler_xyz_from_quat
+from lwlab.utils.usd_utils import usd
 
 
 def array_to_string(array):
@@ -920,3 +922,54 @@ def obj_fixture_bbox_min_dist(env, obj_name, fixture):
         all_sep_distances.append(sep_distance)
 
     return torch.tensor(all_sep_distances, dtype=torch.float32, device=env.device)
+
+
+def check_contact(env, geoms_1, geoms_2) -> torch.Tensor:
+    """
+    check if the two geoms are in contact
+    """
+    if env.common_step_counter == 1:
+        if isinstance(geoms_1, str):
+            geoms_1_sensor_path = f"{geoms_1}_contact"
+        else:
+            geoms_1_sensor_path = f"{geoms_1.task_name}_contact"
+
+        if isinstance(geoms_2, str):
+            geoms_2_sensor_path = geoms_2
+        else:
+            geoms_2_sensor_path = []
+            geoms_2_prims = usd.get_prim_by_name(env.scene.stage.GetPseudoRoot(), geoms_2.name)
+            for prim in geoms_2_prims:
+                geoms_2_sensor_path.append([str(cp.GetPrimPath()) for cp in usd.get_prim_by_types(prim, ["Mesh", "Cube", "Cylinder"])])
+
+        geoms_1_contact_paths = env.scene.sensors[geoms_1_sensor_path].contact_physx_view.sensor_paths
+
+        for env_id in range(env.num_envs):
+            if isinstance(geoms_2, str):
+                filter_prim_paths_expr = [re.sub(r'env_\d+', f'env_{env_id}', geoms_2_sensor_path)]
+            else:
+                filter_prim_paths_expr = geoms_2_sensor_path[env_id]
+            env.cfg.contact_queues[env_id].add(
+                env.sim.physics_sim_view.create_rigid_contact_view(
+                    geoms_1_contact_paths[env_id],
+                    filter_patterns=filter_prim_paths_expr,
+                    max_contact_data_count=200
+                )
+            )
+    elif env.common_step_counter:
+        contact_views = [env.cfg.contact_queues[env_id].pop() for env_id in range(env.num_envs)]
+        return torch.tensor(
+            [max(abs(view.get_contact_data(env.physics_dt)[0])) > 0 for view in contact_views],
+            device=env.device,
+        )
+    return torch.tensor([False], device=env.device).repeat(env.num_envs)
+
+
+def calculate_contact_force(env, geom) -> torch.Tensor:
+    """
+    calculate the contact force on the geom
+    """
+    if f"{geom}_contact" in env.scene.sensors:
+        return torch.max(env.scene.sensors[f"{geom}_contact"].data.net_forces_w, dim=-1).values
+    else:
+        return torch.tensor([0.0], device=env.device).repeat(env.num_envs)

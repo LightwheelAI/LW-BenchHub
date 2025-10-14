@@ -82,7 +82,7 @@ class TerminationCfg:
     pass
 
 
-class LwScene(Scene):
+class LwLabScene(Scene):
 
     def __init__(self,
                  scene_name: str,
@@ -118,7 +118,6 @@ class LwScene(Scene):
 
         self.success_cache = torch.tensor([0], device=self.device, dtype=torch.int32).repeat(self.num_envs)
         self.success_flag = torch.tensor([False], device=self.device, dtype=torch.bool).repeat(self.num_envs)
-        self.rng = np.random.default_rng(self.seed)
 
         # Initialize robot base position and orientation attributes
         self.init_robot_base_pos = [0.0, 0.0, 0.0]
@@ -144,12 +143,12 @@ class LwScene(Scene):
 
     # first stage (just init from itself)
     def _setup_config(self):
-        self.cache_usd_version = {}
+        self.floorplan_usd_version = None
         self._ep_meta = {}
         if self.replay_cfgs is not None and "ep_meta" in self.replay_cfgs:
             self.set_ep_meta(self.replay_cfgs["ep_meta"])
-            if "cache_usd_version" in self._ep_meta:
-                self.cache_usd_version = self._ep_meta["cache_usd_version"]
+            if "floorplan_usd_version" in self._ep_meta:
+                self.floorplan_usd_version = self._ep_meta["floorplan_usd_version"]
             if "hdf5_path" in self.replay_cfgs:
                 self.hdf5_path = self.replay_cfgs["hdf5_path"]
 
@@ -172,26 +171,27 @@ class LwScene(Scene):
         self.style_id = int(style_id) if style_id is not None else None
 
     # second stage (init from ArenaEnvironment) ouhe logic
-    def setup_env_config(self, arena_env):
+    def setup_env_config(self, orchestrator):
         self.lwlab_arena = KitchenArena(
             layout_id=self.layout_id,
             style_id=self.style_id,
-            exclude_layouts=arena_env.task.EXCLUDE_LAYOUTS,
-            enable_fixtures=arena_env.task.enable_fixtures,
-            removable_fixtures=arena_env.task.removable_fixtures,
-            ref_fixture_types=arena_env.task.ref_fixture_types,
-            ref_fixture_ids=arena_env.task.ref_fixture_ids,
-            usd_simplify=arena_env.task.usd_simplify,
+            exclude_layouts=orchestrator.task.EXCLUDE_LAYOUTS,
+            enable_fixtures=orchestrator.task.enable_fixtures,
+            removable_fixtures=orchestrator.task.removable_fixtures,
+            ref_fixture_types=orchestrator.task.ref_fixture_types,
+            ref_fixture_ids=orchestrator.task.ref_fixture_ids,
+            usd_simplify=orchestrator.task.usd_simplify,
             scene_type=self.scene_type,
             scene_cfg=self,
         )
         self.fixtures = self.lwlab_arena.fixtures
         self.ref_fixtures = self.lwlab_arena.ref_fixtures
-        self.cache_usd_version.update({"floorplan_version": self.lwlab_arena.version_id})
+        orchestrator.update_fixture_controllers(self.ref_fixtures)
+        self.floorplan_usd_version = self.lwlab_arena.version_id
         self.fixture_cfgs = self.lwlab_arena.get_fixture_cfgs()
         self.fxtr_placements = usd.get_fixture_placements(self.lwlab_arena.stage.GetPseudoRoot(), self.fixture_cfgs, self.fixtures)
 
-        if self.lwlab_arena.layout_id in arena_env.task.EXCLUDE_LAYOUTS:
+        if self.lwlab_arena.layout_id in orchestrator.task.EXCLUDE_LAYOUTS:
             raise ValueError(f"Layout {self.lwlab_arena.layout_id} is excluded in task {self.task_name}")
 
         background = Background(
@@ -214,33 +214,6 @@ class LwScene(Scene):
         self.assets = {}
         self.add_asset(background)
         self.add_assets(ref_fixture_references)
-
-        def init_kitchen(env, env_ids):
-            self.env = env
-            for fixtr in self.ref_fixture.values():
-                if isinstance(fixtr, IsaacFixture):
-                    fixtr.setup_env(env)
-
-        def check_success_caller(env):
-            self.update_state()
-            for checker in self.checkers:
-                self.checkers_results[checker.type] = checker.check(env)
-
-            # at the begining of the episode, dont check success for stabilization
-            success_check_result = self._check_success()
-            assert isinstance(success_check_result, torch.Tensor), f"_check_success must be a torch.Tensor, but got {type(success_check_result)}"
-            assert len(success_check_result.shape) == 1 and success_check_result.shape[0] == self.num_envs, f"_check_success must be a torch.Tensor of shape ({self.num_envs},), but got {success_check_result.shape}"
-            success_check_result &= (env.episode_length_buf >= self.start_success_check_count)
-
-            # success delay
-            self.success_flag &= (self.success_cache < self.success_count)
-            self.success_cache *= (self.success_cache < self.success_count)
-            self.success_flag |= success_check_result
-            self.success_cache += self.success_flag.int()
-            return self.success_cache >= self.success_count
-
-        self.events_cfg.init_kitchen = EventTerm(func=init_kitchen, mode="startup")
-        self.termination_cfg.success = DoneTerm(func=check_success_caller)
 
     def set_ep_meta(self, meta):
         self._ep_meta = meta
@@ -276,14 +249,6 @@ class LwScene(Scene):
                     "warning_on_screen": False
                 }
             }
-
-    def update_state(self):
-        """
-        Updates the state of the environment.
-        This involves updating the state of all fixtures in the environment.
-        """
-        for fixtr in self.ref_fixtures.values():
-            fixtr.update_state(self.env)
 
     def get_fixture(self, id, ref=None, size=(0.2, 0.2), full_name_check=False, fix_id=None, full_depth_region=False):
         """
@@ -395,6 +360,47 @@ class LwScene(Scene):
                 fxtr for (fxtr, d) in zip(cand_fixtures, dists) if d - min_dist < 0.10
             ]
             return self.rng.choice(close_fixtures)
+
+    def get_warning_text(self):
+        warning_text = ""
+        for checker in self.checkers:
+            if self.checkers_results[checker.type].get("warning_text"):
+                warning_text += self.checkers_results[checker.type].get("warning_text")
+                warning_text += "\n"
+        return warning_text
+
+    def get_ep_meta(self):
+        ep_meta = super().get_ep_meta()
+
+        def copy_dict_for_json(orig_dict):
+            new_dict = {}
+            for (k, v) in orig_dict.items():
+                if isinstance(v, dict):
+                    new_dict[k] = copy_dict_for_json(v)
+                elif isinstance(v, IsaacFixture):
+                    new_dict[k] = v.name
+                else:
+                    new_dict[k] = v
+            return new_dict
+
+        ep_meta.update(deepcopy(self._ep_meta))
+        ep_meta["scene_type"] = self.scene_type
+        ep_meta["layout_id"] = (
+            self.layout_id if isinstance(self.layout_id, dict) else int(self.layout_id)
+        )
+        ep_meta["style_id"] = (
+            self.style_id if isinstance(self.style_id, dict) else int(self.style_id)
+        )
+
+        ep_meta["fixtures"] = {
+            k: {"cls": v.__class__.__name__} for (k, v) in self.fixtures.items()
+        }
+        ep_meta["ref_fixtures"] = dict(
+            {k: v.name for (k, v) in self.ref_fixtures.items()}
+        )
+        # export actual init pose if available in this episode, otherwise omit
+        ep_meta["floorplan_usd_version"] = self.floorplan_usd_version
+        return ep_meta
 
 
 class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):

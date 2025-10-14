@@ -56,10 +56,7 @@ class KitchenArena:
         self.ref_fixtures = {}
         self.ref_fixture_names = []
         self.usd_simplify = usd_simplify
-        if self.scene_cfg.cache_usd_version is not None and "floorplan_version" in self.scene_cfg.cache_usd_version:
-            self.floorplan_version = self.scene_cfg.cache_usd_version["floorplan_version"]
-        else:
-            self.floorplan_version = None
+        self.floorplan_version = self.scene_cfg.floorplan_usd_version
         self.load_floorplan(layout_id, style_id, exclude_layouts, scene_type=scene_cfg.scene_type)
         self.stage = usd.get_stage(self.usd_path)
         # enable / movable fixtures in usd
