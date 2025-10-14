@@ -49,6 +49,143 @@ from lwlab.utils.fixture_utils import fixture_is_type
 from lwlab.utils.place_utils.env_utils import set_robot_to_position, sample_robot_base_helper, get_safe_robot_anchor
 
 
+from isaac_arena.scene.scene import Scene
+from isaac_arena.assets.background import Background
+
+'''
+What second stage need to do:
+
+1. Scene USD Change:
+    - enable_fixtures (in KitchenArena)
+    - removable_fixtures (in KitchenArena)
+    - usd_simplify (in KitchenArena)
+2. Placement:
+    - object placement
+    - robot placement
+    - retry (init scene_cfg / task_cfg again)
+3. 
+'''
+
+
+class LwScene(Scene):
+
+    def __init__(self,
+                 scene_name: str,
+                 scene_group: int = None,
+                 num_envs: int = 1,
+                 device: str = "cpu",
+                 excute_mode: ExecuteMode = ExecuteMode.TELEOP,
+                 replay_cfgs: Dict[str, Any] = None,
+                 **kwargs,
+                 ):
+
+        self.layout_id: int = None
+        self.style_id: int = None
+
+        # TODO: need move it to task_base or cloud
+        self.EXCLUDE_LAYOUTS = []
+        self.OVEN_EXCLUDED_LAYOUTS = [1, 3, 5, 6, 8, 10, 11, 13, 14, 16, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 30, 32, 33, 36, 38, 40, 41, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60]
+        self.DOUBLE_CAB_EXCLUDED_LAYOUTS = [32, 41, 59]
+        self.DINING_COUNTER_EXCLUDED_LAYOUTS = [1, 3, 5, 6, 18, 20, 36, 39, 40, 43, 47, 50, 52]
+        self.ISLAND_EXCLUDED_LAYOUTS = [1, 3, 5, 6, 8, 9, 10, 13, 18, 19, 22, 27, 30, 36, 40, 43, 46, 47, 49, 52, 53, 60]
+        self.STOOL_EXCLUDED_LAYOUT = [1, 3, 5, 6, 18, 20, 36, 39, 40, 43, 47, 50, 52]
+        self.SHELVES_INCLUDED_LAYOUT = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        self.DOUBLE_CAB_EXCLUDED_LAYOUTS = [32, 41, 59]
+
+        self.obj_instance_split = None
+        self.fixture_refs = {}
+        self.init_robot_base_ref = None
+        self.deterministic_reset = False
+        self.robot_spawn_deviation_pos_x = 0.15
+        self.robot_spawn_deviation_pos_y = 0.05
+        self.robot_spawn_deviation_rot = 0.0
+        self.start_success_check_count = 10
+
+        self.success_cache = torch.tensor([0], device=self.device, dtype=torch.int32).repeat(self.num_envs)
+        self.success_flag = torch.tensor([False], device=self.device, dtype=torch.bool).repeat(self.num_envs)
+        self.rng = np.random.default_rng(self.seed)
+
+        # Initialize robot base position and orientation attributes
+        self.init_robot_base_pos = [0.0, 0.0, 0.0]
+        self.init_robot_base_ori = [0.0, 0.0, 0.0, 1.0]
+
+        # Initialize retry counts
+        self.scene_retry_count = 0
+        self.object_retry_count = 0
+
+        if self.execute_mode in [ExecuteMode.REPLAY_ACTION, ExecuteMode.REPLAY_JOINT_TARGETS, ExecuteMode.REPLAY_STATE]:
+            self.is_replay_mode = True
+        else:
+            self.is_replay_mode = False
+
+        self.replay_cfgs = replay_cfgs
+
+        self._setup_config()
+
+    # first stage (just init from itself)
+    def _setup_config(self):
+        self.cache_usd_version = {}
+        self._ep_meta = {}
+        if self.replay_cfgs is not None and "ep_meta" in self.replay_cfgs:
+            self.set_ep_meta(self.replay_cfgs["ep_meta"])
+            if "cache_usd_version" in self._ep_meta:
+                self.cache_usd_version = self._ep_meta["cache_usd_version"]
+            if "hdf5_path" in self.replay_cfgs:
+                self.hdf5_path = self.replay_cfgs["hdf5_path"]
+
+        if "layout_id" in self._ep_meta and "style_id" in self._ep_meta:
+            self.layout_id = self._ep_meta["layout_id"]
+            self.style_id = self._ep_meta["style_id"]
+            self.scene_type = self._ep_meta["scene_type"] if "scene_type" in self._ep_meta else "robocasakitchen"
+        else:
+            scene_name_split = self.scene_name.split("-")
+            if len(scene_name_split) == 3:
+                self.scene_type, layout_id, style_id = scene_name_split
+            elif len(scene_name_split) == 2:
+                self.scene_type, layout_id = scene_name_split
+            elif len(scene_name_split) == 1:
+                self.scene_type = scene_name_split[0]
+            else:
+                raise ValueError(f"Invalid scene name: {self.scene_name}")
+
+        self.layout_id = int(layout_id) if layout_id is not None else None
+        self.style_id = int(style_id) if style_id is not None else None
+
+    # second stage (init from ArenaEnvironment) ouhe logic
+    def setup_env_config(self, arena_env):
+
+        if self.layout_id in arena_env.task.EXCLUDE_LAYOUTS:
+            raise ValueError(f"Layout {self.layout_id} is excluded in task {self.task_name}")
+
+        self.lwlab_arena = KitchenArena(
+            layout_id=self.layout_id,
+            style_id=self.style_id,
+            exclude_layouts=arena_env.task.EXCLUDE_LAYOUTS,
+            enable_fixtures=arena_env.task.enable_fixtures,
+            removable_fixtures=arena_env.task.removable_fixtures,
+            ref_fixtures=arena_env.task.ref_fixtures,
+            usd_simplify=arena_env.task.usd_simplify,
+            scene_type=self.scene_type,
+        )
+
+        # usd simplify
+
+        background_obj = Background(
+            name=self.scene_type,
+            usd_path=self.lwlab_arena.usd_path,
+            object_min_z=0.1,
+        )
+
+        # if background asset is not in the scene, add it, otherwise update it
+        if self.assets.get(self.scene_type) is None:
+            self.add_asset(background_obj)
+        else:
+            self.assets[self.scene_type] = background_obj
+
+    def set_ep_meta(self, meta):
+        self._ep_meta = meta
+
+
 class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
     """Configuration for the robocasa kitchen environment."""
     fixtures: Dict[str, Any] = {}

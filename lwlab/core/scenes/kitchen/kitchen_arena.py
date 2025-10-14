@@ -34,14 +34,23 @@ class KitchenArena:
         scene_cfg (RoboCasaSceneCfg): scene configuration
     """
 
-    def __init__(self, layout_id=None, style_id=None, scene_cfg=None, scene='robocasakitchen', version=None):
+    def __init__(self,
+                 layout_id,
+                 style_id,
+                 exclude_layouts=[],
+                 enable_fixtures=None,
+                 removable_fixtures=None,
+                 ref_fixtures=None,
+                 usd_simplify=False,
+                 scene_cfg=None,
+                 ):
         # download floorplan usd
         self.scene_cfg = scene_cfg
         if self.scene_cfg.cache_usd_version is not None and "floorplan_version" in self.scene_cfg.cache_usd_version:
             self.floorplan_version = self.scene_cfg.cache_usd_version["floorplan_version"]
         else:
             self.floorplan_version = None
-        self.load_floorplan(layout_id, style_id, self.scene_cfg.EXCLUDE_LAYOUTS, scene=scene, version=version)
+        self.load_floorplan(layout_id, style_id, exclude_layouts, scene_type=scene_cfg.scene_type)
         self.stage = usd.get_stage(self.usd_path)
 
         # enable fixtures in usd
@@ -52,7 +61,7 @@ class KitchenArena:
             self.stage.GetRootLayer().Export(new_path)
             self.usd_path = new_path
         # load fixtures
-        self.scene_cfg.fixtures = parse_fixtures(self.stage, scene_cfg.num_envs, scene_cfg.seed, scene_cfg.device)
+        self.fixtures = parse_fixtures(self.stage, scene_cfg.num_envs, scene_cfg.seed, scene_cfg.device)
 
     def _is_updated_usd(self):
         is_updated_usd = False
@@ -91,7 +100,7 @@ class KitchenArena:
 
         return fixture_cfgs
 
-    def load_floorplan(self, layout_id, style_id, exclude_layouts=[], scene='robocasakitchen', version=None):
+    def load_floorplan(self, layout_id, style_id, exclude_layouts=[]):
         start_time = time.time()
         print(f"load floorplan usd", end="...")
         if layout_id is None:
