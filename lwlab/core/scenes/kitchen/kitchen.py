@@ -178,9 +178,11 @@ class LwScene(Scene):
             exclude_layouts=arena_env.task.EXCLUDE_LAYOUTS,
             enable_fixtures=arena_env.task.enable_fixtures,
             removable_fixtures=arena_env.task.removable_fixtures,
-            ref_fixtures=arena_env.task.ref_fixtures,
+            ref_fixture_types=arena_env.task.ref_fixture_types,
+            ref_fixture_ids=arena_env.task.ref_fixture_ids,
             usd_simplify=arena_env.task.usd_simplify,
             scene_type=self.scene_type,
+            scene_cfg=self,
         )
         self.fixtures = self.lwlab_arena.fixtures
         self.ref_fixtures = self.lwlab_arena.ref_fixtures
