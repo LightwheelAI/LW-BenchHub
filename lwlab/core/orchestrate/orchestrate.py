@@ -5,6 +5,8 @@ from isaac_arena.embodiments.embodiment_base import EmbodimentBase
 from isaac_arena.scene.scene import Scene
 from isaac_arena.tasks.task_base import TaskBase
 from isaac_arena.utils.pose import Pose
+from lwlab.core.models.fixtures.fixture import Fixture as IsaacFixture
+import torch
 
 
 class PlacementStrategy:
@@ -59,11 +61,11 @@ class LwLabBaseOrchestrator(OrchestratorBase):
         # reset event
         self.reset_event()
 
-        # update state
-        self.update_state()
+        # setup scene done terms
+        self.setup_scene_done_terms()
 
-        # init kitchen
-        self.init_kitchen()
+        # setup scene event terms
+        self.setup_scene_event_terms()
 
         # combine ep_meta
         self.combine_ep_meta()
@@ -83,17 +85,54 @@ class LwLabBaseOrchestrator(OrchestratorBase):
         """
         self.scene.reset_event()
 
-    def update_state(self):
+    def init_scene(self, env):
+        for fixture_controller in self.fixture_controllers.values():
+            if isinstance(fixture_controller, IsaacFixture):
+                fixture_controller.setup_env(env)
+
+    def update_state(self, env):
+        for fixture_controller in self.fixture_controllers.values():
+            if isinstance(fixture_controller, IsaacFixture):
+                fixture_controller.update_state(env)
+
+    def check_success_caller(self, env):
+        self.update_state(env)
+
+        for checker in self.scene.checkers:
+            self.scene.checkers_results[checker.type] = checker.check(env)
+
+        def _check_success(env):
+            return torch.tensor([False], device=env.device).repeat(env.num_envs)
+
+        # at the begining of the episode, dont check success for stabilization
+        success_check_result = self.task._check_success(env) if self.task.hasattr('_check_success') else _check_success(env)
+
+        assert isinstance(success_check_result, torch.Tensor), f"_check_success must be a torch.Tensor, but got {type(success_check_result)}"
+        assert len(success_check_result.shape) == 1 and success_check_result.shape[0] == env.num_envs, f"_check_success must be a torch.Tensor of shape ({env.num_envs},), but got {success_check_result.shape}"
+        success_check_result &= (env.episode_length_buf >= self.scene.start_success_check_count)
+
+        # success delay
+        self.scene.success_flag &= (self.scene.success_cache < self.scene.success_count)
+        self.scene.success_cache *= (self.scene.success_cache < self.scene.success_count)
+        self.scene.success_flag |= success_check_result
+        self.scene.success_cache += self.scene.success_flag.int()
+        return self.scene.success_cache >= self.scene.success_count
+
+    def setup_scene_done_terms(self):
         """
         Update the state.
         """
-        self.scene.update_state()
+        termination_cfg = self.scene.get_termination_cfg()
+        from isaaclab.managers import TerminationTermCfg as DoneTerm
+        termination_cfg.success = DoneTerm(func=self.check_success_caller)
 
-    def init_kitchen(self):
+    def setup_scene_event_terms(self):
         """
-        Init the kitchen.
+        setup the init_scene event.
         """
-        self.scene.init_kitchen()
+        events_cfg = self.scene.get_events_cfg()
+        from isaaclab.managers import EventTermCfg as EventTerm
+        events_cfg.init_scene = EventTerm(func=self.init_scene, mode="startup")
 
     def place_robot_and_objects(self):
         """
