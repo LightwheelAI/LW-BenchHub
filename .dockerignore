@@ -98,3 +98,5 @@ third_party/*
 !third_party/robocasa_upload/**
 !third_party/IsaacLab/
 !third_party/IsaacLab/**
+!third_party/IsaacLab-Arena/
+!third_party/IsaacLab-Arena/**
