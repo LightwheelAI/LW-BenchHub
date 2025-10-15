@@ -18,6 +18,7 @@ import numpy as np
 from dataclasses import MISSING
 from typing import List, Optional
 
+from isaaclab.envs import ManagerBasedEnv
 from isaaclab.utils import configclass
 from isaaclab.assets import ArticulationCfg
 from isaaclab.envs.mdp.recorders.recorders_cfg import RecorderTerm, RecorderTermCfg, ActionStateRecorderManagerCfg
@@ -26,7 +27,6 @@ from isaaclab.utils.datasets.episode_data import EpisodeData
 import lwlab.core.mdp as mdp
 from lwlab.utils.env import ExecuteMode
 from lwlab.utils.isaaclab_utils import get_robot_joint_target_from_scene
-from lwlab.core.cfg import LwBaseCfg
 from lwlab.core.context import get_context
 
 
@@ -42,7 +42,7 @@ class ActionsCfg:
 
 
 class JointReplayPositionAction(mdp.JointPositionAction):
-    def __init__(self, cfg: mdp.JointPositionActionCfg, env: LwBaseCfg):
+    def __init__(self, cfg: mdp.JointPositionActionCfg, env: ManagerBasedEnv):
         self.decimation = env.cfg.decimation
         self.apply_action_count = 0
         super().__init__(cfg, env)
@@ -74,7 +74,7 @@ class JointReplayPositionActionCfg(mdp.JointPositionActionCfg):
 class PrePhysicsStepJointTargetsRecorder(RecorderTerm):
     """Recoder term that records the IK Target Pos in the beginning of each step."""
 
-    def __init__(self, cfg: RecorderTermCfg, env: LwBaseCfg):
+    def __init__(self, cfg: RecorderTermCfg, env: ManagerBasedEnv):
         super().__init__(cfg, env)
         self.decimation = env.cfg.decimation
         self._record_count = 0
@@ -134,8 +134,10 @@ class LwLabEmbodimentBase(EmbodimentBase):
         self.mimic_env = MISSING
 
         self.set_default_offset_config()
+
+    def get_recorder_term_cfg(self):
         if self.context.execute_mode in [ExecuteMode.TELEOP, ExecuteMode.REPLAY_ACTION, ExecuteMode.REPLAY_JOINT_TARGETS]:
-            self.basecfg.recorders = RecorderManagerCfg()
+            return RecorderManagerCfg()
 
     def preprocess_device_action(self, action: dict[str, torch.Tensor]) -> torch.Tensor:
         pass
