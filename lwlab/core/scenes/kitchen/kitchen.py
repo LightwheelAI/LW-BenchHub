@@ -94,8 +94,8 @@ class LwLabScene(Scene):
     def _setup_config(self):
         self.floorplan_version = None
         self._ep_meta = {}
-        if self.extent.replay_cfgs is not None and "ep_meta" in self.extent.replay_cfgs:
-            self.set_ep_meta(self.extent.replay_cfgs["ep_meta"])
+        if self.context.replay_cfgs is not None and "ep_meta" in self.context.replay_cfgs:
+            self.set_ep_meta(self.context.replay_cfgs["ep_meta"])
             if "cache_usd_version" in self._ep_meta:
                 self.floorplan_version = self._ep_meta["cache_usd_version"]["floorplan_version"]
 
