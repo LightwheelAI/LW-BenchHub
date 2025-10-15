@@ -407,7 +407,7 @@ class LwLabTaskBase(TaskBase):
                 object_type=ObjectType.RIGID,
             )
             self.contact_sensors[f"{cfg['info']['task_name']}_contact"] = ContactSensorCfg(
-                prim_path=f"{{ENV_REGEX_NS}}/{self.context.scene_name.split('-')[0]}/{cfg["info"]["task_name"]}/{cfg["info"]["name"]}",
+                prim_path=f"{{ENV_REGEX_NS}}/{self.context.scene_name.split('-')[0]}/{cfg['info']['task_name']}/{cfg['info']['name']}",
                 update_period=0.0,
                 history_length=6,
                 debug_vis=False,
