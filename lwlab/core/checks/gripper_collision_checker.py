@@ -1,7 +1,7 @@
 from lwlab.core.checks.base_checker import BaseChecker
 import torch
 from lwlab.core.models.fixtures.fixture_types import FixtureType
-
+from lwlab.utils.object_utils import check_contact
 
 class GripperCollisionChecker(BaseChecker):
     type = "gripper_collision"
@@ -46,11 +46,11 @@ class GripperCollisionChecker(BaseChecker):
 
         for fixture in FixtureType:
             if fixture in [FixtureType.COFFEE_MACHINE]:
-                self.object = env.cfg.get_fixture(FixtureType.COFFEE_MACHINE)
+                self.object = env.cfg.isaac_arena_env.task.get_fixture(FixtureType.COFFEE_MACHINE)
                 # self.object = env.cfg.objects["obj"]
 
                 # Handle both scalar and multi-environment tensors
-                left_contact_tensor = env.cfg.check_contact(left_gripper, self.object)
+                left_contact_tensor = check_contact(env, left_gripper, self.object)
                 if left_contact_tensor.dim() == 0:
                     left_contact = left_contact_tensor.item()
                 else:
@@ -61,7 +61,7 @@ class GripperCollisionChecker(BaseChecker):
                     self.collision_object_left = self.object
                     # break
 
-                right_contact_tensor = env.cfg.check_contact(right_gripper, self.object)
+                right_contact_tensor = check_contact(env, right_gripper, self.object)
                 if right_contact_tensor.dim() == 0:
                     right_contact = right_contact_tensor.item()
                 else:
