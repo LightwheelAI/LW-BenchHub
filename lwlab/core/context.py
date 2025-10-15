@@ -24,6 +24,7 @@ class Context:
     object_projects: list[str] | None = None
     headless_mode: bool = False
     extra_params: dict | None = None
+    replay_cfgs: dict | None = None
 
 
 def get_context():

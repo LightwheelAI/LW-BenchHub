@@ -199,7 +199,7 @@ def parse_env_cfg(
     context.object_projects = object_projects
     context.headless_mode = headless_mode
     context.extra_params = kwargs
-    # context.replay_cfgs = replay_cfgs
+    context.replay_cfgs = replay_cfgs
     discover_and_import_lwlab_modules()
 
     from isaac_arena.environments.isaac_arena_environment import IsaacArenaEnvironment
