@@ -497,7 +497,7 @@ def main():
         if keep_placement:
             # if initial_state is None:
             #     initial_state = copy.deepcopy(env.recorder_manager.get_episode(0).data["initial_state"])
-            if "robocasalibero" in env.cfg.usd_path:
+            if "robocasalibero" in env.cfg.isaac_arena_env.scene.usd_path:
                 scene_name = "robocasalibero"
             else:
                 scene_name = "robocasakitchen"

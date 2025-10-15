@@ -665,7 +665,7 @@ def main():
         object_cfgs = None
         scene_name = None
         if keep_placement:
-            if "robocasalibero" in env.cfg.usd_path:
+            if "robocasalibero" in env.cfg.isaac_arena_env.scene.usd_path:
                 scene_name = "robocasalibero"
             else:
                 scene_name = "robocasakitchen"

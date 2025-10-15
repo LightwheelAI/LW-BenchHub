@@ -100,7 +100,7 @@ class PrePhysicsStepJointTargetsRecorder(RecorderTerm):
         return None, None
 
     def record_pre_reset(self, env_ids):
-        for env_id, success in zip(env_ids, (self._env.cfg.success_cache >= self._env.cfg.success_count)[env_ids]):
+        for env_id, success in zip(env_ids, (self._env.cfg.isaac_arena_env.scene.success_cache >= self._env.cfg.isaac_arena_env.scene.success_count)[env_ids]):
             if not success.item():
                 self._env.recorder_manager._episodes[env_id] = EpisodeData()
         return None, None
