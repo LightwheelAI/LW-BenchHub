@@ -14,7 +14,7 @@
 
 import torch
 from dataclasses import MISSING
-
+from isaaclab.envs import ManagerBasedEnvCfg
 from isaaclab.utils import configclass
 from isaaclab.assets import ArticulationCfg
 from isaaclab.sensors import FrameTransformerCfg
@@ -56,11 +56,13 @@ class PandaOmronEmbodiment(LwLabEmbodimentBase):
         self.event_config = MISSING
         self.mimic_env = MISSING
         self.camera_config = PandaOmronCameraCfg()
-        self.basecfg.viewport_cfg = {
+
+    def get_simulation_parameters(self, env_cfg: ManagerBasedEnvCfg) -> Any:
+        env_cfg.viewport_cfg = {
             "offset": [-1.0, 0.0, 2.0],
             "lookat": [1.0, 0.0, -0.7]
         }
-        self.basecfg.robot_vis_helper_cfg = VIS_HELPER_CFG
+        env_cfg.robot_vis_helper_cfg = VIS_HELPER_CFG
 
     def _update_scene_cfg_with_robot_initial_pose(self, scene_config: Any, pose: Pose) -> Any:
         # We override the default initial pose setting function in order to also set
