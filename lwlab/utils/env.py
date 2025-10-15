@@ -224,6 +224,7 @@ def parse_env_cfg(
     #     teleop_device = environment_base.device_registry.get_device_by_name(teleop_device)()
     # else:
     #     teleop_device = None
+    teleop_device = None
 
     isaac_arena_environment = IsaacArenaEnvironment(
         name=task_name,
