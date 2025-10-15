@@ -38,13 +38,13 @@ FRAME_MARKER_SMALL_CFG = FRAME_MARKER_CFG.copy()
 FRAME_MARKER_SMALL_CFG.markers["frame"].scale = (0.10, 0.10, 0.10)
 
 
-from lwlab.core.robots.robot_arena_base import LwEmbodimentBase
+from lwlab.core.robots.robot_arena_base import LwLabEmbodimentBase
 # @configclass
 from isaac_arena.utils.pose import Pose
 from typing import Optional, Any
 
 
-class PandaOmronEmbodiment(LwEmbodimentBase):
+class PandaOmronEmbodiment(LwLabEmbodimentBase):
 
     name = "pandaomron"
 
