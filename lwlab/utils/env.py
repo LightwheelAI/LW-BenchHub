@@ -25,7 +25,6 @@ from isaaclab.utils.configclass import configclass
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnvCfg
 
-from lwlab.core.context import get_context
 from lwlab.utils.log_utils import get_default_logger
 
 
@@ -53,7 +52,7 @@ class ExecuteMode(enum.Enum):
     REPLAY_STATE = 5
 
 
-def load_robocasa_cfg_cls_from_registry(cfg_type: str, cfg_name: str, entry_point_key: str) -> dict | object:
+def load_cfg_cls_from_registry(cfg_type: str, cfg_name: str, entry_point_key: str) -> dict | object:
     """Load default configuration given its entry point from the gym registry.
 
     This function loads the configuration object from the gym registry for the given task name.
@@ -181,6 +180,7 @@ def parse_env_cfg(
     """
     # import_all_inits(os.path.join(ISAAC_ROBOCASA_ROOT, './tasks/_APIs'))
     # Import all configs in this package
+    from lwlab.core.context import get_context
     context = get_context()
     context.execute_mode = execute_mode
     context.device = device
@@ -205,19 +205,19 @@ def parse_env_cfg(
         scene_type = "USD"
     else:
         scene_type, *_ = scene_name.split("-", 1)
-    scene = load_robocasa_cfg_cls_from_registry("scene", "Robocasakitchen", "env_cfg_entry_point")
+    scene = load_cfg_cls_from_registry("scene", "Robocasakitchen", "env_cfg_entry_point")
 
     if not for_rl:
         if scene_type == "USD":
-            task = load_robocasa_cfg_cls_from_registry("task", "Usd", "env_cfg_entry_point")
+            task = load_cfg_cls_from_registry("task", "Usd", "env_cfg_entry_point")
         else:
-            task = load_robocasa_cfg_cls_from_registry("task", task_name, "env_cfg_entry_point")
-        robot = load_robocasa_cfg_cls_from_registry("robot", robot_name, "env_cfg_entry_point")
+            task = load_cfg_cls_from_registry("task", task_name, "env_cfg_entry_point")
+        robot = load_cfg_cls_from_registry("robot", robot_name, "env_cfg_entry_point")
     else:
         # TODO: how to handle rl_variant? not robot here
         if rl_variant:
             task_name = f"{task_name}-{rl_variant}"
-        task = load_robocasa_cfg_cls_from_registry("rl", f"{robot_name}-{task_name}", "env_cfg_entry_point")
+        task = load_cfg_cls_from_registry("rl", f"{robot_name}-{task_name}", "env_cfg_entry_point")
 
     # TODO: how to handle teleop_device, remove it in main?
     # if teleop_device is not None:
@@ -243,41 +243,6 @@ def parse_env_cfg(
     from isaac_arena.environments.compile_env import ArenaEnvBuilder
     arena_builder = ArenaEnvBuilder(isaac_arena_environment, args)
     env_name, cfg = arena_builder.build_registered()
-
-    ###########
-    # set num_envs in task_env_cfg
-    # if num_envs is not None:
-    #     RobocasaEnvCfg.num_envs = num_envs
-    # RobocasaEnvCfg.device = device
-
-    # if replay_cfgs is not None:
-    #     RobocasaEnvCfg.replay_cfgs = replay_cfgs
-    # RobocasaEnvCfg.first_person_view = first_person_view
-    # RobocasaEnvCfg.usd_simplify = usd_simplify
-    # RobocasaEnvCfg.enable_cameras = enable_cameras
-    # RobocasaEnvCfg.object_init_offset = object_init_offset
-
-    # RobocasaEnvCfg.max_scene_retry = max_scene_retry
-    # RobocasaEnvCfg.max_object_placement_retry = max_object_placement_retry
-    # RobocasaEnvCfg.sources = sources
-    # RobocasaEnvCfg.object_projects = object_projects
-    # RobocasaEnvCfg.headless_mode = headless_mode
-
-    # if scene_type == "USD":
-    #     cfg = RobocasaEnvCfg(
-    #         execute_mode=execute_mode,
-    #         usd_path=scene_name,
-    #         robot_scale=robot_scale,
-    #         seed=seed,
-    #     )
-    # else:
-    #     cfg = RobocasaEnvCfg(
-    #         execute_mode=execute_mode,
-    #         scene_name=scene_name,
-    #         robot_scale=robot_scale,
-    #         seed=seed,
-    #     )
-    ###########
 
     # check that it is not a dict
     # we assume users always use a class for the configuration

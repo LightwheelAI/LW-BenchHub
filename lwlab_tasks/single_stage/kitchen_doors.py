@@ -18,13 +18,13 @@ from lwlab.core.models.fixtures import FixtureType
 import lwlab.utils.place_utils.env_utils as EnvUtils
 from lwlab.core.models.fixtures import fixture_is_type
 
-from lwlab.core.tasks.base import BaseTaskEnvCfg
+from lwlab.core.tasks.base import BaseTaskEnvCfg, LwLabTaskBase
 from lwlab.core.scenes.kitchen.kitchen import RobocasaKitchenEnvCfg
 import lwlab.utils.object_utils as OU
 from lwlab.core.models.fixtures import HingeCabinet, FridgeFrenchDoor, FridgeBottomFreezer, Drawer, Microwave, Counter, Stove, Stovetop, HousingCabinet, SingleCabinet, Fridge, Wall, Floor, Dishwasher
 
 
-class ManipulateDoor(BaseTaskEnvCfg, RobocasaKitchenEnvCfg):
+class ManipulateDoor(LwLabTaskBase):
     """
     Class encapsulating the atomic manipulate door tasks.
 

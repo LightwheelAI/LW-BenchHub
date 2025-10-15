@@ -123,13 +123,13 @@ def main():
             disable_env_checker=True,
         )
 
-        from lwlab.utils.env import load_robocasa_cfg_cls_from_registry
+        from lwlab.utils.env import load_cfg_cls_from_registry
         agent_cfg = None
         if agent_cfg_entry_point:
             if args_cli.variant:
-                agent_cfg = load_robocasa_cfg_cls_from_registry('rl', f"{args_cli.robot}-{args_cli.task}-{args_cli.variant}", agent_cfg_entry_point)
+                agent_cfg = load_cfg_cls_from_registry('rl', f"{args_cli.robot}-{args_cli.task}-{args_cli.variant}", agent_cfg_entry_point)
             else:
-                agent_cfg = load_robocasa_cfg_cls_from_registry('rl', f"{args_cli.robot}-{args_cli.task}", agent_cfg_entry_point)
+                agent_cfg = load_cfg_cls_from_registry('rl', f"{args_cli.robot}-{args_cli.task}", agent_cfg_entry_point)
 
     env_cfg.observations.policy.concatenate_terms = True
     # modify configuration
