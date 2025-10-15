@@ -38,21 +38,23 @@ class PlacementStrategy:
 class LwLabBaseOrchestrator(OrchestratorBase):
 
     def __init__(self, placement_strategy: Optional[PlacementStrategy] = None):
-        self.fixture_controllers = dict()
+        # self.fixture_controllers = dict()
         self.placement_strategy = placement_strategy
         self.scene = None
         self.embodiment = None
         self.task = None
 
-    def add_fixture_controller(self, fixture_controller):
-        self.fixture_controllers[fixture_controller.name] = fixture_controller
+    # def add_fixture_controller(self, fixture_controller):
+    #     self.fixture_controllers[fixture_controller.name] = fixture_controller
 
-    def update_fixture_controllers(self, fixtures: Dict[str, Any]):
-        for fixture_name, fixture_cfg in fixtures.items():
-            if fixture_name in self.fixture_controllers:
-                self.fixture_controllers[fixture_name].update(fixture_cfg)
+    # def update_fixture_controllers(self, fixtures: Dict[str, Any]):
+    #     for fixture_name, fixture_cfg in fixtures.items():
+    #         if fixture_name in self.fixture_controllers:
+    #             self.fixture_controllers[fixture_name].update(fixture_cfg)
 
     def orchestrate(self, embodiment: EmbodimentBase, scene: Scene, task: TaskBase) -> None:
+
+        context = scene.context
 
         # Second stage: update scene, embodiment, task
         self.scene = scene
@@ -61,6 +63,21 @@ class LwLabBaseOrchestrator(OrchestratorBase):
         embodiment.setup_env_config(self)
         scene.setup_env_config(self)
         task.setup_env_config(self)
+
+        # set up kitchen references
+        self.fixture_refs = self.task.fixture_refs
+
+        if context.get("usd_simplify", False):
+            # TODO: usd_simplify
+
+            # TODO: modify background
+            pass
+
+        # init ref fixtures
+        self._init_ref_fixtures()
+
+        # add ref fixtureassets to arena
+        self._add_ref_fixtures_to_arena()
 
         # place robot and objects
         self.place_robot_and_objects()
@@ -74,14 +91,14 @@ class LwLabBaseOrchestrator(OrchestratorBase):
         # combine ep_meta
         self.combine_ep_meta()
 
-    def combine_ep_meta(self):
-        """
-        Combine the ep_meta of scene, embodiment, task.
-        """
-        ep_meta = self.scene.get_ep_meta()
-        ep_meta.update(self.embodiment.get_ep_meta())
-        ep_meta.update(self.task.get_ep_meta())
-        return ep_meta
+    def _init_ref_fixtures(self):
+        for fixtr in self.fixture_refs.values():
+            if isinstance(fixtr, IsaacFixture):
+                fixtr.setup_cfg(self)
+
+    def _add_ref_fixtures_to_arena(self):
+        # TODO: add ref fixtures to arena
+        pass
 
     def _reset_internal(self, env_ids, env):
         """
@@ -91,12 +108,12 @@ class LwLabBaseOrchestrator(OrchestratorBase):
         self.scene.reset_root_state(env=env, env_ids=env_ids)
 
     def init_scene(self, env):
-        for fixture_controller in self.fixture_controllers.values():
+        for fixture_controller in self.fixture_refs.values():
             if isinstance(fixture_controller, IsaacFixture):
                 fixture_controller.setup_env(env)
 
     def update_state(self, env):
-        for fixture_controller in self.fixture_controllers.values():
+        for fixture_controller in self.fixture_refs.values():
             if isinstance(fixture_controller, IsaacFixture):
                 fixture_controller.update_state(env)
 
@@ -139,17 +156,28 @@ class LwLabBaseOrchestrator(OrchestratorBase):
         from isaaclab.managers import EventTermCfg as EventTerm
         events_cfg.init_scene = EventTerm(func=self.init_scene, mode="startup")
 
+    def combine_ep_meta(self):
+        """
+        Combine the ep_meta of scene, embodiment, task.
+        """
+        ep_meta = self.scene.get_ep_meta()
+        ep_meta.update(self.embodiment.get_ep_meta())
+        ep_meta.update(self.task.get_ep_meta())
+        return ep_meta
+
     def place_robot_and_objects(self):
         """
         Place the robot and objects in the scene.
         """
         if not self.placement_strategy:
             return
+
         scene_cfg = self.scene.get_scene_cfg()
         embodiment_cfg = self.embodiment.get_scene_cfg()
         task_cfg = self.task.get_scene_cfg()
         fixtures = self._extract_fixtures(scene_cfg)
         objects = self._extract_objects(task_cfg)
+
         robot_pose = self.placement_strategy.compute_robot_pose(fixtures, embodiment_cfg)
         object_poses = self.placement_strategy.compute_object_poses(objects, fixtures, robot_pose)
 
