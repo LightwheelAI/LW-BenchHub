@@ -182,6 +182,9 @@ def parse_env_cfg(
     # Import all configs in this package
     from lwlab.core.context import get_context
     context = get_context()
+    context.scene_name = scene_name
+    context.robot_name = robot_name
+    context.task_name = task_name
     context.execute_mode = execute_mode
     context.device = device
     context.robot_scale = robot_scale

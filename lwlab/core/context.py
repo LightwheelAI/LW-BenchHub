@@ -6,6 +6,9 @@ CURRENT_CONTEXT = None
 
 @configclass
 class Context:
+    scene_name: str | None = None
+    robot_name: str | None = None
+    task_name: str | None = None
     execute_mode: ExecuteMode | None = None
     device: str | None = None
     ep_meta: dict | None = None
