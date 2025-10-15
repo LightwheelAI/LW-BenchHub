@@ -8,7 +8,11 @@ from lwlab.core.models.fixtures.fixture import Fixture as IsaacFixture
 import torch
 from lwlab.utils.place_utils import env_utils as EnvUtils
 import numpy as np
-from lwlab.utils.place_utils.env_utils import get_safe_robot_anchor
+from lwlab.utils.place_utils.env_utils import set_robot_to_position, sample_robot_base_helper, get_safe_robot_anchor
+import lwlab.utils.math_utils.transform_utils.numpy_impl as Tn
+import lwlab.utils.math_utils.transform_utils.torch_impl as Tt
+from lwlab.core.models.fixtures.fixture import FixtureType
+from lwlab.utils.fixture_utils import fixture_is_type
 
 
 class PlacementStrategy:
@@ -73,7 +77,7 @@ class LwLabBaseOrchestrator(OrchestratorBase):
 
     def orchestrate(self, embodiment: EmbodimentBase, scene: Scene, task: TaskBase) -> None:
 
-        context = scene.context
+        self.context = scene.context
 
         # Second stage: update scene, embodiment, task
         self.scene = scene
@@ -87,7 +91,7 @@ class LwLabBaseOrchestrator(OrchestratorBase):
         self.fixture_refs = self.task.fixture_refs
 
         # usd simplify
-        if context.get("usd_simplify", False):
+        if self.context.get("usd_simplify", False):
             from lwlab.utils.usd_utils import OpenUsd as usd
             new_stage = usd.usd_simplify(self.scene.lwlab_arena.stage, self.fixture_refs)
             self.scene.scene_type
@@ -226,23 +230,22 @@ class LwLabBaseOrchestrator(OrchestratorBase):
         if hasattr(cfg, key):
             setattr(cfg, key, value)
 
-    # TODO:(ju.zheng) need to update this
     def reset_root_state(self, env, env_ids=None):
         """
         reset the root state of objects and robot in the environment
         """
         if env_ids is None:
-            env_ids = torch.arange(env.num_envs, device=self.device, dtype=torch.int64)
+            env_ids = torch.arange(env.num_envs, device=self.context.device, dtype=torch.int64)
         object_placements = EnvUtils.sample_object_placements(self, need_retry=False)
         object_placements, updated_obj_names = self._update_fxtr_obj_placement(object_placements)
-        if env.cfg.reset_objects_enabled and self.fix_object_pose_cfg is None:
+        if self.task.reset_objects_enabled and self.task.fix_object_pose_cfg is None:
             reset_objs = object_placements.keys()
         else:
             reset_objs = updated_obj_names
         for obj_name in reset_objs:
             obj_poses, obj_quat, _ = object_placements[obj_name]
-            obj_pos = torch.tensor(obj_poses, device=self.device, dtype=torch.float32)[env_ids] + env.scene.env_origins[env_ids]
-            obj_quat = Tt.convert_quat(torch.tensor(obj_quat, device=self.device, dtype=torch.float32), to="wxyz")
+            obj_pos = torch.tensor(obj_poses, device=self.context.device, dtype=torch.float32)[env_ids] + env.scene.env_origins[env_ids]
+            obj_quat = Tt.convert_quat(torch.tensor(obj_quat, device=self.context.device, dtype=torch.float32), to="wxyz")
             obj_quat = obj_quat.unsqueeze(0).repeat(obj_pos.shape[0], 1)
             root_pos = torch.concatenate([obj_pos, obj_quat], dim=-1)
             env.scene.rigid_objects[obj_name].write_root_pose_to_sim(
@@ -251,7 +254,8 @@ class LwLabBaseOrchestrator(OrchestratorBase):
             )
         env.sim.forward()
 
-        if env.cfg.reset_robot_enabled:
+        if self.task.reset_robot_enabled:
+            # TODO:(ju.zheng) need to update this
             self.sample_robot_base(env, env_ids)
             set_robot_to_position(env, self.init_robot_base_pos, self.init_robot_base_ori, keep_z=False, env_ids=env_ids)
 
@@ -259,12 +263,12 @@ class LwLabBaseOrchestrator(OrchestratorBase):
         updated_obj_names = []
         for obj_name, obj_placement in object_placements.items():
             updated_placement = list(obj_placement)
-            obj_cfg = [cfg for cfg in self.object_cfgs if cfg["name"] == obj_name][0]
+            obj_cfg = [cfg for cfg in self.task.object_cfgs if cfg["name"] == obj_name][0]
             ref_fixture = None
             if "fixture" in obj_cfg["placement"]:
                 ref_fixture = obj_cfg["placement"]["fixture"]
             if isinstance(ref_fixture, str):
-                ref_fixture = self.get_fixture(ref_fixture)
+                ref_fixture = self.task.get_fixture(ref_fixture)
             # TODO: add other sliding fxtr types
             if fixture_is_type(ref_fixture, FixtureType.DRAWER):
                 ref_rot_mat = Tn.euler2mat(np.array([0, 0, ref_fixture.rot]))
@@ -274,3 +278,25 @@ class LwLabBaseOrchestrator(OrchestratorBase):
                 updated_placement[0] = np.array(updated_placement[0])[None, :].repeat(self.num_envs, axis=0)
             object_placements[obj_name] = updated_placement
         return object_placements, updated_obj_names
+
+    def sample_robot_base(self, env, env_ids=None):
+        # set the robot here
+        if "init_robot_base_pos" in self._ep_meta:
+            assert "init_robot_base_ori" in self._ep_meta, "init_robot_base_ori is required when init_robot_base_pos is provided"
+            self.init_robot_base_pos = self._ep_meta["init_robot_base_pos"]
+            self.init_robot_base_ori = self._ep_meta["init_robot_base_ori"]
+            if len(self.init_robot_base_ori) == 4:  # xyzw
+                self.init_robot_base_ori = Tn.mat2euler(Tn.quat2mat(self.init_robot_base_ori)).tolist()
+        else:
+            robot_pos = sample_robot_base_helper(
+                env=env,
+                anchor_pos=self.init_robot_base_pos_anchor,
+                anchor_ori=self.init_robot_base_ori_anchor,
+                rot_dev=self.robot_spawn_deviation_rot,
+                pos_dev_x=self.robot_spawn_deviation_pos_x,
+                pos_dev_y=self.robot_spawn_deviation_pos_y,
+                env_ids=env_ids,
+                execute_mode=self.execute_mode,
+            )
+            self.init_robot_base_pos = robot_pos
+            self.init_robot_base_ori = self.init_robot_base_ori_anchor
