@@ -186,9 +186,24 @@ def parse_env_cfg(
     from isaac_arena.examples.example_environments.example_environment_base import ExampleEnvironmentBase
 
     environment_base = ExampleEnvironmentBase()
-    robot = environment_base.asset_registry.get_asset_by_name(robot_name)()
-    scene = environment_base.asset_registry.get_asset_by_name(scene_name)()
-    task = environment_base.asset_registry.get_asset_by_name(task_name)()
+
+    if scene_name.endswith(".usd"):
+        scene_type = "USD"
+    else:
+        scene_type, *_ = scene_name.split("-", 1)
+    scene = load_robocasa_cfg_cls_from_registry("scene", "Robocasakitchen", "env_cfg_entry_point")
+
+    if not for_rl:
+        if scene_type == "USD":
+            task = load_robocasa_cfg_cls_from_registry("task", "Usd", "env_cfg_entry_point")
+        else:
+            task = load_robocasa_cfg_cls_from_registry("task", task_name, "env_cfg_entry_point")
+        robot = load_robocasa_cfg_cls_from_registry("robot", robot_name, "env_cfg_entry_point")
+    else:
+        if rl_variant:
+            task_name = f"{task_name}-{rl_variant}"
+        task = load_robocasa_cfg_cls_from_registry("rl", f"{robot_name}-{task_name}", "env_cfg_entry_point")
+
     if teleop_device is not None:
         teleop_device = environment_base.device_registry.get_device_by_name(teleop_device)()
     else:
@@ -210,67 +225,40 @@ def parse_env_cfg(
 
     from isaac_arena.environments.compile_env import ArenaEnvBuilder
     arena_builder = ArenaEnvBuilder(isaac_arena_environment, args)
-    env_name, env_cfg = arena_builder.build_registered()
+    env_name, cfg = arena_builder.build_registered()
 
-    return env_name, env_cfg
+    # # set num_envs in task_env_cfg
+    # if num_envs is not None:
+    #     RobocasaEnvCfg.num_envs = num_envs
+    # RobocasaEnvCfg.device = device
 
-    if scene_name.endswith(".usd"):
-        scene_type = "USD"
-    else:
-        scene_type, *_ = scene_name.split("-", 1)
-    scene_env_cfg = load_robocasa_cfg_cls_from_registry("scene", "Robocasakitchen", "env_cfg_entry_point")
+    # if replay_cfgs is not None:
+    #     RobocasaEnvCfg.replay_cfgs = replay_cfgs
+    # RobocasaEnvCfg.first_person_view = first_person_view
+    # RobocasaEnvCfg.usd_simplify = usd_simplify
+    # RobocasaEnvCfg.enable_cameras = enable_cameras
+    # RobocasaEnvCfg.object_init_offset = object_init_offset
 
-    if not for_rl:
-        if scene_type == "USD":
-            task_env_cfg = load_robocasa_cfg_cls_from_registry("task", "Usd", "env_cfg_entry_point")
-        else:
-            task_env_cfg = load_robocasa_cfg_cls_from_registry("task", task_name, "env_cfg_entry_point")
-        robot_env_cfg = load_robocasa_cfg_cls_from_registry("robot", robot_name, "env_cfg_entry_point")
+    # RobocasaEnvCfg.max_scene_retry = max_scene_retry
+    # RobocasaEnvCfg.max_object_placement_retry = max_object_placement_retry
+    # RobocasaEnvCfg.sources = sources
+    # RobocasaEnvCfg.object_projects = object_projects
+    # RobocasaEnvCfg.headless_mode = headless_mode
 
-        @configclass
-        class RobocasaEnvCfg(robot_env_cfg, task_env_cfg, scene_env_cfg):
-            pass
-    else:
-        if rl_variant:
-            task_name = f"{task_name}-{rl_variant}"
-        rl_robot_task_cfg = load_robocasa_cfg_cls_from_registry("rl", f"{robot_name}-{task_name}", "env_cfg_entry_point")
-
-        @configclass
-        class RobocasaEnvCfg(rl_robot_task_cfg, scene_env_cfg):
-            pass
-
-    # set num_envs in task_env_cfg
-    if num_envs is not None:
-        RobocasaEnvCfg.num_envs = num_envs
-    RobocasaEnvCfg.device = device
-
-    if replay_cfgs is not None:
-        RobocasaEnvCfg.replay_cfgs = replay_cfgs
-    RobocasaEnvCfg.first_person_view = first_person_view
-    RobocasaEnvCfg.usd_simplify = usd_simplify
-    RobocasaEnvCfg.enable_cameras = enable_cameras
-    RobocasaEnvCfg.object_init_offset = object_init_offset
-
-    RobocasaEnvCfg.max_scene_retry = max_scene_retry
-    RobocasaEnvCfg.max_object_placement_retry = max_object_placement_retry
-    RobocasaEnvCfg.sources = sources
-    RobocasaEnvCfg.object_projects = object_projects
-    RobocasaEnvCfg.headless_mode = headless_mode
-
-    if scene_type == "USD":
-        cfg = RobocasaEnvCfg(
-            execute_mode=execute_mode,
-            usd_path=scene_name,
-            robot_scale=robot_scale,
-            seed=seed,
-        )
-    else:
-        cfg = RobocasaEnvCfg(
-            execute_mode=execute_mode,
-            scene_name=scene_name,
-            robot_scale=robot_scale,
-            seed=seed,
-        )
+    # if scene_type == "USD":
+    #     cfg = RobocasaEnvCfg(
+    #         execute_mode=execute_mode,
+    #         usd_path=scene_name,
+    #         robot_scale=robot_scale,
+    #         seed=seed,
+    #     )
+    # else:
+    #     cfg = RobocasaEnvCfg(
+    #         execute_mode=execute_mode,
+    #         scene_name=scene_name,
+    #         robot_scale=robot_scale,
+    #         seed=seed,
+    #     )
 
     # check that it is not a dict
     # we assume users always use a class for the configuration
