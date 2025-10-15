@@ -228,9 +228,9 @@ def parse_env_cfg(
 
     isaac_arena_environment = IsaacArenaEnvironment(
         name=task_name,
-        embodiment=robot,
-        scene=scene,
-        task=task,
+        embodiment=robot(),
+        scene=scene(),
+        task=task(),
         teleop_device=teleop_device,
     )
 

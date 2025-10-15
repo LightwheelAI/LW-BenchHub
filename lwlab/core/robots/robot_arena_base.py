@@ -133,9 +133,8 @@ class LwLabEmbodimentBase(EmbodimentBase):
         self.event_config = MISSING
         self.mimic_env = MISSING
 
-        self.basecfg = LwBaseCfg()
-        self.set_default_offset_config(self.basecfg)
-        if self.basecfg.execute_mode in [ExecuteMode.TELEOP, ExecuteMode.REPLAY_ACTION, ExecuteMode.REPLAY_JOINT_TARGETS]:
+        self.set_default_offset_config()
+        if self.context.execute_mode in [ExecuteMode.TELEOP, ExecuteMode.REPLAY_ACTION, ExecuteMode.REPLAY_JOINT_TARGETS]:
             self.basecfg.recorders = RecorderManagerCfg()
 
     def preprocess_device_action(self, action: dict[str, torch.Tensor]) -> torch.Tensor:
@@ -191,8 +190,8 @@ class LwLabEmbodimentBase(EmbodimentBase):
         ep_meta["robot_name"] = self.robot_name
         return ep_meta
 
-    def set_default_offset_config(self, cfg):
-        cfg.offset_config = {
+    def set_default_offset_config(self):
+        self.offset_config = {
             "left_gripper_offset": np.zeros(3,),
             "right_gripper_offset": np.zeros(3,),
             "controller2gripper_l_arm": np.eye(4),
