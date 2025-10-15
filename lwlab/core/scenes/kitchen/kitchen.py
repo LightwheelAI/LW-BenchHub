@@ -72,16 +72,6 @@ What second stage need to do:
 '''
 
 
-@configclass
-class EventCfg:
-    pass
-
-
-@configclass
-class TerminationCfg:
-    pass
-
-
 class LwLabScene(Scene):
 
     def __init__(self,
@@ -96,36 +86,7 @@ class LwLabScene(Scene):
 
         self.layout_id: int = None
         self.style_id: int = None
-
-        # TODO: need move it to task_base or cloud
-        self.EXCLUDE_LAYOUTS = []
-        self.OVEN_EXCLUDED_LAYOUTS = [1, 3, 5, 6, 8, 10, 11, 13, 14, 16, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 30, 32, 33, 36, 38, 40, 41, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60]
-        self.DOUBLE_CAB_EXCLUDED_LAYOUTS = [32, 41, 59]
-        self.DINING_COUNTER_EXCLUDED_LAYOUTS = [1, 3, 5, 6, 18, 20, 36, 39, 40, 43, 47, 50, 52]
-        self.ISLAND_EXCLUDED_LAYOUTS = [1, 3, 5, 6, 8, 9, 10, 13, 18, 19, 22, 27, 30, 36, 40, 43, 46, 47, 49, 52, 53, 60]
-        self.STOOL_EXCLUDED_LAYOUT = [1, 3, 5, 6, 18, 20, 36, 39, 40, 43, 47, 50, 52]
-        self.SHELVES_INCLUDED_LAYOUT = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        self.DOUBLE_CAB_EXCLUDED_LAYOUTS = [32, 41, 59]
-
-        self.obj_instance_split = None
         self.fixture_refs = {}
-        self.init_robot_base_ref = None
-        self.deterministic_reset = False
-        self.robot_spawn_deviation_pos_x = 0.15
-        self.robot_spawn_deviation_pos_y = 0.05
-        self.robot_spawn_deviation_rot = 0.0
-        self.start_success_check_count = 10
-
-        self.success_cache = torch.tensor([0], device=self.device, dtype=torch.int32).repeat(self.num_envs)
-        self.success_flag = torch.tensor([False], device=self.device, dtype=torch.bool).repeat(self.num_envs)
-
-        # Initialize robot base position and orientation attributes
-        self.init_robot_base_pos = [0.0, 0.0, 0.0]
-        self.init_robot_base_ori = [0.0, 0.0, 0.0, 1.0]
-
-        # Initialize retry counts
-        self.scene_retry_count = 0
-        self.object_retry_count = 0
 
         if self.execute_mode in [ExecuteMode.REPLAY_ACTION, ExecuteMode.REPLAY_JOINT_TARGETS, ExecuteMode.REPLAY_STATE]:
             self.is_replay_mode = True
@@ -133,22 +94,17 @@ class LwLabScene(Scene):
             self.is_replay_mode = False
 
         self.replay_cfgs = replay_cfgs
-        self.events_cfg = EventCfg()
-        self.termination_cfg = TerminationCfg()
 
         self._setup_config()
-        self.init_checkers_cfg()
-        self.checkers = get_checkers_from_cfg(self.checkers_cfg)
-        self.checkers_results = form_checker_result(self.checkers_cfg)
 
     # first stage (just init from itself)
     def _setup_config(self):
-        self.floorplan_usd_version = None
+        self.cache_usd_version = {}
         self._ep_meta = {}
         if self.replay_cfgs is not None and "ep_meta" in self.replay_cfgs:
             self.set_ep_meta(self.replay_cfgs["ep_meta"])
-            if "floorplan_usd_version" in self._ep_meta:
-                self.floorplan_usd_version = self._ep_meta["floorplan_usd_version"]
+            if "cache_usd_version" in self._ep_meta:
+                self.cache_usd_version = self._ep_meta["cache_usd_version"]
             if "hdf5_path" in self.replay_cfgs:
                 self.hdf5_path = self.replay_cfgs["hdf5_path"]
 
@@ -175,20 +131,16 @@ class LwLabScene(Scene):
         self.lwlab_arena = KitchenArena(
             layout_id=self.layout_id,
             style_id=self.style_id,
-            exclude_layouts=orchestrator.task.EXCLUDE_LAYOUTS,
-            enable_fixtures=orchestrator.task.enable_fixtures,
-            removable_fixtures=orchestrator.task.removable_fixtures,
-            ref_fixture_types=orchestrator.task.ref_fixture_types,
-            ref_fixture_ids=orchestrator.task.ref_fixture_ids,
-            usd_simplify=orchestrator.task.usd_simplify,
-            scene_type=self.scene_type,
+            exclude_layouts=orchestrator.task.exclude_layouts,
             scene_cfg=self,
+            scene_type=self.scene_type
         )
-        self.fixtures = self.lwlab_arena.fixtures
-        self.ref_fixtures = self.lwlab_arena.ref_fixtures
-        orchestrator.update_fixture_controllers(self.ref_fixtures)
-        self.floorplan_usd_version = self.lwlab_arena.version_id
+        self.usd_path = self.lwlab_arena.usd_path
+        self.layout_id = self.lwlab_arena.layout_id
+        self.style_id = self.lwlab_arena.style_id
+        self.scene_type = self.lwlab_arena.scene_type
         self.fixture_cfgs = self.lwlab_arena.get_fixture_cfgs()
+        self.cache_usd_version.update({"floorplan_version": self.lwlab_arena.version_id})
         self.fxtr_placements = usd.get_fixture_placements(self.lwlab_arena.stage.GetPseudoRoot(), self.fixture_cfgs, self.fixtures)
 
         if self.lwlab_arena.layout_id in orchestrator.task.EXCLUDE_LAYOUTS:
@@ -200,55 +152,12 @@ class LwLabScene(Scene):
             object_min_z=0.1,
         )
 
-        ref_fixture_references = [
-            ObjectReference(
-                name=ref_fxtr_name,
-                prim_path=f"{{ENV_REGEX_NS}}/{self.scene_type}/{ref_fxtr_name}",
-                parent_asset=background,
-                obj_type=ObjectType.ARTICULATION,
-            )
-            for ref_fxtr_name in self.lwlab_arena.ref_fixture_names
-        ]
-
         # flush self.assets
         self.assets = {}
         self.add_asset(background)
-        self.add_assets(ref_fixture_references)
 
     def set_ep_meta(self, meta):
         self._ep_meta = meta
-
-    def init_checkers_cfg(self):
-        # checkers
-        if self.execute_mode in self.is_replay_mode:
-            print("INFO: Running in Replay Mode. Using replay-specific checker config.")
-            self.checkers_cfg = {
-                "motion": {
-                    "warning_on_screen": False
-                },
-                "kitchen_clipping": {
-                    "warning_on_screen": False
-                },
-                "velocity_jump": {
-                    "warning_on_screen": False
-                }
-            }
-        else:
-            print("INFO: Running in Teleop Mode. Using default checker config.")
-            self.checkers_cfg = {
-                "motion": {
-                    "warning_on_screen": False
-                },
-                "kitchen_clipping": {
-                    "warning_on_screen": False
-                },
-                "velocity_jump": {
-                    "warning_on_screen": False
-                },
-                "start_object_move": {
-                    "warning_on_screen": False
-                }
-            }
 
     def get_fixture(self, id, ref=None, size=(0.2, 0.2), full_name_check=False, fix_id=None, full_depth_region=False):
         """
@@ -361,14 +270,6 @@ class LwLabScene(Scene):
             ]
             return self.rng.choice(close_fixtures)
 
-    def get_warning_text(self):
-        warning_text = ""
-        for checker in self.checkers:
-            if self.checkers_results[checker.type].get("warning_text"):
-                warning_text += self.checkers_results[checker.type].get("warning_text")
-                warning_text += "\n"
-        return warning_text
-
     def get_ep_meta(self):
         ep_meta = super().get_ep_meta()
 
@@ -399,7 +300,7 @@ class LwLabScene(Scene):
             {k: v.name for (k, v) in self.ref_fixtures.items()}
         )
         # export actual init pose if available in this episode, otherwise omit
-        ep_meta["floorplan_usd_version"] = self.floorplan_usd_version
+        ep_meta["cache_usd_version"] = self.cache_usd_version
         return ep_meta
 
 
