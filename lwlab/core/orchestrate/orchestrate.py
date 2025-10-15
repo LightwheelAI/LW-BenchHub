@@ -15,54 +15,10 @@ from lwlab.core.models.fixtures.fixture import FixtureType
 from lwlab.utils.fixture_utils import fixture_is_type
 
 
-class PlacementStrategy:
-
-    def compute_robot_pose(
-        self, orchestrator
-    ) -> Optional[Pose]:
-        """
-        Compute the pose of the robot in the scene.
-        """
-        self.get_robot_anchor()
-
-    def compute_object_poses(
-        self, orchestrator
-    ) -> Dict[str, Pose]:
-        """
-        Compute the poses of the objects in the scene.
-        """
-        object_placements = EnvUtils.sample_object_placements(orchestrator, need_retry=False)
-        return object_placements
-
-    @staticmethod
-    def get_robot_anchor(orchestrator):
-        (
-            robot_base_pos_anchor,
-            robot_base_ori_anchor,
-        ) = EnvUtils.init_robot_base_pose(orchestrator)
-
-        if hasattr(orchestrator, "robot_base_offset"):
-            try:
-                robot_base_pos_anchor += np.array(orchestrator.robot_base_offset["pos"])
-                robot_base_ori_anchor += np.array(orchestrator.robot_base_offset["rot"])
-            except KeyError:
-                raise ValueError("offset value is not correct !! please make sure offset has key pos and rot !!")
-
-        # Intercept the unsafe anchor and make it safe
-        safe_anchor_pos, safe_anchor_ori = get_safe_robot_anchor(
-            cfg=orchestrator.robot,
-            unsafe_anchor_pos=robot_base_pos_anchor,
-            unsafe_anchor_ori=robot_base_ori_anchor
-        )
-
-        return safe_anchor_pos, safe_anchor_ori
-
-
 class LwLabBaseOrchestrator(OrchestratorBase):
 
-    def __init__(self, placement_strategy: Optional[PlacementStrategy] = None):
+    def __init__(self):
         # self.fixture_controllers = dict()
-        self.placement_strategy = placement_strategy
         self.scene = None
         self.embodiment = None
         self.task = None
@@ -114,6 +70,28 @@ class LwLabBaseOrchestrator(OrchestratorBase):
 
         # setup scene event terms
         self.setup_scene_event_terms()
+
+    def get_robot_anchor(orchestrator):
+        (
+            robot_base_pos_anchor,
+            robot_base_ori_anchor,
+        ) = EnvUtils.init_robot_base_pose(orchestrator)
+
+        if hasattr(orchestrator, "robot_base_offset"):
+            try:
+                robot_base_pos_anchor += np.array(orchestrator.robot_base_offset["pos"])
+                robot_base_ori_anchor += np.array(orchestrator.robot_base_offset["rot"])
+            except KeyError:
+                raise ValueError("offset value is not correct !! please make sure offset has key pos and rot !!")
+
+        # Intercept the unsafe anchor and make it safe
+        safe_anchor_pos, safe_anchor_ori = get_safe_robot_anchor(
+            cfg=orchestrator.robot,
+            unsafe_anchor_pos=robot_base_pos_anchor,
+            unsafe_anchor_ori=robot_base_ori_anchor
+        )
+
+        return safe_anchor_pos, safe_anchor_ori
 
     def _init_ref_fixtures(self):
         for fixtr in self.fixture_refs.values():
@@ -197,29 +175,21 @@ class LwLabBaseOrchestrator(OrchestratorBase):
         """
         Place the robot and objects in the scene.
         """
-        if not self.placement_strategy:
-            return
+        # place robot
+        self.init_robot_base_pos_anchor, self.init_robot_base_ori_anchor = self.get_robot_anchor()
+        self.embodiment.scene_config.init_state.pos = self.init_robot_base_pos_anchor
+        self.embodiment.scene_config.init_state.rot = Tn.convert_quat(Tn.mat2quat(Tn.euler2mat(self.init_robot_base_ori_anchor)), to="wxyz")
 
-        robot_pose = self.placement_strategy.compute_robot_pose(self)
-        object_poses = self.placement_strategy.compute_object_poses(self)
+        # place objects
+        object_placements = EnvUtils.sample_object_placements(self, need_retry=False)
+        self._apply_object_poses(object_placements)
 
-        self._apply_robot_pose(embodiment_cfg, robot_pose)
-        self._apply_object_poses(task_cfg, object_poses)
-
-    def _apply_robot_pose(self, embodiment_cfg, robot_pose: Optional[Pose]):
-        if robot_pose and embodiment_cfg and hasattr(embodiment_cfg, 'robot'):
-            robot_cfg = embodiment_cfg.robot
-            if hasattr(robot_cfg, 'init_state'):
-                robot_cfg.init_state.pos = robot_pose.position_xyz
-                robot_cfg.init_state.rot = robot_pose.rotation_wxyz
-
-    def _apply_object_poses(self, task_cfg, object_poses: Dict[str, Pose]):
-        for obj_name, obj_pose in object_poses.items():
-            if hasattr(task_cfg, obj_name):
-                obj_cfg = getattr(task_cfg, obj_name)
-                if hasattr(obj_cfg, 'init_state'):
-                    obj_cfg.init_state.pos = obj_pose.position_xyz
-                    obj_cfg.init_state.rot = obj_pose.rotation_wxyz
+    def _apply_object_poses(self, object_placements):
+        for obj_pos, obj_quat, obj in object_placements.items():
+            if obj.task_name in self.task.assets:
+                obj_quat_wxyz = Tn.convert_quat(obj_quat, to="wxyz")
+                self.task.assets[obj.task_name].init_state.pos = obj_pos
+                self.task.assets[obj.task_name].init_state.rot = obj_quat_wxyz
 
     def _extract_cfg(self, cfg, key):
         if hasattr(cfg, key):
@@ -281,10 +251,11 @@ class LwLabBaseOrchestrator(OrchestratorBase):
 
     def sample_robot_base(self, env, env_ids=None):
         # set the robot here
-        if "init_robot_base_pos" in self._ep_meta:
-            assert "init_robot_base_ori" in self._ep_meta, "init_robot_base_ori is required when init_robot_base_pos is provided"
-            self.init_robot_base_pos = self._ep_meta["init_robot_base_pos"]
-            self.init_robot_base_ori = self._ep_meta["init_robot_base_ori"]
+        ep_meta = self.get_ep_meta()
+        if "init_robot_base_pos" in ep_meta:
+            assert "init_robot_base_ori" in ep_meta, "init_robot_base_ori is required when init_robot_base_pos is provided"
+            self.init_robot_base_pos = ep_meta["init_robot_base_pos"]
+            self.init_robot_base_ori = ep_meta["init_robot_base_ori"]
             if len(self.init_robot_base_ori) == 4:  # xyzw
                 self.init_robot_base_ori = Tn.mat2euler(Tn.quat2mat(self.init_robot_base_ori)).tolist()
         else:
@@ -292,11 +263,11 @@ class LwLabBaseOrchestrator(OrchestratorBase):
                 env=env,
                 anchor_pos=self.init_robot_base_pos_anchor,
                 anchor_ori=self.init_robot_base_ori_anchor,
-                rot_dev=self.robot_spawn_deviation_rot,
-                pos_dev_x=self.robot_spawn_deviation_pos_x,
-                pos_dev_y=self.robot_spawn_deviation_pos_y,
+                rot_dev=self.embodiment.robot_spawn_deviation_rot,
+                pos_dev_x=self.embodiment.robot_spawn_deviation_pos_x,
+                pos_dev_y=self.embodiment.robot_spawn_deviation_pos_y,
                 env_ids=env_ids,
-                execute_mode=self.execute_mode,
+                execute_mode=self.context.execute_mode,
             )
             self.init_robot_base_pos = robot_pos
             self.init_robot_base_ori = self.init_robot_base_ori_anchor

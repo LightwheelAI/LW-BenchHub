@@ -132,6 +132,9 @@ class LwLabEmbodimentBase(EmbodimentBase):
         self.observation_config = MISSING
         self.event_config = MISSING
         self.mimic_env = MISSING
+        self.robot_spawn_deviation_pos_x = 0.15
+        self.robot_spawn_deviation_pos_y = 0.05
+        self.robot_spawn_deviation_rot = 0.0
 
         self.set_default_offset_config()
 

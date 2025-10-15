@@ -1089,27 +1089,25 @@ def sample_object_placements(orchestrator, need_retry=True) -> dict:
                 orchestrator.task.scene_retry_count += 1
                 orchestrator.task = LwLabTaskBase()
                 orchestrator.scene.setup_env_config(orchestrator)
-                return orchestrator.task.object_placements
             else:
                 # No cached versions, try to replace object
                 print(f"Attempting to replace failed object: {failed_obj_name}")
                 if recreate_object(orchestrator, failed_obj_name):
                     orchestrator.task.object_retry_count += 1
-                    return sample_object_placements(orchestrator, need_retry)
                 else:
                     # If recreate failed, increment scene retry and reload model
                     orchestrator.task.scene_retry_count += 1
                     print(f"Failed to replace object {failed_obj_name}, reloading model (scene retry {orchestrator.task.scene_retry_count}/{orchestrator.task.max_scene_retry})")
                     orchestrator.task = LwLabTaskBase()
                     orchestrator.scene.setup_env_config(orchestrator)
-                    return orchestrator.task.object_placements
         else:
             print("Could not identify failed object, falling back to model reload")
             orchestrator.task.scene_retry_count += 1
             print(f"Reloading model (scene retry {orchestrator.task.scene_retry_count}/{orchestrator.task.max_scene_retry})")
             orchestrator.task = LwLabTaskBase()
             orchestrator.scene.setup_env_config(orchestrator)
-            return orchestrator.task.object_placements
+
+        return sample_object_placements(orchestrator, need_retry)
 
 
 @contextlib.contextmanager
@@ -1204,8 +1202,8 @@ def set_robot_to_position(env: ManagerBasedRLEnv, global_pos, global_ori, keep_z
         robot_z = global_pos[2]
     robot_pos = torch.tensor([[global_pos[0], global_pos[1], robot_z]], dtype=torch.float32, device=env.device) + env.scene.env_origins[env_ids]
     robot_quat = T.convert_quat(T.mat2quat(T.euler2mat(global_ori)), "wxyz")
-    env.cfg.isaac_arena_env.embodiment.init_state.pos = robot_pos
-    env.cfg.isaac_arena_env.embodiment.init_state.rot = robot_quat
+    env.cfg.isaac_arena_env.embodiment.scene_config.init_state.pos = robot_pos
+    env.cfg.isaac_arena_env.embodiment.scene_config.init_state.rot = robot_quat
     robot_quat = torch.tensor(robot_quat, dtype=torch.float32, device=env.device).unsqueeze(0).repeat(env_ids.shape[0], 1)
     robot_pose = torch.concat([robot_pos, robot_quat], dim=-1)
     env.scene.articulations["robot"].write_root_pose_to_sim(robot_pose, env_ids=env_ids)
