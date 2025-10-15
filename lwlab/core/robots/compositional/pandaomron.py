@@ -38,22 +38,159 @@ FRAME_MARKER_SMALL_CFG = FRAME_MARKER_CFG.copy()
 FRAME_MARKER_SMALL_CFG.markers["frame"].scale = (0.10, 0.10, 0.10)
 
 
-@configclass
-class ActionsCfg:
-    """Action specifications for the MDP."""
-
-    arm_action: mdp.DifferentialInverseKinematicsActionCfg | mdp.JointPositionActionCfg = MISSING
-    gripper_action: mdp.BinaryJointPositionActionCfg = MISSING
-    base_action: mdp.RelativeJointPositionActionCfg = MISSING
-
-
+from lwlab.core.robots.robot_arena_base import LwEmbodimentBase
 # @configclass
-class PandaOmronEnvCfg(BaseRobotCfg):
-    actions: ActionsCfg = ActionsCfg()
-    robot_scale: float = MISSING
-    robot_cfg: ArticulationCfg = FRANKA_OMRON_CFG
-    offset_config = OFFSET_CONFIG
-    robot_base_link: str = "mobilebase0_wheeled_base"
+from isaac_arena.utils.pose import Pose
+from typing import Optional, Any
+
+
+class PandaOmronEmbodiment(LwEmbodimentBase):
+
+    name = "pandaomron"
+
+    def __init__(self, enable_cameras: bool = False, initial_pose: Optional[Pose] = None):
+        super().__init__(enable_cameras, initial_pose)
+        self.scene_config = PandaOmronSceneCfg()
+        self.action_config = MISSING
+        self.observation_config = MISSING
+        self.event_config = MISSING
+        self.mimic_env = MISSING
+        self.camera_config = PandaOmronCameraCfg()
+        self.basecfg.viewport_cfg = {
+            "offset": [-1.0, 0.0, 2.0],
+            "lookat": [1.0, 0.0, -0.7]
+        }
+        self.basecfg.robot_vis_helper_cfg = VIS_HELPER_CFG
+
+    def _update_scene_cfg_with_robot_initial_pose(self, scene_config: Any, pose: Pose) -> Any:
+        # We override the default initial pose setting function in order to also set
+        # the initial pose of the stand.
+        scene_config = super()._update_scene_cfg_with_robot_initial_pose(scene_config, pose)
+        if scene_config is None or not hasattr(scene_config, "robot"):
+            raise RuntimeError("scene_config must be populated with a `robot` before calling `set_robot_initial_pose`.")
+        scene_config.stand.init_state.pos = pose.position_xyz
+        scene_config.stand.init_state.rot = pose.rotation_wxyz
+        return scene_config
+
+    def preprocess_device_action(self, action: dict[str, torch.Tensor], device) -> torch.Tensor:
+        num_envs = device.env.num_envs
+        base = torch.zeros(num_envs, 4, device=device.env.device)
+        if action.get('spacemouse') is not None:
+            base[:, :3] = torch.tensor([action["rbase"][0], action["rbase"][1], action["rbase"][2]], device=device.env.device)
+        else:
+            if action['rsqueeze'] > 0.5:
+                base[:, :3] = torch.tensor([action["rbase"][0], action["rbase"][1], 0], device=device.env.device)
+            else:
+                base[:, :3] = torch.tensor([action["rbase"][0], 0, action["rbase"][1]], device=device.env.device)
+
+        if self.action_config.arm_action.controller.use_relative_mode:  # Relative mode
+            arm_action = action["arm_delta"]
+        else:  # Absolute mode
+            abs_pose = action["arm_abs"]
+            # _cumulative_base = (device.robot.data.body_link_pos_w[0,2]-device.robot.data.root_com_pos_w[0])
+            # base_quat = device.robot.data.body_link_quat_w[0,3]
+            _cumulative_base, base_quat = math_utils.subtract_frame_transforms(device.robot.data.root_com_pos_w[0],
+                                                                               device.robot.data.root_com_quat_w[0],
+                                                                               device.robot.data.body_link_pos_w[0, 2],
+                                                                               device.robot.data.body_link_quat_w[0, 3])
+            # base_quat = T.quat_multiply(device.robot.data.body_link_quat_w[0,3][[1,2,3,0]],device.robot.data.root_com_quat_w[0][[1,2,3,0]], )
+            base_yaw = T.quat2axisangle(base_quat[[1, 2, 3, 0]])[2]
+
+            cos_yaw = torch.cos(base_yaw)
+            sin_yaw = torch.sin(base_yaw)
+            rot_mat_2d = torch.tensor([
+                [cos_yaw, -sin_yaw],
+                [sin_yaw, cos_yaw]
+            ], device=device.env.device)
+            robot_x = base[0][0]
+            robot_y = base[0][1]
+            local_xy = torch.tensor([robot_x, robot_y], device=device.env.device)
+            world_xy = torch.matmul(rot_mat_2d, local_xy)
+            base[:, 0] = world_xy[0]
+            base[:, 1] = world_xy[1]
+
+            pose_quat = abs_pose[3:7]
+            base_quat = T.axisangle2quat(torch.tensor([0, 0, base_yaw], device=device.env.device))
+            combined_quat = T.quat_multiply(base_quat, pose_quat)
+
+            base_movement = torch.tensor([_cumulative_base[0], _cumulative_base[1], 0], device=device.env.device)
+            arm_action = abs_pose.clone()
+            rot_mat = T.quat2mat(base_quat)
+            gripper_movement = torch.matmul(rot_mat, arm_action[:3])
+
+            pose_movement = base_movement + gripper_movement
+
+            arm_action[:3] = pose_movement
+            arm_action[3] = combined_quat[3]  # 更新旋转四元数 xyzw 2 wxyz
+            arm_action[4:7] = combined_quat[:3]
+
+        arm_action = arm_action.repeat(num_envs, 1)
+        gripper = action["arm_gripper"] > 0
+        gripper_action = torch.zeros(num_envs, 1, device=device.env.device)
+        gripper_action[:] = -1.0 if gripper else 1.0
+        return torch.concat([arm_action, gripper_action, base], dim=1)
+
+
+@configclass
+class PandaOmronSceneCfg:
+    robot: ArticulationCfg = FRANKA_OMRON_HIGH_PD_CFG
+
+    ee_frame: FrameTransformerCfg = FrameTransformerCfg(
+        prim_path="{ENV_REGEX_NS}/Robot/omron_v2/Franka/panda_link0",
+        debug_vis=False,
+        visualizer_cfg=FRAME_MARKER_SMALL_CFG.replace(prim_path="/Visuals/EndEffectorFrameTransformer"),
+        target_frames=[
+            FrameTransformerCfg.FrameCfg(
+                  prim_path="{ENV_REGEX_NS}/Robot/omron_v2/Franka/panda_hand",
+                  name="ee_tcp",
+                  offset=OffsetCfg(
+                      pos=(0.0, 0.0, 0.1034),
+                  ),
+            ),
+            FrameTransformerCfg.FrameCfg(
+                prim_path="{ENV_REGEX_NS}/Robot/omron_v2/Franka/panda_leftfinger",
+                name="tool_leftfinger",
+                offset=OffsetCfg(
+                    pos=(0.0, 0.0, 0.046),
+                ),
+            ),
+            FrameTransformerCfg.FrameCfg(
+                prim_path="{ENV_REGEX_NS}/Robot/omron_v2/Franka/panda_rightfinger",
+                name="tool_rightfinger",
+                offset=OffsetCfg(
+                    pos=(0.0, 0.0, 0.046),
+                ),
+            ),
+        ],
+    )
+
+    base_contact: ContactSensorCfg = ContactSensorCfg(
+        prim_path=f"{{ENV_REGEX_NS}}/Robot/omron_v2/mobilebase0_wheeled_base",
+        update_period=0.0,
+        history_length=1,
+        debug_vis=False,
+        filter_prim_paths_expr=[f"{{ENV_REGEX_NS}}/Scene/floor.*"],
+    )
+
+    left_gripper_contact: ContactSensorCfg = ContactSensorCfg(
+        prim_path=f"{{ENV_REGEX_NS}}/Robot/omron_v2/Franka/panda_leftfinger",
+        update_period=0.0,
+        history_length=1,
+        debug_vis=False,
+        filter_prim_paths_expr=[],
+    )
+
+    right_gripper_contact: ContactSensorCfg = ContactSensorCfg(
+        prim_path=f"{{ENV_REGEX_NS}}/Robot/omron_v2/Franka/panda_rightfinger",
+        update_period=0.0,
+        history_length=1,
+        debug_vis=False,
+        filter_prim_paths_expr=[],
+    )
+
+
+@configclass
+class PandaOmronCameraCfg:
     observation_cameras: dict = {
         "agentview_left_camera": {
             "camera_cfg": TiledCameraCfg(
@@ -113,208 +250,126 @@ class PandaOmronEnvCfg(BaseRobotCfg):
         }
     }
 
-    def __post_init__(self):
-        # post init of parent
-        super().__post_init__()
-        # Set Actions for the specific robot type (franka)
-        self.scene.robot.spawn.scale = (self.robot_scale, self.robot_scale, self.robot_scale)
-        self.actions.gripper_action = mdp.BinaryJointPositionActionCfg(
-            asset_name="robot",
-            joint_names=["panda_finger.*"],
-            open_command_expr={"panda_finger_.*": 0.04},
-            close_command_expr={"panda_finger_.*": 0.0},
-        )
-        self.actions.base_action = mdp.RelativeJointPositionActionCfg(
-            asset_name="robot",
-            joint_names=["mobilebase_.*"],
-            scale={
-                "mobilebase_forward": 0.01,
-                "mobilebase_side": 0.01,
-                "mobilebase_yaw": 0.02,
-                "mobilebase_torso_height": 0.01,
-            },  # 01,
-            use_zero_offset=True,  # use default offset is not working for base action
-        )
 
-        # Listens to the required transforms
-        # IMPORTANT: The order of the frames in the list is important. The first frame is the tool center point (TCP)
-        # the other frames are the fingers
-        self.scene.ee_frame = FrameTransformerCfg(
-            prim_path="{ENV_REGEX_NS}/Robot/omron_v2/Franka/panda_link0",
-            debug_vis=False,
-            visualizer_cfg=FRAME_MARKER_SMALL_CFG.replace(prim_path="/Visuals/EndEffectorFrameTransformer"),
-            target_frames=[
-                FrameTransformerCfg.FrameCfg(
-                    prim_path="{ENV_REGEX_NS}/Robot/omron_v2/Franka/panda_hand",
-                    name="ee_tcp",
-                    offset=OffsetCfg(
-                        pos=(0.0, 0.0, 0.1034),
-                    ),
-                ),
-                FrameTransformerCfg.FrameCfg(
-                    prim_path="{ENV_REGEX_NS}/Robot/omron_v2/Franka/panda_leftfinger",
-                    name="tool_leftfinger",
-                    offset=OffsetCfg(
-                        pos=(0.0, 0.0, 0.046),
-                    ),
-                ),
-                FrameTransformerCfg.FrameCfg(
-                    prim_path="{ENV_REGEX_NS}/Robot/omron_v2/Franka/panda_rightfinger",
-                    name="tool_rightfinger",
-                    offset=OffsetCfg(
-                        pos=(0.0, 0.0, 0.046),
-                    ),
-                ),
-            ],
-        )
-
-        base_contact = ContactSensorCfg(
-            prim_path=f"{{ENV_REGEX_NS}}/Robot/omron_v2/mobilebase0_wheeled_base",
-            update_period=0.0,
-            history_length=1,
-            debug_vis=False,
-            filter_prim_paths_expr=[f"{{ENV_REGEX_NS}}/Scene/floor.*"],
-        )
-        setattr(self.scene, "base_contact", base_contact)
-
-        left_gripper_contact = ContactSensorCfg(
-            prim_path=f"{{ENV_REGEX_NS}}/Robot/omron_v2/Franka/panda_leftfinger",
-            update_period=0.0,
-            history_length=1,
-            debug_vis=False,
-            filter_prim_paths_expr=[],
-        )
-        setattr(self.scene, "left_gripper_contact", left_gripper_contact)
-
-        right_gripper_contact = ContactSensorCfg(
-            prim_path=f"{{ENV_REGEX_NS}}/Robot/omron_v2/Franka/panda_rightfinger",
-            update_period=0.0,
-            history_length=1,
-            debug_vis=False,
-            filter_prim_paths_expr=[],
-        )
-        setattr(self.scene, "right_gripper_contact", right_gripper_contact)
-
-        self.viewport_cfg = {
-            "offset": [-1.0, 0.0, 2.0],
-            "lookat": [1.0, 0.0, -0.7]
-        }
-
-    def preprocess_device_action(self, action: dict[str, torch.Tensor], device) -> torch.Tensor:
-        num_envs = device.env.num_envs
-        base = torch.zeros(num_envs, 4, device=device.env.device)
-        if action.get('spacemouse') is not None:
-            base[:, :3] = torch.tensor([action["rbase"][0], action["rbase"][1], action["rbase"][2]], device=device.env.device)
-        else:
-            if action['rsqueeze'] > 0.5:
-                base[:, :3] = torch.tensor([action["rbase"][0], action["rbase"][1], 0], device=device.env.device)
-            else:
-                base[:, :3] = torch.tensor([action["rbase"][0], 0, action["rbase"][1]], device=device.env.device)
-
-        if self.actions.arm_action.controller.use_relative_mode:  # Relative mode
-            arm_action = action["arm_delta"]
-        else:  # Absolute mode
-            abs_pose = action["arm_abs"]
-            # _cumulative_base = (device.robot.data.body_link_pos_w[0,2]-device.robot.data.root_com_pos_w[0])
-            # base_quat = device.robot.data.body_link_quat_w[0,3]
-            _cumulative_base, base_quat = math_utils.subtract_frame_transforms(device.robot.data.root_com_pos_w[0],
-                                                                               device.robot.data.root_com_quat_w[0],
-                                                                               device.robot.data.body_link_pos_w[0, 2],
-                                                                               device.robot.data.body_link_quat_w[0, 3])
-            # base_quat = T.quat_multiply(device.robot.data.body_link_quat_w[0,3][[1,2,3,0]],device.robot.data.root_com_quat_w[0][[1,2,3,0]], )
-            base_yaw = T.quat2axisangle(base_quat[[1, 2, 3, 0]])[2]
-
-            cos_yaw = torch.cos(base_yaw)
-            sin_yaw = torch.sin(base_yaw)
-            rot_mat_2d = torch.tensor([
-                [cos_yaw, -sin_yaw],
-                [sin_yaw, cos_yaw]
-            ], device=device.env.device)
-            robot_x = base[0][0]
-            robot_y = base[0][1]
-            local_xy = torch.tensor([robot_x, robot_y], device=device.env.device)
-            world_xy = torch.matmul(rot_mat_2d, local_xy)
-            base[:, 0] = world_xy[0]
-            base[:, 1] = world_xy[1]
-
-            pose_quat = abs_pose[3:7]
-            base_quat = T.axisangle2quat(torch.tensor([0, 0, base_yaw], device=device.env.device))
-            combined_quat = T.quat_multiply(base_quat, pose_quat)
-
-            base_movement = torch.tensor([_cumulative_base[0], _cumulative_base[1], 0], device=device.env.device)
-            arm_action = abs_pose.clone()
-            rot_mat = T.quat2mat(base_quat)
-            gripper_movement = torch.matmul(rot_mat, arm_action[:3])
-
-            pose_movement = base_movement + gripper_movement
-
-            arm_action[:3] = pose_movement
-            arm_action[3] = combined_quat[3]  # 更新旋转四元数 xyzw 2 wxyz
-            arm_action[4:7] = combined_quat[:3]
-
-        arm_action = arm_action.repeat(num_envs, 1)
-        gripper = action["arm_gripper"] > 0
-        gripper_action = torch.zeros(num_envs, 1, device=device.env.device)
-        gripper_action[:] = -1.0 if gripper else 1.0
-        return torch.concat([arm_action, gripper_action, base], dim=1)
+@configclass
+class PandaOmronObservationsCfg:
+    pass
 
 
-# @configclass
-class PandaOmronRelEnvCfg(PandaOmronEnvCfg):
-    # We switch here to a stiffer PD controller for IK tracking to be better.
-    robot_cfg: ArticulationCfg = FRANKA_OMRON_HIGH_PD_CFG
-    robot_name: str = "PandaOmron-Rel"
-    robot_vis_helper_cfg = VIS_HELPER_CFG
-
-    def __post_init__(self):
-        # post init of parent
-        super().__post_init__()
-
-        # Set actions for the specific robot type (franka)
-        self.actions.arm_action = mdp.DifferentialInverseKinematicsActionCfg(
-            asset_name="robot",
-            joint_names=["panda_joint.*"],
-            body_name="panda_hand",
-            controller=mdp.DifferentialIKControllerCfg(command_type="pose", use_relative_mode=True, ik_method="dls"),
-            scale=4,
-            body_offset=mdp.DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=(0.0, 0.0, 0.0434),
-                                                                             rot=(0.9537170, 0, 0, 0.3007058)),
-        )
+@configclass
+class PandaOmronEventCfg:
+    pass
 
 
-# @configclass
-class PandaOmronAbsEnvCfg(PandaOmronEnvCfg):
-    robot_cfg: ArticulationCfg = FRANKA_OMRON_HIGH_PD_CFG
-    robot_name: str = "PandaOmron-Abs"
-
-    def __post_init__(self):
-        # post init of parent
-        super().__post_init__()
-
-        # Set actions for the specific robot type (franka)
-        self.actions.arm_action = mdp.DifferentialInverseKinematicsActionCfg(
-            asset_name="robot",
-            joint_names=["panda_joint.*"],
-            body_name="panda_hand",
-            controller=mdp.DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, ik_method="dls"),
-            body_offset=mdp.DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=(0.0, 0.0, 0.107)),
-        )
+@configclass
+class PandaOmronMimicEnv:
+    pass
 
 
-class PandaOmronRLEnvCfg(PandaOmronEnvCfg):
-    robot_cfg: ArticulationCfg = FRANKA_OMRON_HIGH_PD_CFG
-    robot_name: str = "PandaOmron-RL"
+class PandaOmronRelEmbodiment(PandaOmronEmbodiment):
+    name: str = "PandaOmron-Rel"
 
-    def __post_init__(self):
-        # post init of parent
-        super().__post_init__()
+    def __init__(self, enable_cameras: bool = False, initial_pose: Pose | None = None):
+        super().__init__(enable_cameras, initial_pose)
+        self.action_config = PandaOmronRelActionsCfg()
 
-        # Set actions for the specific robot type (franka)
-        self.actions.arm_action = mdp.JointPositionActionCfg(
-            asset_name="robot",
-            joint_names=["panda_joint.*"],
-            scale=0.5,
-            use_default_offset=True,
-        )
 
-        self.set_reward_gripper_joint_names(["panda_joint.*"])
+@configclass
+class PandaOmronRelActionsCfg:
+    arm_action = mdp.DifferentialInverseKinematicsActionCfg(
+        asset_name="robot",
+        joint_names=["panda_joint.*"],
+        body_name="panda_hand",
+        controller=mdp.DifferentialIKControllerCfg(command_type="pose", use_relative_mode=True, ik_method="dls"),
+        scale=4,
+        body_offset=mdp.DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=(0.0, 0.0, 0.0434),
+                                                                         rot=(0.9537170, 0, 0, 0.3007058)),
+    )
+    gripper_action = mdp.BinaryJointPositionActionCfg(
+        asset_name="robot",
+        joint_names=["panda_finger.*"],
+        open_command_expr={"panda_finger_.*": 0.04},
+        close_command_expr={"panda_finger_.*": 0.0},
+    )
+    base_action = mdp.RelativeJointPositionActionCfg(
+        asset_name="robot",
+        joint_names=["mobilebase_.*"],
+        scale={
+            "mobilebase_forward": 0.01,
+            "mobilebase_side": 0.01,
+            "mobilebase_yaw": 0.02,
+            "mobilebase_torso_height": 0.01,
+        },  # 01,
+        use_zero_offset=True,  # use default offset is not working for base action
+    )
+
+
+class PandaOmronAbsEmbodiment(PandaOmronEmbodiment):
+    name: str = "PandaOmron-Abs"
+
+    def __init__(self, enable_cameras: bool = False, initial_pose: Pose | None = None):
+        super().__init__(enable_cameras, initial_pose)
+        self.action_config = PandaOmronAbsActionsCfg()
+
+
+@configclass
+class PandaOmronAbsActionsCfg:
+    arm_action = mdp.DifferentialInverseKinematicsActionCfg(
+        asset_name="robot",
+        joint_names=["panda_joint.*"],
+        body_name="panda_hand",
+        controller=mdp.DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, ik_method="dls"),
+        body_offset=mdp.DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=(0.0, 0.0, 0.107)),
+    )
+    gripper_action = mdp.BinaryJointPositionActionCfg(
+        asset_name="robot",
+        joint_names=["panda_finger.*"],
+        open_command_expr={"panda_finger_.*": 0.04},
+        close_command_expr={"panda_finger_.*": 0.0},
+    )
+    base_action = mdp.RelativeJointPositionActionCfg(
+        asset_name="robot",
+        joint_names=["mobilebase_.*"],
+        scale={
+            "mobilebase_forward": 0.01,
+            "mobilebase_side": 0.01,
+            "mobilebase_yaw": 0.02,
+            "mobilebase_torso_height": 0.01,
+        },  # 01,
+        use_zero_offset=True,  # use default offset is not working for base action
+    )
+
+
+class PandaOmronRLEmbodiment(PandaOmronEmbodiment):
+    name: str = "PandaOmron-RL"
+
+    def __init__(self, enable_cameras: bool = False, initial_pose: Pose | None = None):
+        super().__init__(enable_cameras, initial_pose)
+        self.action_config = PandaOmronRLActionsCfg()
+
+
+@configclass
+class PandaOmronRLActionsCfg:
+    arm_action = mdp.JointPositionActionCfg(
+        asset_name="robot",
+        joint_names=["panda_joint.*"],
+        scale=0.5,
+        use_default_offset=True,
+    )
+    gripper_action = mdp.BinaryJointPositionActionCfg(
+        asset_name="robot",
+        joint_names=["panda_finger.*"],
+        open_command_expr={"panda_finger_.*": 0.04},
+        close_command_expr={"panda_finger_.*": 0.0},
+    )
+    base_action = mdp.RelativeJointPositionActionCfg(
+        asset_name="robot",
+        joint_names=["mobilebase_.*"],
+        scale={
+            "mobilebase_forward": 0.01,
+            "mobilebase_side": 0.01,
+            "mobilebase_yaw": 0.02,
+            "mobilebase_torso_height": 0.01,
+        },  # 01,
+        use_zero_offset=True,  # use default offset is not working for base action
+    )

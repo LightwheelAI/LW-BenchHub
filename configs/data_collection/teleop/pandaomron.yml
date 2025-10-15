@@ -3,3 +3,5 @@ _base_:
 record: false
 task: OpenDishwasher
 layout: robocasakitchen-4-2
+for_rl: false
+variant: Visual

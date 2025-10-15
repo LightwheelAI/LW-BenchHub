@@ -27,7 +27,6 @@ import lwlab.utils.object_utils as OU
 from lwlab.utils.usd_utils import OpenUsd as usd
 import lwlab.utils.math_utils.transform_utils.numpy_impl as T
 from lwlab.utils.errors import SamplingError
-from lwlab.core.cfg.compositional import BaseCompositionalEnvCfg
 from .fixture_types import FixtureType
 
 FIXTURES = {}
@@ -432,7 +431,7 @@ class Fixture:
             env=env, min=min, max=max, joint_names=self.door_joint_names, env_ids=env_ids
         )
 
-    def get_reset_regions(self, env_cfg: BaseCompositionalEnvCfg = None, reset_region_names=None, z_range=(0.45, 1.50)):
+    def get_reset_regions(self, env_cfg=None, reset_region_names=None, z_range=(0.45, 1.50)):
         """
         Get reset regions from USD file using existing USDObject pattern
         """

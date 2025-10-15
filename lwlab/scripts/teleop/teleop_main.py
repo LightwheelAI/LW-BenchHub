@@ -631,6 +631,7 @@ def main():
                     sources=args_cli.sources,
                     object_projects=args_cli.object_projects,
                     headless_mode=args_cli.headless,
+                    teleop_device=args_cli.teleop_device,
                 )
                 if hasattr(args_cli, "reset_objects_enabled"):
                     env_cfg.reset_objects_enabled = args_cli.reset_objects_enabled

@@ -8,7 +8,6 @@ from typing import Dict, List, Any
 
 from copy import deepcopy
 from isaaclab.envs.manager_based_rl_env import ManagerBasedRLEnv
-from lwlab.core.cfg.compositional import BaseCompositionalEnvCfg
 import lwlab.utils.object_utils as OU
 from lwlab.utils.place_utils.placement_samplers import (
     SequentialCompositeSampler,
@@ -107,7 +106,7 @@ def determine_face_dir(fixture_rot, ref_rot, epsilon=1e-2):
         return 2
 
 
-def get_current_layout_stool_rotations(env_cfg: BaseCompositionalEnvCfg):
+def get_current_layout_stool_rotations(env_cfg):
     """
     Automatically detect the current layout and extract unique stool rotation values (z_rot)
     from a YAML layout file associated with the environment.
@@ -186,7 +185,7 @@ def categorize_stool_rotations(stool_rotations, ground_fixture_rot=None):
     return categorized_rotations
 
 
-def get_island_group_counter_names(env_cfg: BaseCompositionalEnvCfg):
+def get_island_group_counter_names(env_cfg):
     """
     Automatically detect all counter fixture names under all island_group groups in the current layout.
     Used to get bounding box combo of multiple counters.
@@ -204,7 +203,7 @@ def get_island_group_counter_names(env_cfg: BaseCompositionalEnvCfg):
     return counter_names
 
 
-def get_combined_counters_2d_bbox_corners(env_cfg: BaseCompositionalEnvCfg, counter_names):
+def get_combined_counters_2d_bbox_corners(env_cfg, counter_names):
     """
     Used to get bounding box combo of multiple counters - useful for dining counters with multiple defined counters.
     """
@@ -235,7 +234,7 @@ def get_combined_counters_2d_bbox_corners(env_cfg: BaseCompositionalEnvCfg, coun
     return abs_sites
 
 
-def compute_robot_base_placement_pose(env_cfg: BaseCompositionalEnvCfg, ref_fixture, ref_object=None, offset=None):
+def compute_robot_base_placement_pose(env_cfg, ref_fixture, ref_object=None, offset=None):
     """
     steps:
     1. find the nearest counter to this fixture
@@ -597,7 +596,7 @@ def _check_cfg_is_valid(cfg):
         ), f"got invaild key \"{k}\" in placement config for {cfg['name']}"
 
 
-def _get_placement_initializer(env_cfg: BaseCompositionalEnvCfg, cfg_list, seed, z_offset=0.01) -> SequentialCompositeSampler:
+def _get_placement_initializer(env_cfg, cfg_list, seed, z_offset=0.01) -> SequentialCompositeSampler:
     """
     Creates a placement initializer for the objects/fixtures based on the specifications in the configurations list.
 
@@ -952,7 +951,7 @@ def find_object_cfg_by_name(env, name):
     raise ValueError
 
 
-def create_obj(env_cfg: BaseCompositionalEnvCfg, cfg: Dict[str, Any], version=None):
+def create_obj(env_cfg, cfg: Dict[str, Any], version=None):
     """
     Helper function for creating objects.
     Called by _create_objects()
@@ -1042,7 +1041,7 @@ def create_obj(env_cfg: BaseCompositionalEnvCfg, cfg: Dict[str, Any], version=No
     )
 
 
-def sample_object_placements(env_cfg: BaseCompositionalEnvCfg, need_retry=True) -> dict:
+def sample_object_placements(env_cfg, need_retry=True) -> dict:
     try:
         if not hasattr(env_cfg, "placement_initializer"):
             env_cfg.placement_initializer = _get_placement_initializer(env_cfg, env_cfg.object_cfgs, env_cfg.seed)
@@ -1364,7 +1363,7 @@ def detect_robot_collision(env: ManagerBasedRLEnv, env_ids=None) -> bool:
         return False
 
 
-def get_safe_robot_anchor(cfg: BaseCompositionalEnvCfg, unsafe_anchor_pos, unsafe_anchor_ori):
+def get_safe_robot_anchor(cfg, unsafe_anchor_pos, unsafe_anchor_ori):
     """
     Takes the default "unsafe" anchor from robocasa and corrects it
     by moving it backwards based on the robot's arm reach to ensure safety.

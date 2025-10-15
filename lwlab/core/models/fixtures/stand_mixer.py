@@ -16,7 +16,7 @@ import torch
 import numpy as np
 
 import lwlab.utils.math_utils.transform_utils.torch_impl as T
-from lwlab.core.cfg.compositional import BaseCompositionalEnvCfg
+import typing
 from isaaclab.envs import ManagerBasedRLEnv
 from .fixture import Fixture
 from .fixture_types import FixtureType
@@ -94,7 +94,7 @@ class StandMixer(Fixture):
             if jn in env.scene.articulations[self.name].data.joint_names:
                 setattr(self, attr, self.get_joint_state(env, [jn])[jn])
 
-    def check_item_in_bowl(self, cfg: BaseCompositionalEnvCfg, obj_name: str, partial_check=False):
+    def check_item_in_bowl(self, cfg, obj_name: str, partial_check=False):
         """
         Check if an object is in the bowl of the stand mixer.
         """

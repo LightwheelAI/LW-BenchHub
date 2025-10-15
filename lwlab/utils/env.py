@@ -183,9 +183,6 @@ def parse_env_cfg(
     discover_and_import_lwlab_modules()
 
     from isaac_arena.environments.isaac_arena_environment import IsaacArenaEnvironment
-    from isaac_arena.examples.example_environments.example_environment_base import ExampleEnvironmentBase
-
-    environment_base = ExampleEnvironmentBase()
 
     if scene_name.endswith(".usd"):
         scene_type = "USD"
@@ -200,14 +197,16 @@ def parse_env_cfg(
             task = load_robocasa_cfg_cls_from_registry("task", task_name, "env_cfg_entry_point")
         robot = load_robocasa_cfg_cls_from_registry("robot", robot_name, "env_cfg_entry_point")
     else:
+        # TODO: how to handle rl_variant? not robot here
         if rl_variant:
             task_name = f"{task_name}-{rl_variant}"
         task = load_robocasa_cfg_cls_from_registry("rl", f"{robot_name}-{task_name}", "env_cfg_entry_point")
 
-    if teleop_device is not None:
-        teleop_device = environment_base.device_registry.get_device_by_name(teleop_device)()
-    else:
-        teleop_device = None
+    # TODO: how to handle teleop_device, remove it in main?
+    # if teleop_device is not None:
+    #     teleop_device = environment_base.device_registry.get_device_by_name(teleop_device)()
+    # else:
+    #     teleop_device = None
 
     isaac_arena_environment = IsaacArenaEnvironment(
         name=task_name,
