@@ -4,7 +4,7 @@ import torch
 import lwlab.utils.math_utils.transform_utils.numpy_impl as T
 import os
 from isaaclab.utils.math import matrix_from_quat, euler_xyz_from_quat
-from lwlab.utils.usd_utils import usd
+from lwlab.utils.usd_utils import OpenUsd as usd
 
 
 def array_to_string(array):

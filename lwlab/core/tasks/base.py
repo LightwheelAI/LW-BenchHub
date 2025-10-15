@@ -33,6 +33,9 @@ from lwlab.utils.place_utils.env_utils import ContactQueue
 from lwlab.core.checks.checker_factory import get_checkers_from_cfg, form_checker_result
 from lwlab.utils.place_utils.usd_object import USDObject
 import lwlab.utils.place_utils.env_utils as EnvUtils
+from isaac_arena.utils.configclass import make_configclass
+from isaac_arena.assets.object_library import LibraryObject
+from isaac_arena.assets.object_base import ObjectType
 
 
 @configclass
@@ -174,6 +177,7 @@ class LwLabTaskBase(TaskBase):
         self.init_checkers_cfg()
         self.checkers = get_checkers_from_cfg(self.checkers_cfg)
         self.checkers_results = form_checker_result(self.checkers_cfg)
+        self._create_objects()
 
     def get_termination_cfg(self):
         return self.termination_cfg
@@ -368,6 +372,25 @@ class LwLabTaskBase(TaskBase):
         for cfg in self.object_cfgs:
             objects_version.append({cfg["name"]: cfg["info"]["obj_version"]})
         self.context.ep_meta["cache_usd_version"].update({"objects_version": objects_version})
+
+        self.assets = {}
+        for cfg in self.object_cfgs:
+            self.assets[cfg["info"]["task_name"]] = LibraryObject(
+                name=cfg["info"]["task_name"],
+                tags=["object"],
+                usd_path=cfg["info"]["obj_path"],
+                object_type=ObjectType.RIGID,
+            )
+
+    def get_scene_cfg(self):
+        super().get_scene_cfg()
+        fields = []
+        for asset in self.assets.values():
+            for asset_cfg_name, asset_cfg in asset.get_cfgs().items():
+                fields.append((asset_cfg_name, type(asset_cfg), asset_cfg))
+        NewConfigClass = make_configclass("TaskCfg", fields)
+        new_config_class = NewConfigClass()
+        return new_config_class
 
     def apply_object_init_offset(self, cfgs):
         if hasattr(self, "object_init_offset"):

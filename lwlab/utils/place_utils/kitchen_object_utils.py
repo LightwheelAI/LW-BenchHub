@@ -15,6 +15,7 @@ class ObjInfo:
         name,
         types,
         category,
+        task_name=None,
         source="objaverse",
         size=None,
         rotate_upright=False,
@@ -26,6 +27,7 @@ class ObjInfo:
         self.name = name
         self.types = types
         self.category = category
+        self.task_name = task_name
         self.size = size
         self.rotate_upright = rotate_upright
         self.obj_path = obj_path
@@ -157,6 +159,7 @@ def sample_kitchen_object(
             name=obj_name,
             types=obj_res["property"]["types"] if "types" in obj_res["property"] else [],
             category=sampled_category,
+            task_name=object_cfgs.get("task_name"),
             source=SOURCE_MAPPING[obj_res["source"]],
             rotate_upright=rotate_upright,
             obj_path=obj_path,
