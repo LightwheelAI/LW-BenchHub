@@ -1204,8 +1204,8 @@ def set_robot_to_position(env: ManagerBasedRLEnv, global_pos, global_ori, keep_z
         robot_z = global_pos[2]
     robot_pos = torch.tensor([[global_pos[0], global_pos[1], robot_z]], dtype=torch.float32, device=env.device) + env.scene.env_origins[env_ids]
     robot_quat = T.convert_quat(T.mat2quat(T.euler2mat(global_ori)), "wxyz")
-    env.cfg.robot_cfg.init_state.pos = robot_pos
-    env.cfg.robot_cfg.init_state.rot = robot_quat
+    env.cfg.isaac_arena_env.robot.init_state.pos = robot_pos
+    env.cfg.isaac_arena_env.robot.init_state.rot = robot_quat
     robot_quat = torch.tensor(robot_quat, dtype=torch.float32, device=env.device).unsqueeze(0).repeat(env_ids.shape[0], 1)
     robot_pose = torch.concat([robot_pos, robot_quat], dim=-1)
     env.scene.articulations["robot"].write_root_pose_to_sim(robot_pose, env_ids=env_ids)
