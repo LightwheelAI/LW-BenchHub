@@ -33,9 +33,18 @@ from lwlab.utils.place_utils.env_utils import ContactQueue
 from lwlab.core.checks.checker_factory import get_checkers_from_cfg, form_checker_result
 from lwlab.utils.place_utils.usd_object import USDObject
 import lwlab.utils.place_utils.env_utils as EnvUtils
+import numpy as np
 from isaac_arena.utils.configclass import make_configclass
 from isaac_arena.assets.object_library import LibraryObject
 from isaac_arena.assets.object_base import ObjectType
+import lwlab.utils.object_utils as OU
+from lwlab.utils.fixture_utils import fixture_is_type
+from lwlab.core.models.fixtures.fixture import FixtureType
+import lwlab.utils.math_utils.transform_utils.numpy_impl as Tn
+import lwlab.utils.math_utils.transform_utils.torch_impl as Tt
+from lwlab.utils.log_utils import copy_dict_for_json
+from lightwheel_sdk.loader import ENDPOINT
+from lwlab.core.models.objects.LwLabObject import LwLabObject
 
 
 @configclass
@@ -168,15 +177,26 @@ class LwLabTaskBase(TaskBase):
     SHELVES_INCLUDED_LAYOUT: list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     DOUBLE_CAB_EXCLUDED_LAYOUTS: list = [32, 41, 59]
 
-    def __init__(self, execute_mode: ExecuteMode = ExecuteMode.TELEOP):
+    def __init__(self):
         self.context = get_context()
+        self.usd_simplified = self.context.usd_simplified
         self.exclude_layouts = self.EMPTY_EXCLUDE_LAYOUTS
         self.objects_version = self.context.ep_meta["cache_usd_version"].get("objects_version", None)
+        self.sources = self.context.sources
+        self.object_projects = self.context.object_projects
+        self.seed = self.context.seed
+        self.rng = np.random.default_rng(self.seed)
+        self.init_robot_base_ref = None
         self.events_cfg = EventCfg()
         self.termination_cfg = TerminationsCfg()
         self.init_checkers_cfg()
         self.checkers = get_checkers_from_cfg(self.checkers_cfg)
         self.checkers_results = form_checker_result(self.checkers_cfg)
+
+        # Initialize retry counts
+        self.scene_retry_count = 0
+        self.object_retry_count = 0
+
         self._create_objects()
 
     def get_termination_cfg(self):
@@ -375,12 +395,39 @@ class LwLabTaskBase(TaskBase):
 
         self.assets = {}
         for cfg in self.object_cfgs:
-            self.assets[cfg["info"]["task_name"]] = LibraryObject(
+            self.assets[cfg["info"]["task_name"]] = LwLabObject(
                 name=cfg["info"]["task_name"],
                 tags=["object"],
                 usd_path=cfg["info"]["obj_path"],
+                prim_path=f"{{ENV_REGEX_NS}}/{self.context.scene_name.split('-')[0]}/{cfg['info']['task_name']}",
                 object_type=ObjectType.RIGID,
             )
+
+    def get_obj_lang(self, obj_name="obj", get_preposition=False):
+        """
+        gets a formatted language string for the object (replaces underscores with spaces)
+        """
+        return OU.get_obj_lang(self, obj_name=obj_name, get_preposition=get_preposition)
+
+    def _update_fxtr_obj_placement(self, object_placements):
+        updated_obj_names = []
+        for obj_name, obj_placement in object_placements.items():
+            updated_placement = list(obj_placement)
+            obj_cfg = [cfg for cfg in self.object_cfgs if cfg["name"] == obj_name][0]
+            ref_fixture = None
+            if "fixture" in obj_cfg["placement"]:
+                ref_fixture = obj_cfg["placement"]["fixture"]
+            if isinstance(ref_fixture, str):
+                ref_fixture = self.get_fixture(ref_fixture)
+            # TODO: add other sliding fxtr types
+            if fixture_is_type(ref_fixture, FixtureType.DRAWER):
+                ref_rot_mat = Tn.euler2mat(np.array([0, 0, ref_fixture.rot]))
+                updated_placement[0] = np.array(updated_placement[0]) + ref_fixture._regions["int"]["per_env_offset"] @ ref_rot_mat.T
+                updated_obj_names.append(obj_name)
+            else:
+                updated_placement[0] = np.array(updated_placement[0])[None, :].repeat(self.num_envs, axis=0)
+            object_placements[obj_name] = updated_placement
+        return object_placements, updated_obj_names
 
     def get_scene_cfg(self):
         super().get_scene_cfg()
@@ -401,6 +448,195 @@ class LwLabTaskBase(TaskBase):
                     cfg["placement"]["pos"] = ((object_init_offset[0] + pos[0]) if (isinstance(pos[0], float) or isinstance(pos[0], int)) else pos[0],
                                                (object_init_offset[1] + pos[1]) if (isinstance(pos[1], float) or isinstance(pos[1], int)) else pos[1])
         return cfgs
+
+    def _load_placement(self):
+        objects_placement = {}
+        import h5py
+        ep_names = self.context.replay_cfgs["ep_names"]
+        if len(ep_names) > 1:
+            ep_name = ep_names[0]
+        else:
+            ep_name = ep_names[-1]
+        with h5py.File(self.context.replay_cfgs["hdf5_path"], 'r') as f:
+            rigid_objects_path = f"data/{ep_name}/initial_state/rigid_object"
+
+            # Check if rigid_objects_path exists in the file
+            if rigid_objects_path not in f:
+                return objects_placement
+
+            rigid_objects_group = f[rigid_objects_path]
+
+            for obj_name in rigid_objects_group.keys():
+                if obj_name not in self.objects.keys():
+                    continue
+                pose_path = f"{rigid_objects_path}/{obj_name}"
+                obj_group = f[pose_path]
+                objects_placement[obj_name] = (
+                    tuple(obj_group["root_pose"][0][0:3].tolist()), np.array([obj_group["root_pose"][0][4], obj_group["root_pose"][0][5], obj_group["root_pose"][0][6], obj_group["root_pose"][0][3]], dtype=np.float32), self.objects[obj_name]
+                )
+        return objects_placement
+
+    def _setup_kitchen_references(self):
+        """
+        setup fixtures (and their references). this function is called within load_model function for kitchens
+        """
+        serialized_refs = self.context.ep_meta.get("fixture_refs", {})
+        # unserialize refs
+        self.fixture_refs = {
+            k: self.get_fixture(v) for (k, v) in serialized_refs.items()
+        }
+
+    def get_fixture(self, id, ref=None, size=(0.2, 0.2), full_name_check=False, fix_id=None, full_depth_region=False) -> Fixture | None:
+        """
+        search fixture by id (name, object, or type)
+
+        Args:
+            id (str, Fixture, FixtureType): id of fixture to search for
+
+            ref (str, Fixture, FixtureType): if specified, will search for fixture close to ref (within 0.10m)
+
+            size (tuple): if sampling counter, minimum size (x,y) that the counter region must be
+
+            full_depth_region (bool): if True, will only sample island counter regions that can be accessed
+
+        Returns:
+            Fixture: fixture object
+        """
+        from lwlab.core.models.fixtures import Fixture, FixtureType, fixture_is_type
+        import lwlab.utils.fixture_utils as FixtureUtils
+
+        # case 1: id refers to fixture object directly
+        if isinstance(id, Fixture):
+            return id
+        # case 2: id refers to exact name of fixture
+        elif id in self.fixtures.keys():
+            return self.fixtures[id]
+
+        if ref is None:
+            # find all fixtures with names containing given name
+            if isinstance(id, FixtureType) or isinstance(id, int):
+                matches = [
+                    name
+                    for (name, fxtr) in self.fixtures.items()
+                    if fixture_is_type(fxtr, id)
+                ]
+            else:
+                if full_name_check:
+                    matches = [name for name in self.fixtures.keys() if name == id]
+                else:
+                    matches = [name for name in self.fixtures.keys() if id in name]
+            if id == FixtureType.COUNTER or id == FixtureType.COUNTER_NON_CORNER:
+                matches = [
+                    name
+                    for name in matches
+                    if FixtureUtils.is_fxtr_valid(self, self.fixtures[name], size)
+                ]
+            if (
+                len(matches) > 1
+                and any("island" in name for name in matches)
+                and full_depth_region
+            ):
+                island_matches = [name for name in matches if "island" in name]
+                if len(island_matches) >= 3:
+                    depths = [self.fixtures[name].size[1] for name in island_matches]
+                    sorted_indices = sorted(range(len(depths)), key=lambda i: depths[i])
+                    min_depth = depths[sorted_indices[0]]
+                    next_min_depth = (
+                        depths[sorted_indices[1]] if len(depths) > 1 else min_depth
+                    )
+                    if min_depth < 0.8 * next_min_depth:
+                        keep = [
+                            i
+                            for i in range(len(island_matches))
+                            if i != sorted_indices[0]
+                        ]
+                        filtered_islands = [island_matches[i] for i in keep]
+                        matches = [
+                            name for name in matches if name not in island_matches
+                        ] + filtered_islands
+
+            if len(matches) == 0:
+                return None
+            # sample random key
+            if fix_id is not None:
+                key = matches[fix_id]
+            else:
+                key = self.rng.choice(matches)
+            return self.fixtures[key]
+        else:
+            ref_fixture = self.get_fixture(ref)
+
+            # NOTE: I dont konw why error here?
+            # assert isinstance(id, FixtureType)
+            cand_fixtures: List[Fixture] = []
+            for fxtr in self.fixtures.values():
+                if not fixture_is_type(fxtr, id):
+                    continue
+                if fxtr is ref_fixture:
+                    continue
+                if id == FixtureType.COUNTER:
+                    fxtr_is_valid = FixtureUtils.is_fxtr_valid(self, fxtr, size)
+                    if not fxtr_is_valid:
+                        continue
+                cand_fixtures.append(fxtr)
+
+            if len(cand_fixtures) == 0:
+                raise ValueError(f"No fixture found for {id} with size {size}")
+
+            # first, try to find fixture "containing" the reference fixture
+            for fxtr in cand_fixtures:
+                if OU.point_in_fixture(ref_fixture.pos, fxtr, only_2d=True):
+                    return fxtr
+            # if no fixture contains reference fixture, sample all close fixtures
+            dists = [
+                OU.fixture_pairwise_dist(ref_fixture, fxtr) for fxtr in cand_fixtures
+            ]
+            min_dist = np.min(dists)
+            close_fixtures = [
+                fxtr for (fxtr, d) in zip(cand_fixtures, dists) if d - min_dist < 0.10
+            ]
+            return self.rng.choice(close_fixtures)
+
+    def register_fixture_ref(self, ref_name: str, fn_kwargs: dict):
+        """
+        Registers a fixture reference for later use. Initializes the fixture
+        if it has not been initialized yet.
+
+        Args:
+            ref_name (str): name of the reference
+
+            fn_kwargs (dict): keyword arguments to pass to get_fixture
+
+        Returns:
+            Fixture: fixture object
+        """
+        if ref_name not in self.fixture_refs:
+            self.fixture_refs[ref_name] = self.get_fixture(**fn_kwargs)
+        return self.fixture_refs[ref_name]
+
+    def setup_env_config(self, orchestrator):
+        self.fixtures = orchestrator.scene.fixtures
+
+    def get_ep_meta(self):
+        ep_meta = {}
+        ep_meta["object_cfgs"] = [copy_dict_for_json(cfg) for cfg in self.object_cfgs]
+        # serialize np arrays to lists
+        for cfg in ep_meta["object_cfgs"]:
+            if cfg.get("reset_region", None) is not None:
+                if isinstance(cfg["reset_region"], dict):
+                    cfg["reset_region"] = [cfg["reset_region"]]
+                for region in cfg["reset_region"]:
+                    for (k, v) in region.items():
+                        if isinstance(v, np.ndarray):
+                            region[k] = list(v)
+
+        ep_meta["lang"] = ""
+        ep_meta["usd_simplify"] = self.context.usd_simplify
+        ep_meta["objects_version"] = self.objects_version
+        ep_meta["source"] = self.context.source
+        ep_meta["object_projects"] = self.context.object_projects
+        ep_meta["seed"] = self.context.seed
+        ep_meta["LW_API_ENDPOINT"] = ENDPOINT
 
 
 class BaseTaskEnvCfg(LwBaseCfg):

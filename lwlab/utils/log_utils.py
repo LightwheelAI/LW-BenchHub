@@ -491,3 +491,16 @@ def handle_exception_and_log():
         print(f"Error information logged asynchronously")
     except Exception as log_e:
         print(f"Error in async error logging: {log_e}")
+
+
+def copy_dict_for_json(orig_dict):
+    from lwlab.core.models.fixtures.fixture import Fixture as IsaacFixture
+    new_dict = {}
+    for (k, v) in orig_dict.items():
+        if isinstance(v, dict):
+            new_dict[k] = copy_dict_for_json(v)
+        elif isinstance(v, IsaacFixture):
+            new_dict[k] = v.name
+        else:
+            new_dict[k] = v
+    return new_dict

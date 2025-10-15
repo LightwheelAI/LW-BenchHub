@@ -57,6 +57,7 @@ from isaac_arena.assets.background import Background
 from isaac_arena.assets.object_reference import ObjectReference
 from isaac_arena.assets.object_base import ObjectType
 from isaaclab.utils import configclass
+from lwlab.utils.log_utils import copy_dict_for_json
 
 '''
 What second stage need to do:
@@ -76,32 +77,27 @@ What second stage need to do:
 class LwLabScene(Scene):
 
     def __init__(self,
-                 scene_name: str,
-                 scene_group: int = None,
                  num_envs: int = 1,
                  device: str = "cpu",
                  excute_mode: ExecuteMode = ExecuteMode.TELEOP,
-                 replay_cfgs: Dict[str, Any] = None,
                  **kwargs,
                  ):
         self.context = get_context()
+        self.scene_name = self.context.scene_name
         self.layout_id: int = None
         self.style_id: int = None
         self.fixture_refs = {}
         self.is_replay_mode = self.context.execute_mode in [ExecuteMode.REPLAY_ACTION, ExecuteMode.REPLAY_JOINT_TARGETS, ExecuteMode.REPLAY_STATE]
-        self.replay_cfgs = replay_cfgs
         self._setup_config()
 
     # first stage (just init from itself)
     def _setup_config(self):
-        self.cache_usd_version = {}
+        self.floorplan_version = None
         self._ep_meta = {}
-        if self.replay_cfgs is not None and "ep_meta" in self.replay_cfgs:
-            self.set_ep_meta(self.replay_cfgs["ep_meta"])
+        if self.extent.replay_cfgs is not None and "ep_meta" in self.extent.replay_cfgs:
+            self.set_ep_meta(self.extent.replay_cfgs["ep_meta"])
             if "cache_usd_version" in self._ep_meta:
-                self.cache_usd_version = self._ep_meta["cache_usd_version"]
-            if "hdf5_path" in self.replay_cfgs:
-                self.hdf5_path = self.replay_cfgs["hdf5_path"]
+                self.floorplan_version = self._ep_meta["cache_usd_version"]["floorplan_version"]
 
         if "layout_id" in self._ep_meta and "style_id" in self._ep_meta:
             self.layout_id = self._ep_meta["layout_id"]
@@ -135,7 +131,7 @@ class LwLabScene(Scene):
         self.style_id = self.lwlab_arena.style_id
         self.scene_type = self.lwlab_arena.scene_type
         self.fixture_cfgs = self.lwlab_arena.get_fixture_cfgs()
-        self.cache_usd_version.update({"floorplan_version": self.lwlab_arena.version_id})
+        self.floorplan_version = self.lwlab_arena.version_id
         self.fxtr_placements = usd.get_fixture_placements(self.lwlab_arena.stage.GetPseudoRoot(), self.fixture_cfgs, self.fixtures)
 
         if self.lwlab_arena.layout_id in orchestrator.task.EXCLUDE_LAYOUTS:
@@ -154,131 +150,8 @@ class LwLabScene(Scene):
     def set_ep_meta(self, meta):
         self._ep_meta = meta
 
-    def get_fixture(self, id, ref=None, size=(0.2, 0.2), full_name_check=False, fix_id=None, full_depth_region=False):
-        """
-        search fixture by id (name, object, or type)
-
-        Args:
-            id (str, Fixture, FixtureType): id of fixture to search for
-
-            ref (str, Fixture, FixtureType): if specified, will search for fixture close to ref (within 0.10m)
-
-            size (tuple): if sampling counter, minimum size (x,y) that the counter region must be
-
-            full_depth_region (bool): if True, will only sample island counter regions that can be accessed
-
-        Returns:
-            Fixture: fixture object
-        """
-        from lwlab.core.models.fixtures import Fixture, FixtureType, fixture_is_type
-        import lwlab.utils.fixture_utils as FixtureUtils
-
-        # case 1: id refers to fixture object directly
-        if isinstance(id, Fixture):
-            return id
-        # case 2: id refers to exact name of fixture
-        elif id in self.fixtures.keys():
-            return self.fixtures[id]
-
-        if ref is None:
-            # find all fixtures with names containing given name
-            if isinstance(id, FixtureType) or isinstance(id, int):
-                matches = [
-                    name
-                    for (name, fxtr) in self.fixtures.items()
-                    if fixture_is_type(fxtr, id)
-                ]
-            else:
-                if full_name_check:
-                    matches = [name for name in self.fixtures.keys() if name == id]
-                else:
-                    matches = [name for name in self.fixtures.keys() if id in name]
-            if id == FixtureType.COUNTER or id == FixtureType.COUNTER_NON_CORNER:
-                matches = [
-                    name
-                    for name in matches
-                    if FixtureUtils.is_fxtr_valid(self, self.fixtures[name], size)
-                ]
-            if (
-                len(matches) > 1
-                and any("island" in name for name in matches)
-                and full_depth_region
-            ):
-                island_matches = [name for name in matches if "island" in name]
-                if len(island_matches) >= 3:
-                    depths = [self.fixtures[name].size[1] for name in island_matches]
-                    sorted_indices = sorted(range(len(depths)), key=lambda i: depths[i])
-                    min_depth = depths[sorted_indices[0]]
-                    next_min_depth = (
-                        depths[sorted_indices[1]] if len(depths) > 1 else min_depth
-                    )
-                    if min_depth < 0.8 * next_min_depth:
-                        keep = [
-                            i
-                            for i in range(len(island_matches))
-                            if i != sorted_indices[0]
-                        ]
-                        filtered_islands = [island_matches[i] for i in keep]
-                        matches = [
-                            name for name in matches if name not in island_matches
-                        ] + filtered_islands
-
-            if len(matches) == 0:
-                return None
-            # sample random key
-            if fix_id is not None:
-                key = matches[fix_id]
-            else:
-                key = self.rng.choice(matches)
-            return self.fixtures[key]
-        else:
-            ref_fixture = self.get_fixture(ref)
-
-            # NOTE: I dont konw why error here?
-            # assert isinstance(id, FixtureType)
-            cand_fixtures = []
-            for fxtr in self.fixtures.values():
-                if not fixture_is_type(fxtr, id):
-                    continue
-                if fxtr is ref_fixture:
-                    continue
-                if id == FixtureType.COUNTER:
-                    fxtr_is_valid = FixtureUtils.is_fxtr_valid(self, fxtr, size)
-                    if not fxtr_is_valid:
-                        continue
-                cand_fixtures.append(fxtr)
-
-            if len(cand_fixtures) == 0:
-                raise ValueError(f"No fixture found for {id} with size {size}")
-
-            # first, try to find fixture "containing" the reference fixture
-            for fxtr in cand_fixtures:
-                if OU.point_in_fixture(ref_fixture.pos, fxtr, only_2d=True):
-                    return fxtr
-            # if no fixture contains reference fixture, sample all close fixtures
-            dists = [
-                OU.fixture_pairwise_dist(ref_fixture, fxtr) for fxtr in cand_fixtures
-            ]
-            min_dist = np.min(dists)
-            close_fixtures = [
-                fxtr for (fxtr, d) in zip(cand_fixtures, dists) if d - min_dist < 0.10
-            ]
-            return self.rng.choice(close_fixtures)
-
     def get_ep_meta(self):
-        ep_meta = super().get_ep_meta()
-
-        def copy_dict_for_json(orig_dict):
-            new_dict = {}
-            for (k, v) in orig_dict.items():
-                if isinstance(v, dict):
-                    new_dict[k] = copy_dict_for_json(v)
-                elif isinstance(v, IsaacFixture):
-                    new_dict[k] = v.name
-                else:
-                    new_dict[k] = v
-            return new_dict
-
+        ep_meta = {}
         ep_meta.update(deepcopy(self._ep_meta))
         ep_meta["scene_type"] = self.scene_type
         ep_meta["layout_id"] = (
@@ -291,11 +164,8 @@ class LwLabScene(Scene):
         ep_meta["fixtures"] = {
             k: {"cls": v.__class__.__name__} for (k, v) in self.fixtures.items()
         }
-        ep_meta["ref_fixtures"] = dict(
-            {k: v.name for (k, v) in self.ref_fixtures.items()}
-        )
         # export actual init pose if available in this episode, otherwise omit
-        ep_meta["cache_usd_version"] = self.cache_usd_version
+        ep_meta["floorplan_version"] = self.floorplan_version
         return ep_meta
 
 
@@ -727,18 +597,6 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
 
     def get_ep_meta(self):
         ep_meta = super().get_ep_meta()
-
-        def copy_dict_for_json(orig_dict):
-            new_dict = {}
-            for (k, v) in orig_dict.items():
-                if isinstance(v, dict):
-                    new_dict[k] = copy_dict_for_json(v)
-                elif isinstance(v, IsaacFixture):
-                    new_dict[k] = v.name
-                else:
-                    new_dict[k] = v
-            return new_dict
-
         ep_meta.update(deepcopy(self._ep_meta))
         ep_meta["scene_type"] = self.scene_type
         ep_meta["layout_id"] = (

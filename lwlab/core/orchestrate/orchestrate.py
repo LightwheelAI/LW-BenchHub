@@ -87,9 +87,6 @@ class LwLabBaseOrchestrator(OrchestratorBase):
         # setup scene event terms
         self.setup_scene_event_terms()
 
-        # combine ep_meta
-        self.combine_ep_meta()
-
     def _init_ref_fixtures(self):
         for fixtr in self.fixture_refs.values():
             if isinstance(fixtr, IsaacFixture):
@@ -158,13 +155,14 @@ class LwLabBaseOrchestrator(OrchestratorBase):
         from isaaclab.managers import EventTermCfg as EventTerm
         events_cfg.init_scene = EventTerm(func=self.init_scene, mode="startup")
 
-    def combine_ep_meta(self):
+    def get_ep_meta(self):
         """
         Combine the ep_meta of scene, embodiment, task.
         """
         ep_meta = self.scene.get_ep_meta()
         ep_meta.update(self.embodiment.get_ep_meta())
         ep_meta.update(self.task.get_ep_meta())
+        ep_meta["cache_usd_version"] = {"floorplan_version": ep_meta["floorplan_version"], "objects_version": ep_meta["objects_version"]}
         return ep_meta
 
     def place_robot_and_objects(self):

@@ -37,11 +37,7 @@ class KitchenArena:
     def __init__(self, layout_id, style_id, exclude_layouts=[], scene_cfg=None, scene_type='robocasakitchen'):
         # download floorplan usd
         self.scene_cfg = scene_cfg
-        if self.scene_cfg.cache_usd_version is not None and "floorplan_version" in self.scene_cfg.cache_usd_version:
-            self.floorplan_version = self.scene_cfg.cache_usd_version["floorplan_version"]
-        else:
-            self.floorplan_version = None
-        self.load_floorplan(layout_id, style_id, exclude_layouts=exclude_layouts, scene_type=scene_type, version=self.floorplan_version)
+        self.load_floorplan(layout_id, style_id, exclude_layouts=exclude_layouts, scene_type=scene_type, version=self.scene_cfg.floorplan_version)
         self.stage = usd.get_stage(self.usd_path)
 
         # enable fixtures in usd
