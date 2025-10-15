@@ -110,7 +110,7 @@ class Sink(Fixture):
 
     def check_obj_under_water(self, env, obj_name, xy_thresh=None):
         if xy_thresh is None:
-            xy_thresh = env.cfg.objects[obj_name].horizontal_radius
+            xy_thresh = env.cfg.isaac_arena_env.task.objects[obj_name].horizontal_radius
         obj_pos = OU.get_object_pos(env, obj_name)  # shape: (3,)
         result = torch.tensor([False] * env.num_envs, device=env.device)
         for env_id, (site, origin_radius) in enumerate(self.water_sites):

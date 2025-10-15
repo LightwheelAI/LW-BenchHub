@@ -48,7 +48,7 @@ class GripperCollisionChecker(BaseChecker):
         for fixture in FixtureType:
             if fixture in [FixtureType.COFFEE_MACHINE]:
                 self.object = env.cfg.isaac_arena_env.task.get_fixture(FixtureType.COFFEE_MACHINE)
-                # self.object = env.cfg.objects["obj"]
+                # self.object = env.cfg.isaac_arena_env.task.objects["obj"]
 
                 # Handle both scalar and multi-environment tensors
                 left_contact_tensor = check_contact(env, left_gripper, self.object)

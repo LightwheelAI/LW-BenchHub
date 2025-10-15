@@ -137,6 +137,6 @@ class L90L3PickUpTheAlphabetSoupAndPutItInTheTray(LiberoEnvCfg, BaseTaskEnvCfg):
         return cfgs
 
     def _check_success(self):
-        th = self.env.cfg.objects["wooden_tray"].horizontal_radius
+        th = self.env.cfg.isaac_arena_env.task.objects["wooden_tray"].horizontal_radius
         soup_in_tray = OU.check_obj_in_receptacle(self.env, "alphabet_soup", "wooden_tray", th)
         return soup_in_tray & OU.gripper_obj_far(self.env, "alphabet_soup")

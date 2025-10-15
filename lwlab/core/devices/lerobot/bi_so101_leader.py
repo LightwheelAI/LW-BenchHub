@@ -47,4 +47,4 @@ class BiSO101Leader(DeviceBase):
             'right_arm': self.right_so101_leader.motor_limits
         }
         action_dict['bi_so101_leader'] = True
-        return self.env.cfg.preprocess_device_action(action_dict, self)
+        return self.env.cfg.isaac_arena_env.embodiment.preprocess_device_action(action_dict, self)

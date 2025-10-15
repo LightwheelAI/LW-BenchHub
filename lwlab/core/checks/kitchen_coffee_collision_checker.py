@@ -30,7 +30,7 @@ class KitchenCoffeeCollisionChecker(BaseChecker):
         Returns:
             dict: Dictionary containing total collision times.
         """
-        self.coffee_machine = env.cfg.get_fixture(FixtureType.COFFEE_MACHINE)
+        self.coffee_machine = env.cfg.isaac_arena_env.task.get_fixture(FixtureType.COFFEE_MACHINE)
 
         if self._coffee_collision_counts is None:
             self._coffee_collision_counts = 0

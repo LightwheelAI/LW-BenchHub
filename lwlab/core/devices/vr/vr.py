@@ -87,8 +87,8 @@ class Device(DeviceBase):
         self.grasp_states = [[False] * self.arm_count for i in range(self.num_robots)]
         self.active_arm_indices = [0] * self.num_robots
         self.base_modes = [False] * self.num_robots
-        if hasattr(self.env.cfg, 'reset_robot_cfg_state'):
-            self.env.cfg.reset_robot_cfg_state()
+        if hasattr(self.env.cfg.isaac_arena_env.embodiment, 'reset_robot_cfg_state'):
+            self.env.cfg.isaac_arena_env.embodiment.reset_robot_cfg_state()
 
     def _display_controls(self):
         pass
@@ -328,7 +328,7 @@ class Device(DeviceBase):
             return False
         for key, value in action.items():
             action[key] = torch.tensor(value, device=self.env.device, dtype=torch.float32)
-        processed_action = self.env.cfg.preprocess_device_action(action, self)
+        processed_action = self.env.cfg.isaac_arena_env.embodiment.preprocess_device_action(action, self)
 
         # Repeat action to (num_envs, action_dim)
         for key in action.keys():
@@ -422,7 +422,7 @@ class VRDevice(Device):
                                              [0, 0, 1, 0],
                                              [0, 0, 0, 1]])
 
-        config = self.env.cfg.offset_config
+        config = self.env.cfg.isaac_arena_env.embodiment.offset_config
         self.vuer_head_mat = config.get("vuer_head_mat", self.vuer_head_mat)
         self.vuer_right_wrist_mat = config.get("vuer_right_wrist_mat", self.vuer_right_wrist_mat)
         self.vuer_left_wrist_mat = config.get("vuer_left_wrist_mat", self.vuer_left_wrist_mat)

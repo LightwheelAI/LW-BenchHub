@@ -199,4 +199,4 @@ class LwOpenXRDevice(OpenXRDevice):
             "right_finger_tips": right_hand_abs,
         }
 
-        return self.env.cfg.preprocess_device_action(abs_actions, self, base_move=False)
+        return self.env.cfg.isaac_arena_env.embodiment.preprocess_device_action(abs_actions, self, base_move=False)

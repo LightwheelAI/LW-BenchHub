@@ -115,7 +115,7 @@ class SO101Leader(DeviceBase):
         action_dict['joint_state'] = self._get_raw_data()
         action_dict['motor_limits'] = self._motor_limits
         action_dict['so101_leader'] = True
-        return self.env.cfg.preprocess_device_action(action_dict, self)
+        return self.env.cfg.isaac_arena_env.embodiment.preprocess_device_action(action_dict, self)
 
     def reset(self):
         pass

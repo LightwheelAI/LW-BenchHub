@@ -78,7 +78,7 @@ class L90K1PutTheBlackBowlOnThePlate(LiberoEnvCfg, BaseTaskEnvCfg):
         return cfgs
 
     def _check_success(self):
-        th = self.env.cfg.objects["plate"].horizontal_radius
+        th = self.env.cfg.isaac_arena_env.task.objects["plate"].horizontal_radius
         bowl_in_plate = OU.check_obj_in_receptacle_no_contact(self.env, "akita_black_bowl", "plate", th)
         far_from_objects = self._gripper_obj_farfrom_objects()
         return bowl_in_plate & far_from_objects

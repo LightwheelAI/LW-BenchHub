@@ -18,6 +18,7 @@ from .fixture import Fixture
 from lwlab.utils.usd_utils import OpenUsd as usd
 from isaaclab.envs import ManagerBasedRLEnvCfg, ManagerBasedRLEnv
 from .fixture_types import FixtureType
+from lwlab.utils.object_utils import check_contact
 
 
 class Dishwasher(Fixture):
@@ -78,7 +79,7 @@ class Dishwasher(Fixture):
         Args:
             obj_name (rigid body): object to check
         """
-        return env.cfg.check_contact(obj, str(self.rack_infos[self._joint_names["rack"]][0].GetPrimPath()))
+        return check_contact(env, obj, str(self.rack_infos[self._joint_names["rack"]][0].GetPrimPath()))
 
     def get_state(self, env):
         """

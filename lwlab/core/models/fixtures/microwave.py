@@ -19,6 +19,7 @@ from .fixture_types import FixtureType
 from isaaclab.envs import ManagerBasedRLEnvCfg, ManagerBasedRLEnv
 
 from lwlab.utils.usd_utils import OpenUsd as usd
+from lwlab.utils.object_utils import check_contact
 
 
 class Microwave(Fixture):
@@ -61,8 +62,8 @@ class Microwave(Fixture):
         start_button_pressed = torch.tensor([False], dtype=torch.bool, device=env.device).repeat(env.num_envs)
         stop_button_pressed = torch.tensor([False], dtype=torch.bool, device=env.device).repeat(env.num_envs)
         for gripper_name in [name for name in list(self._env.scene.sensors.keys()) if "gripper" in name and "contact" in name]:
-            start_button_pressed |= env.cfg.check_contact(gripper_name.replace("_contact", ""), str(self.button_infos["start_button"][0].GetPrimPath()))
-            stop_button_pressed |= env.cfg.check_contact(gripper_name.replace("_contact", ""), str(self.button_infos["stop_button"][0].GetPrimPath()))
+            start_button_pressed |= check_contact(env, gripper_name.replace("_contact", ""), str(self.button_infos["start_button"][0].GetPrimPath()))
+            stop_button_pressed |= check_contact(env, gripper_name.replace("_contact", ""), str(self.button_infos["stop_button"][0].GetPrimPath()))
         door_open = self.is_open(env)
         self._turned_on = ~door_open & (
             (self._turned_on & ~stop_button_pressed) |
