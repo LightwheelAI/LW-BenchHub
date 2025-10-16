@@ -8,7 +8,7 @@ from lwlab.core.models.fixtures.fixture import Fixture as IsaacFixture
 import torch
 from lwlab.utils.place_utils import env_utils as EnvUtils
 import numpy as np
-from lwlab.utils.place_utils.env_utils import set_robot_to_position, sample_robot_base_helper, get_safe_robot_anchor
+from lwlab.utils.place_utils.env_utils import set_robot_to_position, sample_robot_base_helper
 import lwlab.utils.math_utils.transform_utils.numpy_impl as Tn
 import lwlab.utils.math_utils.transform_utils.torch_impl as Tt
 from lwlab.core.models.fixtures.fixture import FixtureType
@@ -39,9 +39,9 @@ class LwLabBaseOrchestrator(OrchestratorBase):
         self.scene = scene
         self.embodiment = embodiment
         self.task = task
-        embodiment.setup_env_config(self)
         scene.setup_env_config(self)
         task.setup_env_config(self)
+        embodiment.setup_env_config(self)
 
         # set up kitchen references
         self.fixture_refs = self.task.fixture_refs
@@ -70,28 +70,6 @@ class LwLabBaseOrchestrator(OrchestratorBase):
 
         # setup scene event terms
         self.setup_scene_event_terms()
-
-    def get_robot_anchor(orchestrator):
-        (
-            robot_base_pos_anchor,
-            robot_base_ori_anchor,
-        ) = EnvUtils.init_robot_base_pose(orchestrator)
-
-        if hasattr(orchestrator, "robot_base_offset"):
-            try:
-                robot_base_pos_anchor += np.array(orchestrator.robot_base_offset["pos"])
-                robot_base_ori_anchor += np.array(orchestrator.robot_base_offset["rot"])
-            except KeyError:
-                raise ValueError("offset value is not correct !! please make sure offset has key pos and rot !!")
-
-        # Intercept the unsafe anchor and make it safe
-        safe_anchor_pos, safe_anchor_ori = get_safe_robot_anchor(
-            cfg=orchestrator.robot,
-            unsafe_anchor_pos=robot_base_pos_anchor,
-            unsafe_anchor_ori=robot_base_ori_anchor
-        )
-
-        return safe_anchor_pos, safe_anchor_ori
 
     def _init_ref_fixtures(self):
         for fixtr in self.fixture_refs.values():

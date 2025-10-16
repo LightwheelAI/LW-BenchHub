@@ -28,6 +28,9 @@ import lwlab.core.mdp as mdp
 from lwlab.utils.env import ExecuteMode
 from lwlab.utils.isaaclab_utils import get_robot_joint_target_from_scene
 from lwlab.core.context import get_context
+from lwlab.utils.place_utils.env_utils import get_safe_robot_anchor
+import lwlab.utils.place_utils.env_utils as EnvUtils
+import lwlab.utils.math_utils.transform_utils.numpy_impl as Tn
 
 
 @configclass
@@ -202,3 +205,32 @@ class LwLabEmbodimentBase(EmbodimentBase):
             "controller2gripper_l_arm": np.eye(4),
             "controller2gripper_r_arm": np.eye(4),
         }
+
+    def setup_env_config(self, orchestrator):
+        self.place_robot(orchestrator)
+
+    def palce_robot(self, orchestrator):
+        robot_base_pos_anchor, robot_base_ori_anchor = self.get_robot_anchor(orchestrator)
+        self.scene_config.init_state.pos = robot_base_pos_anchor
+        self.scene_config.init_state.rot = Tn.convert_quat(Tn.mat2quat(Tn.euler2mat(robot_base_ori_anchor)), to="wxyz")
+
+    def get_robot_anchor(orchestrator):
+        (
+            robot_base_pos_anchor,
+            robot_base_ori_anchor,
+        ) = EnvUtils.init_robot_base_pose(orchestrator)
+
+        if hasattr(orchestrator, "robot_base_offset"):
+            try:
+                robot_base_pos_anchor += np.array(orchestrator.robot_base_offset["pos"])
+                robot_base_ori_anchor += np.array(orchestrator.robot_base_offset["rot"])
+            except KeyError:
+                raise ValueError("offset value is not correct !! please make sure offset has key pos and rot !!")
+
+        # Intercept the unsafe anchor and make it safe
+        safe_anchor_pos, safe_anchor_ori = get_safe_robot_anchor(
+            cfg=orchestrator.robot,
+            unsafe_anchor_pos=robot_base_pos_anchor,
+            unsafe_anchor_ori=robot_base_ori_anchor
+        )
+        return safe_anchor_pos, safe_anchor_ori

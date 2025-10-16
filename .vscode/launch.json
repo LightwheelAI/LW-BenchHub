@@ -64,6 +64,9 @@
             "program": "${workspaceFolder}/lwlab/scripts/teleop/teleop_main.py",
             "console": "integratedTerminal",
             "justMyCode": false,
+            "env": {
+                "LW_API_ENDPOINT": "https://api-dev.lightwheel.net"
+            },
         },
         {
             "name": "replay",

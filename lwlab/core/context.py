@@ -11,7 +11,7 @@ class Context:
     task_name: str | None = None
     execute_mode: ExecuteMode | None = None
     device: str | None = None
-    ep_meta: dict | None = None
+    ep_meta: dict = {}
     robot_scale: float = 1.0
     first_person_view: bool = False
     enable_cameras: bool = False
