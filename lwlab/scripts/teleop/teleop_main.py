@@ -491,7 +491,7 @@ def main():
             "B": lambda: quick_rewind(teleop_interface.env, 10),
         }
 
-        if hasattr(env_cfg, "teleop_devices") and args_cli.teleop_device in env_cfg.teleop_devices.devices:
+        if hasattr(env_cfg.isaac_arena_env.embodiment, "teleop_devices") and args_cli.teleop_device in env_cfg.isaac_arena_env.embodiment.teleop_devices.devices:
             teleoperation_active = True
             teleop_interface = create_teleop_device(
                 env, args_cli.teleop_device, env_cfg.teleop_devices.devices, teleoperation_callbacks
@@ -702,7 +702,7 @@ def main():
 
     def setup_env_config_with_args(env, viewports=None):
         env_cfg = env.cfg
-        if not args_cli.headless and env_cfg.enable_cameras and args_cli.enable_multiple_viewports:
+        if not args_cli.headless and args_cli.enable_cameras and args_cli.enable_multiple_viewports:
             viewports = setup_cameras(env, viewports)
             for key, v_p in viewports.items():
                 res = v_p.viewport_api.get_texture_resolution()

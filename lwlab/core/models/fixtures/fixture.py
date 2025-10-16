@@ -431,7 +431,7 @@ class Fixture:
             env=env, min=min, max=max, joint_names=self.door_joint_names, env_ids=env_ids
         )
 
-    def get_reset_regions(self, reset_region_names=None, z_range=(0.45, 1.50)):
+    def get_reset_regions(self, env=None, reset_region_names=None, z_range=(0.45, 1.50)):
         """
         Get reset regions from USD file using existing USDObject pattern
         """
@@ -639,7 +639,7 @@ class Fixture:
         points = [(np.matmul(rot, p) + trans) for p in bbox_offsets]
         return points
 
-    def get_all_valid_reset_region(self, min_size=None, *args, **kwargs):
+    def get_all_valid_reset_region(self, env=None, min_size=None, *args, **kwargs):
         """
         Sample a reset region from available regions
         """
@@ -666,10 +666,10 @@ class Fixture:
 
         if fixture_is_type(self, FixtureType.DINING_COUNTER):
             all_regions_dict = self.get_reset_regions(
-                *args, **kwargs, ref_rot_flag=ref_rot_flag
+                env=env, *args, **kwargs, ref_rot_flag=ref_rot_flag
             )
         else:
-            all_regions_dict = self.get_reset_regions(*args, **kwargs)
+            all_regions_dict = self.get_reset_regions(env=env, *args, **kwargs)
 
         valid_regions = []
         for reg_name, reg_dict in all_regions_dict.items():
@@ -697,11 +697,11 @@ class Fixture:
             )
         return valid_regions
 
-    def sample_reset_region(self, min_size=None, *args, **kwargs):
+    def sample_reset_region(self, env=None, min_size=None, *args, **kwargs):
         """
         Sample a reset region from available regions
         """
-        valid_regions = self.get_all_valid_reset_region(min_size, *args, **kwargs)
+        valid_regions = self.get_all_valid_reset_region(env, min_size, *args, **kwargs)
         return self.rng.choice(valid_regions)
 
     def set_regions(self, region_dict):

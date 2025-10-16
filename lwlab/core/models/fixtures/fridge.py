@@ -128,7 +128,7 @@ class Fridge(Fixture):
     def get_reset_region_names(self):
         return self._fridge_reg_names + self._freezer_reg_names
 
-    def get_reset_regions(self, reg_type="fridge", z_range=(0.50, 1.50), rack_index=None):
+    def get_reset_regions(self, env=None, reg_type="fridge", z_range=(0.50, 1.50), rack_index=None):
         assert reg_type in ["fridge", "freezer"]
         reset_region_names = [
             reg_name

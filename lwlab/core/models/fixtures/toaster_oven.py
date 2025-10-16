@@ -57,7 +57,7 @@ class ToasterOven(Fixture):
     def get_reset_region_names(self):
         return ("rack0", "rack1", "tray0", "tray1")
 
-    def get_reset_regions(self, rack_level=0, z_range=None):
+    def get_reset_regions(self, env=None, rack_level=0, z_range=None):
         """
         Returns one reset region at the desired rack/tray level.
         Supports:

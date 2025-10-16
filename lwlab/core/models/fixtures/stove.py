@@ -257,7 +257,7 @@ class Stove(Fixture):
     def nat_lang(self):
         return "stove"
 
-    def get_reset_regions(self, locs=None):
+    def get_reset_regions(self, env=None, locs=None):
         regions = dict()
         if locs is None:
             locs = self.valid_locations

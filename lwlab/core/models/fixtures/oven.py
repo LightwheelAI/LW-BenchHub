@@ -182,7 +182,7 @@ class Oven(Fixture):
     def get_reset_region_names(self):
         return ("rack0", "rack1")
 
-    def get_reset_regions(self, rack_level=0, z_range=None):
+    def get_reset_regions(self, env=None, rack_level=0, z_range=None):
         rack_regions = []
 
         for key, reg in self._regions.items():

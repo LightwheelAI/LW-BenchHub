@@ -690,10 +690,9 @@ def _get_placement_initializer(orchestrator, cfg_list, seed, z_offset=0.01) -> S
                     and rotation_axis == "z"
                 ):
                     sample_region_kwargs["min_size"] = mj_obj.size
-                sample_region_kwargs["task"] = orchestrator.task
                 if reuse_region_from is None:
                     print(f"get valid reset region for {cfg['name']}")
-                    reset_region = fixture.get_all_valid_reset_region(**sample_region_kwargs)
+                    reset_region = fixture.get_all_valid_reset_region(env=orchestrator.task, **sample_region_kwargs)
                 else:
                     # find and re-use sampling region from another object
                     print(f"reuse region from {reuse_region_from}")

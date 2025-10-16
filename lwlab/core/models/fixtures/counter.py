@@ -122,7 +122,7 @@ class Counter(ProcGenFixture):
         return geoms
 
     def get_reset_regions(
-        self, task, ref=None, loc="nn", top_size=(0.40, 0.25), ref_rot_flag=False, full_depth_region=False,
+        self, env=None, ref=None, loc="nn", top_size=(0.40, 0.25), ref_rot_flag=False, full_depth_region=False,
     ):
 
         all_geoms = []
@@ -167,7 +167,7 @@ class Counter(ProcGenFixture):
                 geom_i += 1
 
         else:
-            ref_fixture = task.get_fixture(ref)
+            ref_fixture = env.get_fixture(ref)
 
             ### find an appropriate geom to sample ###
             counter_top_geom_info = {}

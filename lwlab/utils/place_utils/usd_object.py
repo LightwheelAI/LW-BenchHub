@@ -10,8 +10,8 @@ class USDObject():
 
     def __init__(
         self,
-        name:str,
-        task_name:str,
+        name: str,
+        task_name: str,
         category,
         obj_path,
         object_scale=(1.0, 1.0, 1.0),
