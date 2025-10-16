@@ -62,9 +62,6 @@ class LwLabBaseOrchestrator(OrchestratorBase):
             self.scene.assets[self.scene.scene_type].usd_path = self.scene.usd_path
         del self.scene.lwlab_arena
 
-        # setup scene event terms
-        self.setup_scene_event_terms()
-
     def _reset_internal(self, env_ids, env):
         """
         Reset the event.
@@ -72,23 +69,10 @@ class LwLabBaseOrchestrator(OrchestratorBase):
         self.scene._setup_scene(env_ids)
         self.scene.reset_root_state(env=env, env_ids=env_ids)
 
-    def init_scene(self, env, env_ids=None):
-        self.task.env = env
-        for fixture_controller in self.fixture_refs.values():
-            if isinstance(fixture_controller, IsaacFixture):
-                fixture_controller.setup_env(env)
-
     def update_state(self, env):
         for fixture_controller in self.fixture_refs.values():
             if isinstance(fixture_controller, IsaacFixture):
                 fixture_controller.update_state(env)
-
-    def setup_scene_event_terms(self):
-        """
-        setup the init_scene event.
-        """
-        events_cfg = self.task.get_events_cfg()
-        events_cfg.init_scene = EventTerm(func=self.init_scene, mode="startup")
 
     def get_ep_meta(self):
         """

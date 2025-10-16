@@ -95,7 +95,7 @@ class ObservationsCfg:
 class EventCfg:
     """Configuration for events."""
 
-    robot_physics_material = EventTerm(
+    robot_physics_material: EventTerm = EventTerm(
         func=mdp.randomize_rigid_body_material,
         mode="startup",
         params={
@@ -106,6 +106,7 @@ class EventCfg:
             "num_buckets": 16,
         },
     )
+    init_task: EventTerm = MISSING
 
     # cabinet_physics_material = EventTerm(
     #     func=mdp.randomize_rigid_body_material,
@@ -210,7 +211,9 @@ class LwLabTaskBase(TaskBase):
         self.init_robot_base_ref = None
         self.enable_fixtures = []
         self.movable_fixtures = []
-        self.events_cfg = EventCfg()
+        self.events_cfg = EventCfg(
+            init_task=EventTerm(func=self.init_fixtures, mode="startup")
+        )
         self.termination_cfg = TerminationsCfg(
             success=DoneTerm(func=self.check_success_caller)
         )
@@ -264,6 +267,11 @@ class LwLabTaskBase(TaskBase):
         self._success_flag |= success_check_result
         self._success_cache += self._success_flag.int()
         return self._success_cache >= self._success_count
+
+    def init_fixtures(self, env, env_ids=None):
+        for fixture_controller in self.fixture_refs.values():
+            if isinstance(fixture_controller, IsaacFixture):
+                fixture_controller.setup_env(env)
 
     def init_checkers_cfg(self):
         # checkers
