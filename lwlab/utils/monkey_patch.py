@@ -104,7 +104,7 @@ def patch_recorder_manager_ep_meta():
     from isaaclab.managers.recorder_manager import RecorderManager
 
     def get_ep_meta(mgr: RecorderManager):
-        ep_meta = mgr._env.cfg.get_ep_meta()
+        ep_meta = mgr._env.cfg.isaac_arena_env.orchestrator.get_ep_meta()
         for obj in ep_meta["object_cfgs"]:
             obj["placement"] = convert_fixture_to_name(obj["placement"])
         return ep_meta
