@@ -107,18 +107,18 @@ def determine_face_dir(fixture_rot, ref_rot, epsilon=1e-2):
         return 2
 
 
-def get_current_layout_stool_rotations(env_cfg):
+def get_current_layout_stool_rotations(task: LwLabTaskBase):
     """
     Automatically detect the current layout and extract unique stool rotation values (z_rot)
     from a YAML layout file associated with the environment.
 
     Args:
-        env_cfg: The environment configuration object (must have layout_id attribute)
+        task: The environment configuration object (must have layout_id attribute)
 
     Returns:
         list: List of unique rotation values (floats) found in stool configurations
     """
-    root_prim = env_cfg.lwlab_arena.stage.GetPseudoRoot()
+    root_prim = task.lwlab_arena.stage.GetPseudoRoot()
     stool_prims = OpenUsd.get_prim_by_prefix(root_prim, "stool", only_xform=True)
 
     unique_rots = set()
@@ -186,7 +186,7 @@ def categorize_stool_rotations(stool_rotations, ground_fixture_rot=None):
     return categorized_rotations
 
 
-def get_island_group_counter_names(env_cfg):
+def get_island_group_counter_names(task: LwLabTaskBase):
     """
     Automatically detect all counter fixture names under all island_group groups in the current layout.
     Used to get bounding box combo of multiple counters.
@@ -195,7 +195,7 @@ def get_island_group_counter_names(env_cfg):
     Returns:
         list: List of counter fixture names (str) under all island_group groups
     """
-    root_prim = env_cfg.lwlab_arena.stage.GetPseudoRoot()
+    root_prim = task.lwlab_arena.stage.GetPseudoRoot()
     island_prims = OpenUsd.get_prim_by_suffix(root_prim, "island_group", only_xform=True)
     counter_names = []
     for island_prim in island_prims:
@@ -204,13 +204,13 @@ def get_island_group_counter_names(env_cfg):
     return counter_names
 
 
-def get_combined_counters_2d_bbox_corners(env_cfg, counter_names):
+def get_combined_counters_2d_bbox_corners(task: LwLabTaskBase, counter_names):
     """
     Used to get bounding box combo of multiple counters - useful for dining counters with multiple defined counters.
     """
     all_pts = []
     for name in counter_names:
-        fx = env_cfg.get_fixture(name)
+        fx = task.get_fixture(name)
         all_pts.extend(fx.get_ext_sites(all_points=False, relative=False))
     all_pts = np.asarray(all_pts)
 
@@ -235,7 +235,7 @@ def get_combined_counters_2d_bbox_corners(env_cfg, counter_names):
     return abs_sites
 
 
-def compute_robot_base_placement_pose(env_cfg, ref_fixture, ref_object=None, offset=None):
+def compute_robot_base_placement_pose(task: LwLabTaskBase, ref_fixture, ref_object=None, offset=None):
     """
     steps:
     1. find the nearest counter to this fixture
@@ -263,14 +263,14 @@ def compute_robot_base_placement_pose(env_cfg, ref_fixture, ref_object=None, off
 
     # manipulate drawer envs are exempt from dining counter/stool placement rules
     manipulate_drawer_env = any(
-        cls.__name__ == "ManipulateDrawer" for cls in env_cfg.__class__.__mro__
+        cls.__name__ == "ManipulateDrawer" for cls in task.__class__.__mro__
     )
 
     if not fixture_is_type(ref_fixture, FixtureType.DINING_COUNTER):
         # get all base fixtures in the environment
         ground_fixtures = [
             fxtr
-            for fxtr in env_cfg.fixtures.values()
+            for fxtr in task.fixtures.values()
             if isinstance(fxtr, Counter)
             or isinstance(fxtr, Stove)
             or isinstance(fxtr, Stovetop)
@@ -315,15 +315,15 @@ def compute_robot_base_placement_pose(env_cfg, ref_fixture, ref_object=None, off
         fixture_is_type(ground_fixture, FixtureType.DINING_COUNTER)
         and not manipulate_drawer_env
     ):
-        if hasattr(env_cfg, "object_cfgs") and env_cfg.object_cfgs is not None:
-            for cfg in env_cfg.object_cfgs:
+        if task.object_cfgs is not None:
+            for cfg in task.object_cfgs:
                 placement = cfg.get("placement", None)
                 if placement is None:
                     continue
                 fixture_id = placement.get("fixture", None)
                 if fixture_id is None:
                     continue
-                fixture = env_cfg.get_fixture(
+                fixture = task.get_fixture(
                     id=fixture_id,
                     ref=placement.get("ref", None),
                     full_name_check=True if cfg["type"] == "fixture" else False,
@@ -334,16 +334,16 @@ def compute_robot_base_placement_pose(env_cfg, ref_fixture, ref_object=None, off
                     if ref_to_fixture is None:
                         continue
                     # in case ref_to_fixture is a string, get the corresponding fixture object
-                    ref_to_fixture = env_cfg.get_fixture(ref_to_fixture)
+                    ref_to_fixture = task.get_fixture(ref_to_fixture)
 
     face_dir = 1  # 1 is facing front of fixture, -1 is facing south end of fixture
     if fixture_is_type(ground_fixture, FixtureType.DINING_COUNTER) or stool_only:
-        stool_rotations = get_current_layout_stool_rotations(env_cfg)
+        stool_rotations = get_current_layout_stool_rotations(task)
 
         # for dining counters, can face either north of south end of fixture
         if ref_object is not None:
             # choose the end that is closest to the ref object
-            ref_point = env_cfg.object_placements[ref_object][0]
+            ref_point = task.object_placements[ref_object][0]
             categorized_stool_rotations = categorize_stool_rotations(
                 stool_rotations, ground_fixture.rot
             )
@@ -361,10 +361,10 @@ def compute_robot_base_placement_pose(env_cfg, ref_fixture, ref_object=None, off
         elif fixture_is_type(ref_fixture, FixtureType.STOOL) and ref_object is None:
             face_dir = determine_face_dir(ground_fixture.rot, ref_fixture.rot)
         else:
-            island_group_counter_names = get_island_group_counter_names(env_cfg)
+            island_group_counter_names = get_island_group_counter_names(task)
             if len(island_group_counter_names) > 1:
                 abs_sites = get_combined_counters_2d_bbox_corners(
-                    env_cfg, island_group_counter_names
+                    task, island_group_counter_names
                 )
             else:
                 abs_sites = ground_fixture.get_ext_sites(relative=False)
@@ -417,8 +417,8 @@ def compute_robot_base_placement_pose(env_cfg, ref_fixture, ref_object=None, off
 
                 # these dining counters only have 1 accesssible side for robot to spawn
                 one_accessible_layout_ids = [11, 27, 30, 35, 49, 60]
-                if env_cfg.layout_id in one_accessible_layout_ids:
-                    stool_rotations = get_current_layout_stool_rotations(env_cfg)
+                if task.layout_id in one_accessible_layout_ids:
+                    stool_rotations = get_current_layout_stool_rotations(task)
                     categorized_stool_rotations = categorize_stool_rotations(
                         stool_rotations, ground_fixture.rot
                     )
@@ -431,7 +431,7 @@ def compute_robot_base_placement_pose(env_cfg, ref_fixture, ref_object=None, off
     fixture_to_robot_offset[0] = ground_to_ref[0]
 
     # y direction it's facing from perspective of host fixture
-    robot_to_fixture_dist = env_cfg.robot_to_fixture_dist if hasattr(env_cfg, "robot_to_fixture_dist") else 0.20
+    robot_to_fixture_dist = task.robot_to_fixture_dist if hasattr(task, "robot_to_fixture_dist") else 0.20
     if face_dir == 1:  # north
         fixture_p = fixture_ext_sites[0]
         fixture_to_robot_offset[1] = fixture_p[1] - robot_to_fixture_dist
@@ -450,7 +450,7 @@ def compute_robot_base_placement_pose(env_cfg, ref_fixture, ref_object=None, off
         fixture_to_robot_offset[1] += offset[1]
     elif ref_object is not None:
         print(f"placement initializer object: {ref_object}")
-        sampler = env_cfg.placement_initializer.samplers[f"{ref_object}_Sampler"]
+        sampler = task.placement_initializer.samplers[f"{ref_object}_Sampler"]
         if face_dir == -1 or face_dir == 1:
             fixture_to_robot_offset[0] += np.mean(sampler.x_ranges)
         if face_dir == 2 or face_dir == -2:
@@ -466,9 +466,9 @@ def compute_robot_base_placement_pose(env_cfg, ref_fixture, ref_object=None, off
     # move back a bit for the stools
     if fixture_is_type(ground_fixture, FixtureType.DINING_COUNTER):
         abs_sites = ground_fixture.get_ext_sites(relative=False)
-        stool = ref_to_fixture or env_cfg.get_fixture(FixtureType.STOOL)
+        stool = ref_to_fixture or task.get_fixture(FixtureType.STOOL)
 
-        stool_rotations = get_current_layout_stool_rotations(env_cfg)
+        stool_rotations = get_current_layout_stool_rotations(task)
 
         def rotation_matrix_z(theta):
             """
@@ -544,7 +544,7 @@ def compute_robot_base_placement_pose(env_cfg, ref_fixture, ref_object=None, off
                     )
 
     # apply robot-specific offset relative to the base fixture for x,y dims
-    # robot_model = env_cfg.robots[0].robot_model
+    # robot_model = task.robots[0].robot_model
     # robot_class_name = robot_model.__class__.__name__
     # if robot_class_name in _ROBOT_POS_OFFSETS:
     #     for dimension in range(0, 2):
@@ -950,7 +950,7 @@ def find_object_cfg_by_name(object_cfgs, name):
     raise ValueError
 
 
-def create_obj(env_cfg, cfg: Dict[str, Any], version=None):
+def create_obj(task: LwLabTaskBase, cfg: Dict[str, Any], version=None):
     """
     Helper function for creating objects.
     Called by _create_objects()
@@ -999,7 +999,7 @@ def create_obj(env_cfg, cfg: Dict[str, Any], version=None):
     if "placement" in cfg and "fixture" in cfg["placement"]:
         ref_fixture = cfg["placement"]["fixture"]
         if isinstance(ref_fixture, str):
-            ref_fixture = env_cfg.get_fixture(ref_fixture)
+            ref_fixture = task.get_fixture(ref_fixture)
         if fixture_is_type(ref_fixture, FixtureType.SINK):
             object_properties["washable"] = True
         elif fixture_is_type(ref_fixture, FixtureType.DISHWASHER):
@@ -1031,11 +1031,11 @@ def create_obj(env_cfg, cfg: Dict[str, Any], version=None):
 
     return sample_kitchen_object(
         object_cfgs,
-        source=cfg.get("source", env_cfg.sources),
+        source=cfg.get("source", task.sources),
         max_size=cfg.get("max_size", (None, None, None)),
         object_scale=cfg.get("object_scale", None),
         rotate_upright=cfg.get("rotate_upright", False),
-        projects=env_cfg.object_projects,
+        projects=task.object_projects,
         version=version,
     )
 

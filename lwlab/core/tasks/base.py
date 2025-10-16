@@ -352,65 +352,65 @@ class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
         self.objects: Dict[str, USDObject] = {}
         if "object_cfgs" in self.context.ep_meta:
             self.object_cfgs: List[Dict[str, Any]] = self.context.ep_meta["object_cfgs"]
-            for obj_num, cfg in enumerate(self.object_cfgs):
-                if "name" not in cfg:
-                    cfg["name"] = "obj_{}".format(obj_num + 1)
+            for obj_num, obj_cfg in enumerate(self.object_cfgs):
+                if "name" not in obj_cfg:
+                    obj_cfg["name"] = "obj_{}".format(obj_num + 1)
                 if self.objects_version is not None:
                     for obj_version in self.objects_version:
-                        if cfg["name"] in obj_version:
-                            object_version = obj_version[cfg["name"]]
+                        if obj_cfg["name"] in obj_version:
+                            object_version = obj_version[obj_cfg["name"]]
                             break
                         # TODO(geng.wang): temp code for task_1w_dev data, will be deleted in the future
                         else:
-                            if "mjcf_path" in cfg.get("info", {}).keys():
-                                xml_path = cfg.get("info", {})["mjcf_path"]
+                            if "mjcf_path" in obj_cfg.get("info", {}).keys():
+                                xml_path = obj_cfg.get("info", {})["mjcf_path"]
                                 name = xml_path.split("/")[-2]
                                 if name in obj_version:
                                     object_version = obj_version[name]
                                     break
                         ##
-                model, info = EnvUtils.create_obj(self, cfg, version=object_version)
-                cfg["info"] = info
+                model, info = EnvUtils.create_obj(self, obj_cfg, version=object_version)
+                obj_cfg["info"] = info
                 self.objects[model.task_name] = model
         else:
             self.object_cfgs = self._get_obj_cfgs()
             self.object_cfgs = self.apply_object_init_offset(self.object_cfgs)
             all_obj_cfgs = []
-            for obj_num, cfg in enumerate(self.object_cfgs):
-                cfg["type"] = "object"
-                if "name" not in cfg:
-                    cfg["name"] = "obj_{}".format(obj_num + 1)
-                model, info = EnvUtils.create_obj(self, cfg)
-                cfg["info"] = info
+            for obj_num, obj_cfg in enumerate(self.object_cfgs):
+                obj_cfg["type"] = "object"
+                if "name" not in obj_cfg:
+                    obj_cfg["name"] = "obj_{}".format(obj_num + 1)
+                model, info = EnvUtils.create_obj(self, obj_cfg)
+                obj_cfg["info"] = info
                 self.objects[model.task_name] = model
                 # self.model.merge_objects([model])
-                try_to_place_in = cfg["placement"].get("try_to_place_in", None)
-                object_ref = cfg["placement"].get("object", None)
+                try_to_place_in = obj_cfg["placement"].get("try_to_place_in", None)
+                object_ref = obj_cfg["placement"].get("object", None)
 
                 # place object in a container and add container as an object to the scene
                 if try_to_place_in and (
-                    "in_container" in cfg["info"]["groups_containing_sampled_obj"]
+                    "in_container" in obj_cfg["info"]["groups_containing_sampled_obj"]
                 ):
                     container_cfg = {
-                        "name": cfg["name"] + "_container",
-                        "obj_groups": cfg["placement"].get("try_to_place_in"),
-                        "placement": deepcopy(cfg["placement"]),
+                        "name": obj_cfg["name"] + "_container",
+                        "obj_groups": obj_cfg["placement"].get("try_to_place_in"),
+                        "placement": deepcopy(obj_cfg["placement"]),
                         "type": "object",
                     }
 
-                    init_robot_here = cfg.get("init_robot_here", False)
+                    init_robot_here = obj_cfg.get("init_robot_here", False)
                     if init_robot_here is True:
-                        cfg["init_robot_here"] = False
+                        obj_cfg["init_robot_here"] = False
                         container_cfg["init_robot_here"] = True
 
-                    try_to_place_in_kwargs = cfg["placement"].get(
+                    try_to_place_in_kwargs = obj_cfg["placement"].get(
                         "try_to_place_in_kwargs", None
                     )
                     if try_to_place_in_kwargs is not None:
                         for k, v in try_to_place_in_kwargs.items():
                             container_cfg[k] = v
 
-                    container_kwargs = cfg["placement"].get("container_kwargs", None)
+                    container_kwargs = obj_cfg["placement"].get("container_kwargs", None)
                     if container_kwargs is not None:
                         for k, v in container_kwargs.items():
                             container_cfg[k] = v
@@ -427,18 +427,18 @@ class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
                         int_region = reset_regions["int"]
                     else:
                         int_region = reset_regions[model.bounded_region_name]
-                    cfg["placement"] = dict(
+                    obj_cfg["placement"] = dict(
                         size=(int_region["size"][0] / 4, int_region["size"][1] / 4),
                         pos=int_region["offset"],
                         ensure_object_boundary_in_range=False,
                         sample_args=dict(
                             reference=container_cfg["name"],
-                            ref_fixture=cfg["placement"]["fixture"],
+                            ref_fixture=obj_cfg["placement"]["fixture"],
                         ),
                     )
                 elif (
                     object_ref
-                    and "in_container" in cfg["info"]["groups_containing_sampled_obj"]
+                    and "in_container" in obj_cfg["info"]["groups_containing_sampled_obj"]
                 ):
                     parent = object_ref
                     if parent in self.objects:
@@ -447,37 +447,37 @@ class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
                         container_size = container_obj.size
                         smaller_dim = min(container_size[0], container_size[1])
                         sampling_size = (smaller_dim * 0.5, smaller_dim * 0.5)
-                        cfg["placement"] = {
+                        obj_cfg["placement"] = {
                             "size": sampling_size,
                             "ensure_object_boundary_in_range": False,
                             "sample_args": {"reference": container_name},
                         }
 
                 # append the config for this object
-                all_obj_cfgs.append(cfg)
+                all_obj_cfgs.append(obj_cfg)
 
             self.object_cfgs = all_obj_cfgs
 
         # update cache_usd_version
         objects_version = []
-        for cfg in self.object_cfgs:
-            objects_version.append({cfg["name"]: cfg["info"]["obj_version"]})
+        for obj_cfg in self.object_cfgs:
+            objects_version.append({obj_cfg["name"]: obj_cfg["info"]["obj_version"]})
         self.objects_version = objects_version
 
-        for cfg in self.object_cfgs:
+        for obj_cfg in self.object_cfgs:
             self.add_asset(
                 LwLabObject(
-                    name=cfg["info"]["task_name"],
+                    name=obj_cfg["info"]["task_name"],
                     tags=["object"],
-                    usd_path=cfg["info"]["obj_path"],
-                    prim_path=f"{{ENV_REGEX_NS}}/{self.scene_type}/{cfg['info']['task_name']}",
+                    usd_path=obj_cfg["info"]["obj_path"],
+                    prim_path=f"{{ENV_REGEX_NS}}/{self.scene_type}/{obj_cfg['info']['task_name']}",
                     object_type=ObjectType.RIGID,
                 )
             )
             self.add_contact_sensor_cfg(
-                name=f"{cfg['info']['task_name']}_contact",
+                name=f"{obj_cfg['info']['task_name']}_contact",
                 cfg=ContactSensorCfg(
-                    prim_path=f"{{ENV_REGEX_NS}}/{self.scene_type}/{cfg['info']['task_name']}/{cfg['info']['name']}",
+                    prim_path=f"{{ENV_REGEX_NS}}/{self.scene_type}/{obj_cfg['info']['task_name']}/{obj_cfg['info']['name']}",
                     update_period=0.0,
                     history_length=6,
                     debug_vis=False,
