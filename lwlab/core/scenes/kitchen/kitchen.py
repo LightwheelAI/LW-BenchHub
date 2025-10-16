@@ -29,6 +29,7 @@ from isaaclab.sensors import ContactSensorCfg
 from isaaclab.assets import RigidObjectCfg
 from isaaclab.managers import EventTermCfg as EventTerm
 from isaaclab.managers import TerminationTermCfg as DoneTerm
+from isaac_arena.environments.isaac_arena_manager_based_env import IsaacArenaManagerBasedRLEnvCfg
 from lwlab.core.tasks.base import TerminationsCfg
 
 from ..base import BaseSceneEnvCfg
@@ -1006,3 +1007,13 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg, NoDeepcopyMixin):
         if env.cfg.isaac_arena_env.task.resample_robot_placement_on_reset:
             self.sample_robot_base(env, env_ids)
             set_robot_to_position(env, self.init_robot_base_pos, self.init_robot_base_ori, keep_z=False, env_ids=env_ids)
+
+    def modify_env_cfg(self, env_cfg: IsaacArenaManagerBasedRLEnvCfg):
+        """
+        modify the environment configuration
+        """
+        env_cfg.sim.physx.bounce_threshold_velocity = 0.2
+        env_cfg.sim.physx.bounce_threshold_velocity = 0.01
+        env_cfg.sim.physx.friction_correlation_distance = 0.00625
+        env_cfg.sim.render.enable_translucency = True
+        return env_cfg
