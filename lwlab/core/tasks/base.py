@@ -57,7 +57,6 @@ from isaac_arena.utils.pose import Pose
 from isaac_arena.environments.isaac_arena_manager_based_env import IsaacArenaManagerBasedRLEnvCfg
 
 
-
 @configclass
 class ObservationsCfg:
     """Observation specifications for the MDP."""
@@ -130,6 +129,8 @@ class EventCfg:
             "velocity_range": (0.0, 0.0),
         },
     )
+
+    init_scene: EventTerm = MISSING
 
 
 @configclass
@@ -247,11 +248,11 @@ class LwLabTaskBase(TaskBase):
         arena_env = env.cfg.isaac_arena_env
         arena_env.orchestrator.update_state(env)
 
-        for checker in arena_env.scene.checkers:
-            arena_env.scene.checkers_results[checker.type] = checker.check(env)
+        for checker in arena_env.task.checkers:
+            arena_env.task.checker_results[checker.type] = checker.check(env)
 
         # at the begining of the episode, dont check success for stabilization
-        success_check_result = self._check_success(env)
+        success_check_result = self._check_success()
 
         assert isinstance(success_check_result, torch.Tensor), f"_check_success must be a torch.Tensor, but got {type(success_check_result)}"
         assert len(success_check_result.shape) == 1 and success_check_result.shape[0] == env.num_envs, f"_check_success must be a torch.Tensor of shape ({env.num_envs},), but got {success_check_result.shape}"
@@ -700,6 +701,7 @@ class LwLabTaskBase(TaskBase):
                 self.add_asset(
                     ObjectReference(
                         name=fixtr.name,
+                        object_type=ObjectType.ARTICULATION,
                         prim_path=f"{{ENV_REGEX_NS}}/{self.scene_type}/{fixtr.name}",
                         parent_asset=self.scene_assets[self.scene_type]
                     )

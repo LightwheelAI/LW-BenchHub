@@ -14,6 +14,8 @@ import lwlab.utils.math_utils.transform_utils.torch_impl as Tt
 from lwlab.core.models.fixtures.fixture import FixtureType
 from lwlab.core.context import get_context
 from lwlab.utils.fixture_utils import fixture_is_type
+from isaaclab.managers import TerminationTermCfg as DoneTerm
+from isaaclab.managers import EventTermCfg as EventTerm
 
 
 class LwLabBaseOrchestrator(OrchestratorBase):
@@ -70,7 +72,8 @@ class LwLabBaseOrchestrator(OrchestratorBase):
         self.scene._setup_scene(env_ids)
         self.scene.reset_root_state(env=env, env_ids=env_ids)
 
-    def init_scene(self, env):
+    def init_scene(self, env, env_ids=None):
+        self.task.env = env
         for fixture_controller in self.fixture_refs.values():
             if isinstance(fixture_controller, IsaacFixture):
                 fixture_controller.setup_env(env)
@@ -85,7 +88,6 @@ class LwLabBaseOrchestrator(OrchestratorBase):
         setup the init_scene event.
         """
         events_cfg = self.task.get_events_cfg()
-        from isaaclab.managers import EventTermCfg as EventTerm
         events_cfg.init_scene = EventTerm(func=self.init_scene, mode="startup")
 
     def get_ep_meta(self):
