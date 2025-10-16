@@ -21,7 +21,7 @@ from isaaclab.envs import ManagerBasedRLEnvCfg, ManagerBasedRLEnv
 from .fixture_types import FixtureType
 from isaaclab.utils import math as math_utils
 import lwlab.utils.math_utils.transform_utils.torch_impl as T
-from lwlab.utils.object_utils import check_contact
+from lwlab.utils import object_utils as OU
 
 class CoffeeMachine(Fixture):
     """
@@ -96,7 +96,7 @@ class CoffeeMachine(Fixture):
         gripper_names = [name for name in list(env.scene.sensors.keys()) if "gripper" in name and "contact" in name]
         for _, button in self.start_button_infos.items():
             for gripper_name in gripper_names:
-                start_button_pressed |= check_contact(env, gripper_name.replace("_contact", ""), str(button[0].GetPrimPath()))
+                start_button_pressed |= OU.check_contact(env, gripper_name.replace("_contact", ""), str(button[0].GetPrimPath()))
 
         # detect button press (only when False to True)
         for env_id in range(self.num_envs):

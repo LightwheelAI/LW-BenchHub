@@ -18,13 +18,7 @@ import numpy as np
 import json
 from .fixture_types import FixtureType
 SIDES = ["left", "right", "front", "back"]
-
-from lwlab.utils.object_utils import (
-    get_fixture_to_point_rel_offset,
-    get_pos_after_rel_offset,
-    get_rel_transform,
-    project_point_to_segment,
-)
+from lwlab.utils import object_utils as OU
 
 
 class Counter(ProcGenFixture):
@@ -180,23 +174,23 @@ class Counter(ProcGenFixture):
 
                 # use a slightly smaller bounding box
                 SC = 0.99
-                g_pos = get_pos_after_rel_offset(self, np.array(g.get("pos")))
-                g_pos_c1 = get_pos_after_rel_offset(
+                g_pos = OU.get_pos_after_rel_offset(self, np.array(g.get("pos")))
+                g_pos_c1 = OU.get_pos_after_rel_offset(
                     self,
                     g_pos_in_counter_frame
                     + [-SC * g_halfsize[0], -SC * g_halfsize[1], 0],
                 )
-                g_pos_c2 = get_pos_after_rel_offset(
+                g_pos_c2 = OU.get_pos_after_rel_offset(
                     self,
                     g_pos_in_counter_frame
                     + [-SC * g_halfsize[0], SC * g_halfsize[1], 0],
                 )
-                g_pos_c3 = get_pos_after_rel_offset(
+                g_pos_c3 = OU.get_pos_after_rel_offset(
                     self,
                     g_pos_in_counter_frame
                     + [SC * g_halfsize[0], -SC * g_halfsize[1], 0],
                 )
-                g_pos_c4 = get_pos_after_rel_offset(
+                g_pos_c4 = OU.get_pos_after_rel_offset(
                     self,
                     g_pos_in_counter_frame
                     + [SC * g_halfsize[0], SC * g_halfsize[1], 0],
@@ -229,22 +223,22 @@ class Counter(ProcGenFixture):
                 else:
                     g_info["dist_to_fixture"] = np.min(
                         [
-                            project_point_to_segment(
+                            OU.project_point_to_segment(
                                 ref_fixture_pos, g_pos_c1, g_pos_c2
                             )[1],
-                            project_point_to_segment(
+                            OU.project_point_to_segment(
                                 ref_fixture_pos, g_pos_c2, g_pos_c4
                             )[1],
-                            project_point_to_segment(
+                            OU.project_point_to_segment(
                                 ref_fixture_pos, g_pos_c3, g_pos_c4
                             )[1],
-                            project_point_to_segment(
+                            OU.project_point_to_segment(
                                 ref_fixture_pos, g_pos_c1, g_pos_c3
                             )[1],
                         ]
                     )
 
-                rel_offset = get_fixture_to_point_rel_offset(ref_fixture, g_pos)
+                rel_offset = OU.get_fixture_to_point_rel_offset(ref_fixture, g_pos)
                 g_info["fixture_to_geom_rel_offset"] = rel_offset
                 g = json.dumps(g)
                 counter_top_geom_info[g] = g_info
@@ -310,7 +304,7 @@ class Counter(ProcGenFixture):
                     g_pos_c1 = counter_top_geom_info[json.dumps(g)]["pos_c1"]
                     g_pos_c3 = counter_top_geom_info[json.dumps(g)]["pos_c3"]
 
-                    point_to_fixture = get_fixture_to_point_rel_offset(
+                    point_to_fixture = OU.get_fixture_to_point_rel_offset(
                         ref_fixture, g_pos_c1, rot=self.rot
                     )
                     fixture_x = np.abs(point_to_fixture[0])
@@ -350,7 +344,7 @@ class Counter(ProcGenFixture):
                     min_x = top_pos[0] - top_half_size[0]
                     max_x = top_pos[0] + top_half_size[0]
 
-                    ref_pos, _ = get_rel_transform(self, ref_fixture)
+                    ref_pos, _ = OU.get_rel_transform(self, ref_fixture)
                     if ref_rot_flag is False:
                         if min_x <= ref_pos[0] <= max_x:
                             new_size = min(ref_pos[0] - min_x, max_x - ref_pos[0]) * 2
