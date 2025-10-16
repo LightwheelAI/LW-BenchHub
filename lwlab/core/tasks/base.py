@@ -192,6 +192,7 @@ class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
     STOOL_EXCLUDED_LAYOUT: list = [1, 3, 5, 6, 18, 20, 36, 39, 40, 43, 47, 50, 52]
     SHELVES_INCLUDED_LAYOUT: list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     DOUBLE_CAB_EXCLUDED_LAYOUTS: list = [32, 41, 59]
+    _start_success_check_count: int = 10
 
     def __init__(self):
         self.context = get_context()
@@ -258,7 +259,7 @@ class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
 
         assert isinstance(success_check_result, torch.Tensor), f"_check_success must be a torch.Tensor, but got {type(success_check_result)}"
         assert len(success_check_result.shape) == 1 and success_check_result.shape[0] == env.num_envs, f"_check_success must be a torch.Tensor of shape ({env.num_envs},), but got {success_check_result.shape}"
-        success_check_result &= (env.episode_length_buf >= self.scene.start_success_check_count)
+        success_check_result &= (env.episode_length_buf >= self._start_success_check_count)
 
         # success delay
         self._success_flag &= (self._success_cache < self._success_count)
