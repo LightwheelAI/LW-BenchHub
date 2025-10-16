@@ -55,7 +55,7 @@ class USDSceneCfg(InteractiveSceneCfg):
 
 # monkey patch to add the _usd_path field to the InteractiveSceneCfg class,
 # so that InteractiveSceneCfg._add_entities_from_cfg can ignore _usd_path
-InteractiveSceneCfg.__dataclass_fields__["_usd_path"] = USDSceneCfg.__dataclass_fields__["_usd_path"]
+# InteractiveSceneCfg.__dataclass_fields__["_usd_path"] = USDSceneCfg.__dataclass_fields__["_usd_path"]
 
 
 # @configclass

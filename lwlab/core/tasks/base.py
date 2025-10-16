@@ -472,7 +472,7 @@ class LwLabTaskBase(TaskBase):
         for asset in self.assets.values():
             for asset_cfg_name, asset_cfg in asset.get_cfgs().items():
                 fields.append((asset_cfg_name, type(asset_cfg), asset_cfg))
-        for sensor_name, sensor_cfg in self.contact_sensors.values():
+        for sensor_name, sensor_cfg in self.contact_sensors.items():
             fields.append((sensor_name, type(sensor_cfg), sensor_cfg))
         NewConfigClass = make_configclass("TaskCfg", fields)
         new_config_class = NewConfigClass()

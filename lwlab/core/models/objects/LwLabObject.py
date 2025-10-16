@@ -15,10 +15,10 @@ class LwLabObject(Object):
                 usd_path=self.usd_path,
                 scale=self.scale,
                 activate_contact_sensors=False,
-            ),
-            rigid_props=sim_utils.RigidBodyPropertiesCfg(
-                sleep_threshold=0.0,
-                stabilization_threshold=0.0,
+                rigid_props=sim_utils.RigidBodyPropertiesCfg(
+                    sleep_threshold=0.0,
+                    stabilization_threshold=0.0,
+                ),
             ),
         )
         object_cfg = self._add_initial_pose_to_cfg(object_cfg)

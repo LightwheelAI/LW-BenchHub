@@ -59,3 +59,6 @@ video_fps: 30
 # =========================
 max_scene_retry: 4
 max_object_placement_retry: 3
+
+resample_objects_placement_on_reset: true
+resample_robot_placement_on_reset: true
