@@ -133,23 +133,23 @@ def overlay_image(
         image = back_alpha * back_image * back_mask + fore_alpha * fore_image * fore_mask
         return torch.clamp(image, 0.0, 255.0).to(torch.uint8)
 
-    semantic_id = env.cfg.isaac_arena_env.embodiment.foreground_semantic_id_mapping.get(sensor_cfg.name, None)
+    semantic_id = env.cfg.isaac_arena_env.task.foreground_semantic_id_mapping.get(sensor_cfg.name, None)
     if semantic_id is not None:
         camera_output = env.scene.sensors[sensor_cfg.name].data.output
-        if env.cfg.rgb_overlay_mode == 'background':
+        if env.cfg.isaac_arena_env.task.rgb_overlay_mode == 'background':
             semantic_mask = camera_output["semantic_segmentation"]
             overlay_mask = semantic_mask == semantic_id
             sim_image = image_overlapping(
-                back_image=env.cfg.rgb_overlay_images[sensor_cfg.name],
+                back_image=env.cfg.isaac_arena_env.task.rgb_overlay_images[sensor_cfg.name],
                 fore_image=sim_image,
                 back_mask=torch.logical_not(overlay_mask),
                 fore_mask=overlay_mask,
                 back_alpha=1.0,
                 fore_alpha=1.0,
             )
-        elif env.cfg.rgb_overlay_mode == 'debug':
+        elif env.cfg.isaac_arena_env.task.rgb_overlay_mode == 'debug':
             sim_image = image_overlapping(
-                back_image=env.cfg.rgb_overlay_images[sensor_cfg.name],
+                back_image=env.cfg.isaac_arena_env.task.rgb_overlay_images[sensor_cfg.name],
                 fore_image=sim_image,
                 back_alpha=0.5,
                 fore_alpha=0.5,

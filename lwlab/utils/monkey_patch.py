@@ -72,10 +72,10 @@ def patch_reset():
         if self.cfg.wait_for_textures and self.sim.has_rtx_sensors():
             while SimulationManager.assets_loading():
                 self.sim.render()
-        if hasattr(self.cfg.isaac_arena_env.embodiment, "foreground_semantic_id_mapping"):
-            self.cfg.isaac_arena_env.embodiment.foreground_semantic_id_mapping
+        if hasattr(self.cfg.isaac_arena_env.task, "foreground_semantic_id_mapping"):
+            self.cfg.isaac_arena_env.task.foreground_semantic_id_mapping
             # self.cfg.setup_camera_and_foreground(self.scene)
-            self.cfg.isaac_arena_env.embodiment.record_semantic_id_mapping(self.scene)
+            self.cfg.isaac_arena_env.task.record_semantic_id_mapping(self.scene)
         # return observations
         return self.obs_buf, self.extras
     ManagerBasedRLEnv.reset = reset
