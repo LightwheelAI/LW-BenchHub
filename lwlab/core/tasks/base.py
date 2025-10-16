@@ -175,6 +175,8 @@ class TerminationsCfg:
 class LwLabTaskBase(TaskBase):
     task_name: str
     task_type: str = "teleop"
+    resample_objects_placement_on_reset: bool = True
+    resample_robot_placement_on_reset: bool = True
     EMPTY_EXCLUDE_LAYOUTS: list = []
     OVEN_EXCLUDED_LAYOUTS: list = [1, 3, 5, 6, 8, 10, 11, 13, 14, 16, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 30, 32, 33, 36, 38, 40, 41, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60]
     DOUBLE_CAB_EXCLUDED_LAYOUTS: list = [32, 41, 59]
@@ -194,6 +196,10 @@ class LwLabTaskBase(TaskBase):
         self.object_projects = self.context.object_projects
         self.seed = self.context.seed
         self.rng = np.random.default_rng(self.seed)
+        if self.context.resample_objects_placement_on_reset is not None:
+            self.resample_objects_placement_on_reset = self.context.resample_objects_placement_on_reset
+        if self.context.resample_robot_placement_on_reset is not None:
+            self.resample_robot_placement_on_reset = self.context.resample_robot_placement_on_reset
         self.init_robot_base_ref = None
         self.events_cfg = EventCfg()
         self.termination_cfg = TerminationsCfg()

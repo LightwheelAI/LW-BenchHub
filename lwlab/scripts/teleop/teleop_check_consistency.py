@@ -461,9 +461,9 @@ def main():
                     object_projects=args_cli.object_projects,
                     initial_state=initial_state,
                     headless_mode=args_cli.headless,
+                    resample_objects_placement_on_reset=args_cli.resample_objects_placement_on_reset,
+                    resample_robot_placement_on_reset=args_cli.resample_robot_placement_on_reset,
                 )
-                if hasattr(args_cli, "reset_objects_enabled"):
-                    env_cfg.reset_objects_enabled = args_cli.reset_objects_enabled
             env_name = f"Robocasa-{args_cli.task}-{args_cli.robot}-v0"
             env_cfg.env_name = env_name
             env_cfg.terminations.time_out = None

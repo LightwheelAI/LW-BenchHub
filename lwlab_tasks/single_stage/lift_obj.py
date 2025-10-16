@@ -86,7 +86,7 @@ class LiftObj(BaseTaskEnvCfg, RobocasaKitchenEnvCfg):
     counter_id: FixtureType = FixtureType.COUNTER
     task_name: str = "LiftObj"
     fix_object_pose_cfg: dict = {"object": {"pos": (2.94, -4.08, 0.95)}}  # y- near to robot
-    reset_robot_enabled = False
+    resample_robot_placement_on_reset = False
     events: EventCfg = EventCfg()
     observations: LeRobotVisualObservationsCfg = LeRobotVisualObservationsCfg()
 

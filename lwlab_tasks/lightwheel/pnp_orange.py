@@ -49,7 +49,7 @@ class LeRobotVisualObservationsCfg:
 class PnPOrange(RobocasaKitchenEnvCfg, BaseTaskEnvCfg):
     task_name: str = "PnPOrange"
     observations: LeRobotVisualObservationsCfg = LeRobotVisualObservationsCfg()
-    reset_objects_enabled: bool = True
+    resample_objects_placement_on_reset: bool = True
 
     def _setup_kitchen_references(self):
         super()._setup_kitchen_references()

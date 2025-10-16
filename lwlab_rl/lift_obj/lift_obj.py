@@ -175,8 +175,8 @@ class BaseLiftObjRLEnvCfg(BaseRLEnvCfg, LiftObj):
     events: EventCfg = EventCfg()
     curriculum: CurriculumCfg = CurriculumCfg()
     commands: CommandsCfg = CommandsCfg()
-    reset_objects_enabled: bool = False
-    reset_robot_enabled: bool = False
+    resample_objects_placement_on_reset: bool = False
+    resample_robot_placement_on_reset: bool = False
     # fix_object_pose_cfg: dict = {"object": {"pos": (3.93, -0.6, 0.95)}}  # y- near to robot
 
     # def set_reward_arm_joint_names(self, arm_joint_names):

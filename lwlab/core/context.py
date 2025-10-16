@@ -25,6 +25,8 @@ class Context:
     headless_mode: bool = False
     extra_params: dict | None = None
     replay_cfgs: dict | None = None
+    resample_objects_placement_on_reset: bool | None = None
+    resample_robot_placement_on_reset: bool | None = None
 
 
 def get_context():

@@ -10,5 +10,5 @@ recalibrate: false
 task: PnPOrange
 layout: robocasakitchen-2-2
 enable_cameras: true
-reset_objects_enabled: false
+resample_objects_placement_on_reset: false
 num_demos: 3

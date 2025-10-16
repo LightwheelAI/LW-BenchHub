@@ -983,7 +983,7 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
             env_ids = torch.arange(env.num_envs, device=self.device, dtype=torch.int64)
         object_placements = EnvUtils.sample_object_placements(self, need_retry=False)
         object_placements, updated_obj_names = self._update_fxtr_obj_placement(object_placements)
-        if env.cfg.reset_objects_enabled and self.fix_object_pose_cfg is None:
+        if env.cfg.isaac_arena_env.task.resample_objects_placement_on_reset and self.fix_object_pose_cfg is None:
             reset_objs = object_placements.keys()
         else:
             reset_objs = updated_obj_names
@@ -999,6 +999,6 @@ class RobocasaKitchenEnvCfg(BaseSceneEnvCfg):
             )
         env.sim.forward()
 
-        if env.cfg.reset_robot_enabled:
+        if env.cfg.isaac_arena_env.task.resample_robot_placement_on_reset:
             self.sample_robot_base(env, env_ids)
             set_robot_to_position(env, self.init_robot_base_pos, self.init_robot_base_ori, keep_z=False, env_ids=env_ids)
