@@ -131,8 +131,6 @@ class EventCfg:
         },
     )
 
-    init_scene: EventTerm = MISSING
-
 
 @configclass
 class RewardsCfg:
