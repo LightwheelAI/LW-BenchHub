@@ -126,7 +126,8 @@ from typing import Dict, Any, Callable
 
 
 class LwLabEmbodimentBase(EmbodimentBase):
-    observation_cameras: dict = {}
+    observation_cameras: dict | None = None
+    robot_vis_helper_cfg: dict | None = None
 
     def __init__(self, enable_cameras: bool = False, initial_pose: Optional[Pose] = None):
         self.context = get_context()

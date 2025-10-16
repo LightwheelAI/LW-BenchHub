@@ -344,7 +344,7 @@ def spawn_cylinder_with_xform(
 
 def spawn_robot_vis_helper_general(env):
     # check if the robot_vis_helper_cfg is available
-    if not hasattr(env.cfg, "robot_vis_helper_cfg"):
+    if env.cfg.isaac_arena_env.embodiment.robot_vis_helper_cfg is None:
         return
 
     vis_helper_prims = []
@@ -352,7 +352,7 @@ def spawn_robot_vis_helper_general(env):
     for prim in env.sim.stage.Traverse():
         if prim.GetName().lower() == "robot":
             robot_prim_path = prim.GetPath()
-    for key, cfg in env.cfg.robot_vis_helper_cfg.items():
+    for key, cfg in env.cfg.isaac_arena_env.embodiment.robot_vis_helper_cfg.items():
         prim_path = robot_prim_path.AppendPath(cfg["relative_prim_path"])
         cylinder_prim = spawn_cylinder_with_xform(
             parent_prim_path=prim_path,
@@ -368,7 +368,7 @@ def spawn_robot_vis_helper_general(env):
 def spawn_robot_vis_helper(env):
     # Have problems with Isaaclab/IsaacSim 4.5, works fine with Isaaclab/IsaacSim 5.0
     # check if the robot_vis_helper_cfg is available
-    if not hasattr(env.cfg, "robot_vis_helper_cfg"):
+    if env.cfg.isaac_arena_env.embodiment.robot_vis_helper_cfg is None:
         return
     import isaaclab.sim as sim_utils
 
@@ -379,7 +379,7 @@ def spawn_robot_vis_helper(env):
         if prim.GetName().lower() == "robot":
             robot_prim = prim
             robot_prim_path = prim.GetPath()
-    for key, cfg in env.cfg.robot_vis_helper_cfg.items():
+    for key, cfg in env.cfg.isaac_arena_env.embodiment.robot_vis_helper_cfg.items():
         prim_path = robot_prim_path.AppendPath(cfg["relative_prim_path"])
         prim = sim_utils.spawn_cylinder(prim_path, cfg['spawn'], translation=cfg['translation'], orientation=cfg['orientation'])
         vis_helper_prims.append(prim)

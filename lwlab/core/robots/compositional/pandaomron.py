@@ -48,6 +48,7 @@ class PandaOmronEmbodiment(LwLabEmbodimentBase):
 
     name = "pandaomron"
     robot_base_link: str = "mobilebase0_wheeled_base"
+    robot_vis_helper_cfg = VIS_HELPER_CFG
 
     def __init__(self, enable_cameras: bool = False, initial_pose: Optional[Pose] = None):
         super().__init__(enable_cameras, initial_pose)
@@ -58,14 +59,6 @@ class PandaOmronEmbodiment(LwLabEmbodimentBase):
         self.mimic_env = None
         self.camera_config = PandaOmronCameraCfg()
         self.offset_config = OFFSET_CONFIG
-
-    def modify_env_cfg(self, env_cfg: ManagerBasedEnvCfg) -> Any:
-        env_cfg.viewport_cfg = {
-            "offset": [-1.0, 0.0, 2.0],
-            "lookat": [1.0, 0.0, -0.7]
-        }
-        env_cfg.robot_vis_helper_cfg = VIS_HELPER_CFG
-        return env_cfg
 
     def _update_scene_cfg_with_robot_initial_pose(self, scene_config: Any, pose: Pose) -> Any:
         # We override the default initial pose setting function in order to also set
@@ -296,8 +289,7 @@ class PandaOmronMimicEnv:
 
 class PandaOmronRelEmbodiment(PandaOmronEmbodiment):
     name: str = "PandaOmron-Rel"
-    robot_vis_helper_cfg = VIS_HELPER_CFG
-
+    
     def __init__(self, enable_cameras: bool = False, initial_pose: Pose | None = None):
         super().__init__(enable_cameras, initial_pose)
         self.action_config = PandaOmronRelActionsCfg()
