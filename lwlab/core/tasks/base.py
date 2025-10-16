@@ -253,7 +253,7 @@ class LwLabTaskBase(TaskBase):
             arena_env.task.checker_results[checker.type] = checker.check(env)
 
         # at the begining of the episode, dont check success for stabilization
-        success_check_result = self._check_success()
+        success_check_result = self._check_success(env)
 
         assert isinstance(success_check_result, torch.Tensor), f"_check_success must be a torch.Tensor, but got {type(success_check_result)}"
         assert len(success_check_result.shape) == 1 and success_check_result.shape[0] == env.num_envs, f"_check_success must be a torch.Tensor of shape ({env.num_envs},), but got {success_check_result.shape}"

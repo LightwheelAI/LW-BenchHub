@@ -76,7 +76,7 @@ class ManipulateDoor(LwLabTaskBase):
         # set the door state then place the objects otherwise objects initialized in opened drawer will fall down before the drawer is opened
         super()._setup_scene(env_ids)
 
-    def _check_success(self):
+    def _check_success(self, env):
         """
         Check if the door manipulation task is successful.
 
@@ -84,9 +84,9 @@ class ManipulateDoor(LwLabTaskBase):
             bool: True if the task is successful, False otherwise.
         """
         if self.behavior == "open":
-            return self.fxtr.is_open(env=self.env)
+            return self.fxtr.is_open(env=env)
         elif self.behavior == "close":
-            return self.fxtr.is_closed(env=self.env)
+            return self.fxtr.is_closed(env=env)
 
     def _get_obj_cfgs(self):
         """
