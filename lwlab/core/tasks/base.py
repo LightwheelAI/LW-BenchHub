@@ -702,10 +702,11 @@ class LwLabTaskBase(TaskBase):
         ep_meta["lang"] = ""
         ep_meta["usd_simplify"] = self.context.usd_simplify
         ep_meta["objects_version"] = self.objects_version
-        ep_meta["source"] = self.context.source
+        ep_meta["source"] = self.context.sources
         ep_meta["object_projects"] = self.context.object_projects
         ep_meta["seed"] = self.context.seed
         ep_meta["LW_API_ENDPOINT"] = ENDPOINT
+        return ep_meta
 
     def get_mimic_env_cfg(self):
         return None

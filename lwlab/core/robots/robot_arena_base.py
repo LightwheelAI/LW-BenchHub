@@ -196,7 +196,7 @@ class LwLabEmbodimentBase(EmbodimentBase):
 
     def get_ep_meta(self):
         ep_meta = {}
-        ep_meta["robot_name"] = self.robot_name
+        ep_meta["robot_name"] = self.name
         return ep_meta
 
     def set_default_offset_config(self):

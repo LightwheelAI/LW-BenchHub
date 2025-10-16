@@ -744,7 +744,7 @@ def main():
         if not args_cli.headless:
             viewports, overlay_window = setup_env_config_with_args(env)
 
-        print(colored(env_cfg.get_ep_meta()["lang"], "green"))
+        print(colored(env_cfg.isaac_arena_env.orchestrator.get_ep_meta()["lang"], "green"))
 
         current_recorded_demo_count = 0
         success_step_count = 0
@@ -897,7 +897,7 @@ def main():
                     update_checkers_status(env, env_cfg.get_warning_text())
 
                 # Recorded
-                if env_cfg.enable_cameras and start_record_state and video_recorder is not None:
+                if args_cli.enable_cameras and start_record_state and video_recorder is not None:
                     camera_data, camera_name = get_camera_images(env)
                     if camera_name is not None:
                         video_recorder.add_frame(camera_data)
