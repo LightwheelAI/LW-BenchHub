@@ -15,7 +15,9 @@
 from dataclasses import MISSING
 from typing import Any, Dict, List
 from copy import deepcopy
+import torch
 
+from isaaclab.envs.manager_based_rl_env_cfg import ManagerBasedRLEnvCfg
 from isaaclab.utils import configclass
 from isaaclab.managers import EventTermCfg as EventTerm
 from isaaclab.managers import ObservationGroupCfg as ObsGroup
@@ -52,6 +54,8 @@ from lwlab.core.models.fixtures.fixture import Fixture as IsaacFixture
 from isaac_arena.assets.object_reference import ObjectReference
 from isaac_arena.assets.asset import Asset
 from isaac_arena.utils.pose import Pose
+from isaac_arena.environments.isaac_arena_manager_based_env import IsaacArenaManagerBasedRLEnvCfg
+
 
 
 @configclass
@@ -170,7 +174,8 @@ class RewardsCfg:
 class TerminationsCfg:
     """Termination terms for the MDP."""
 
-    time_out = DoneTerm(func=mdp.time_out, time_out=True)
+    time_out: DoneTerm = DoneTerm(func=mdp.time_out, time_out=True)
+    success: DoneTerm = MISSING
 
 
 class LwLabTaskBase(TaskBase):
@@ -205,7 +210,9 @@ class LwLabTaskBase(TaskBase):
         self.enable_fixtures = []
         self.movable_fixtures = []
         self.events_cfg = EventCfg()
-        self.termination_cfg = TerminationsCfg()
+        self.termination_cfg = TerminationsCfg(
+            success=DoneTerm(func=self.check_success_caller)
+        )
         self.assets = {}
         self.contact_sensors = {}
         self.init_checkers_cfg()
@@ -217,11 +224,45 @@ class LwLabTaskBase(TaskBase):
         self.scene_retry_count = 0
         self.object_retry_count = 0
 
+        self._success_cache: torch.Tensor = torch.tensor([0], device=self.context.device, dtype=torch.int32).repeat(self.context.num_envs)
+        self._success_flag: torch.Tensor = torch.tensor([False], device=self.context.device, dtype=torch.bool).repeat(self.context.num_envs)
+
+    def modify_env_cfg(self, env_cfg: IsaacArenaManagerBasedRLEnvCfg) -> IsaacArenaManagerBasedRLEnvCfg:
+        if self.context.execute_mode == ExecuteMode.TELEOP:
+            self._success_count = int(1 / env_cfg.sim.dt / 2)
+        else:
+            self._success_count = 1
+        return env_cfg
+
     def get_termination_cfg(self):
         return self.termination_cfg
 
     def get_events_cfg(self):
         return self.events_cfg
+
+    def _check_success(self, env):
+        return torch.tensor([False], device=env.device).repeat(env.num_envs)
+
+    def check_success_caller(self, env):
+        arena_env = env.cfg.isaac_arena_env
+        arena_env.orchestrator.update_state(env)
+
+        for checker in arena_env.scene.checkers:
+            arena_env.scene.checkers_results[checker.type] = checker.check(env)
+
+        # at the begining of the episode, dont check success for stabilization
+        success_check_result = self._check_success(env)
+
+        assert isinstance(success_check_result, torch.Tensor), f"_check_success must be a torch.Tensor, but got {type(success_check_result)}"
+        assert len(success_check_result.shape) == 1 and success_check_result.shape[0] == env.num_envs, f"_check_success must be a torch.Tensor of shape ({env.num_envs},), but got {success_check_result.shape}"
+        success_check_result &= (env.episode_length_buf >= self.scene.start_success_check_count)
+
+        # success delay
+        self._success_flag &= (self._success_cache < self._success_count)
+        self._success_cache *= (self._success_cache < self._success_count)
+        self._success_flag |= success_check_result
+        self._success_cache += self._success_flag.int()
+        return self._success_cache >= self._success_count
 
     def init_checkers_cfg(self):
         # checkers

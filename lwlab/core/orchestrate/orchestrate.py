@@ -60,9 +60,6 @@ class LwLabBaseOrchestrator(OrchestratorBase):
             self.scene.assets[self.scene.scene_type].usd_path = self.scene.usd_path
         del self.scene.lwlab_arena
 
-        # setup scene done terms
-        self.setup_scene_done_terms()
-
         # setup scene event terms
         self.setup_scene_event_terms()
 
@@ -82,37 +79,6 @@ class LwLabBaseOrchestrator(OrchestratorBase):
         for fixture_controller in self.fixture_refs.values():
             if isinstance(fixture_controller, IsaacFixture):
                 fixture_controller.update_state(env)
-
-    def check_success_caller(self, env):
-        self.update_state(env)
-
-        for checker in self.scene.checkers:
-            self.scene.checkers_results[checker.type] = checker.check(env)
-
-        def _check_success(env):
-            return torch.tensor([False], device=env.device).repeat(env.num_envs)
-
-        # at the begining of the episode, dont check success for stabilization
-        success_check_result = self.task._check_success(env) if self.task.hasattr('_check_success') else _check_success(env)
-
-        assert isinstance(success_check_result, torch.Tensor), f"_check_success must be a torch.Tensor, but got {type(success_check_result)}"
-        assert len(success_check_result.shape) == 1 and success_check_result.shape[0] == env.num_envs, f"_check_success must be a torch.Tensor of shape ({env.num_envs},), but got {success_check_result.shape}"
-        success_check_result &= (env.episode_length_buf >= self.scene.start_success_check_count)
-
-        # success delay
-        self.scene.success_flag &= (self.scene.success_cache < self.scene.success_count)
-        self.scene.success_cache *= (self.scene.success_cache < self.scene.success_count)
-        self.scene.success_flag |= success_check_result
-        self.scene.success_cache += self.scene.success_flag.int()
-        return self.scene.success_cache >= self.scene.success_count
-
-    def setup_scene_done_terms(self):
-        """
-        Update the state.
-        """
-        termination_cfg = self.task.get_termination_cfg()
-        from isaaclab.managers import TerminationTermCfg as DoneTerm
-        termination_cfg.success = DoneTerm(func=self.check_success_caller)
 
     def setup_scene_event_terms(self):
         """
