@@ -36,6 +36,8 @@ from lwlab.utils.log_utils import get_default_logger, get_logger
 
 from lwlab.utils.video_recorder import VideoProcessor
 
+from lwlab.utils.isaaclab_utils import update_sensors
+
 # add argparse arguments
 parser = argparse.ArgumentParser(description="Replay demonstrations in Isaac Lab environments.")
 parser.add_argument("--num_envs", type=int, default=1, help="Number of environments to replay episodes.")
@@ -248,11 +250,16 @@ def main():
         env_cfg.recorders.dataset_export_dir_path = os.path.dirname(args_cli.dataset_file)
         env_cfg.recorders.dataset_filename = os.path.splitext(os.path.basename(args_cli.dataset_file))[0] + f"_{args_cli.replay_mode}_replay_record.hdf5"
 
-    delattr(env_cfg.terminations, "time_out")
+    env_cfg.terminations.time_out = None
 
     # create environment from loaded config
     env: ManagerBasedRLEnv = gym.make(env_name, cfg=env_cfg).unwrapped
     set_seed(env_cfg.seed, env)
+
+    # warmup rendering
+    if not args_cli.headless and env.common_step_counter <= 1:
+        for _ in range(env.cfg.warmup_steps):
+            update_sensors(env, env.physics_dt)
 
     if app_launcher._enable_cameras and not args_cli.headless:
         teleop_interface = Se3Keyboard(pos_sensitivity=0.1, rot_sensitivity=0.1)
@@ -518,14 +525,14 @@ def main():
                         else:
                             get_default_logger().warning(f"State index {current_state_idx} out of range for {obj_name} (total: {total_states})")
 
-                ee_poses.append(obs['policy']['ee_pose'].cpu().numpy())
+                ee_poses.append(obs['policy']['eef_pos'].cpu().numpy())
                 joint_pos_list.append(obs["policy"]["joint_pos"].cpu().numpy())
                 if args_cli.replay_mode == "joint_target":
                     joint_target_list.append(get_robot_joint_target_from_scene(env.scene)["joint_pos_target"].cpu().numpy())
                     gt_actions = copy.deepcopy(actions)
                     gt_joint_target_list.append(gt_actions.reshape(env.cfg.decimation, -1)[-1:, ...].cpu().numpy())
                 if app_launcher._enable_cameras and video_processor:
-                    camera_names = [n for n, c in env.cfg.isaac_arena_env.embodiment.observation_cameras.items() if env.cfg.isaac_arena_env.task.task_type in c["tags"]]
+                    camera_names = list(env.obs_buf["camera_obs"].keys())
                     # Process images asynchronously
                     video_processor.add_frame(obs, camera_names)
 

@@ -144,14 +144,6 @@ def sample_kitchen_object(
                 total_acquire_time = acquire_end_time - acquire_start_time
                 print(f"Total Acquire Time: {total_acquire_time:.4f}s")
 
-            if cache_key:
-                OBJECT_INFO_CACHE[cache_key] = {
-                    'obj_path': obj_path,
-                    'obj_name': obj_name,
-                    'obj_res': obj_res,
-                    'category': category,
-                }
-
         sampled_category = find_most_similar_category(obj_res["assetName"])
         if sampled_category is None:
             sampled_category = category
@@ -209,6 +201,15 @@ def sample_kitchen_object(
             if obj_info.category in groups:
                 groups_containing_sampled_obj.append(type)
         obj_info.groups_containing_sampled_obj = groups_containing_sampled_obj
+
+    if cache_key:
+        OBJECT_INFO_CACHE[cache_key] = {
+            'obj_path': obj_path,
+            'obj_name': obj_name,
+            'obj_res': obj_res,
+            'category': category,
+        }
+
     print(colored(f"Sampled {object_cfgs['task_name']}: {obj_info.name} from {obj_info.source}", "green"))
 
     return model, obj_info.get_info()

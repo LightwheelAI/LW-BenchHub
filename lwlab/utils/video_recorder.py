@@ -190,7 +190,7 @@ class VideoProcessor:
 
     def _process_single_frame(self, obs, camera_names):
         """Process a single frame"""
-        camera_images = [obs['policy'][name].cpu().numpy() for name in camera_names]
+        camera_images = [obs['camera_obs'][name].cpu().numpy() for name in camera_names]
         if not camera_images:
             return
 

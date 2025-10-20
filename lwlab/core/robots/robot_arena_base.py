@@ -130,9 +130,10 @@ class LwLabEmbodimentBase(EmbodimentBase):
     robot_vis_helper_cfg: dict | None = None
     robot_base_link: str | None = None
 
-    def __init__(self, enable_cameras: bool = False, initial_pose: Optional[Pose] = None):
+    def __init__(self, initial_pose: Optional[Pose] = None):
         self.context = get_context()
-        super().__init__(enable_cameras, initial_pose)
+        self.enable_cameras = self.context.enable_cameras
+        super().__init__(self.enable_cameras, initial_pose)
         self.scene_config = None
         self.action_config = ActionsCfg()
         self.observation_config = None

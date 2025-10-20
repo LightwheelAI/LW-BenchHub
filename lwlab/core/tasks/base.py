@@ -38,7 +38,6 @@ from lwlab.utils.place_utils.usd_object import USDObject
 import lwlab.utils.place_utils.env_utils as EnvUtils
 import numpy as np
 from isaac_arena.utils.configclass import make_configclass
-from isaac_arena.assets.object_library import LibraryObject
 from isaac_arena.assets.object_base import ObjectType
 import lwlab.utils.object_utils as OU
 from lwlab.utils.fixture_utils import fixture_is_type
@@ -251,7 +250,7 @@ class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
         env_cfg.sim.physx.bounce_threshold_velocity = 0.2
         env_cfg.sim.physx.bounce_threshold_velocity = 0.01
         env_cfg.sim.physx.friction_correlation_distance = 0.00625
-        self._set_camera_based_on_task_type(env_cfg)
+        # self._set_camera_based_on_task_type(env_cfg)
         return env_cfg
 
     def get_termination_cfg(self):
@@ -755,6 +754,7 @@ class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
 
     def get_ep_meta(self):
         ep_meta = {}
+        ep_meta["task_name"] = self.task_name
         ep_meta["object_cfgs"] = [copy_dict_for_json(cfg) for cfg in self.object_cfgs]
         # serialize np arrays to lists
         for cfg in ep_meta["object_cfgs"]:
@@ -786,7 +786,7 @@ class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
             return
         if self.task_type != "teleop" or self.context.execute_mode == ExecuteMode.TELEOP:
             return
-        for name, camera_infos in self.observation_cameras.items():
+        for name, camera_infos in env_cfg.isaac_arena_env.embodiment.observation_cameras.items():
             if self.task_type not in camera_infos["tags"]:
                 continue
             setattr(

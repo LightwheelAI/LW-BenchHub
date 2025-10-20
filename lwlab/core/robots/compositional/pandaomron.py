@@ -50,8 +50,8 @@ class PandaOmronEmbodiment(LwLabEmbodimentBase):
     robot_base_link: str = "mobilebase0_wheeled_base"
     robot_vis_helper_cfg = VIS_HELPER_CFG
 
-    def __init__(self, enable_cameras: bool = False, initial_pose: Optional[Pose] = None):
-        super().__init__(enable_cameras, initial_pose)
+    def __init__(self, initial_pose: Optional[Pose] = None):
+        super().__init__(initial_pose)
         self.scene_config = PandaOmronSceneCfg()
         self.action_config = None
         self.observation_config = PandaOmronObservationsCfg()
@@ -59,6 +59,74 @@ class PandaOmronEmbodiment(LwLabEmbodimentBase):
         self.mimic_env = None
         self.camera_config = PandaOmronCameraCfg()
         self.offset_config = OFFSET_CONFIG
+        self.observation_cameras = {
+            "agentview_left_camera": {
+                "camera_cfg": TiledCameraCfg(
+                    prim_path="{ENV_REGEX_NS}/Robot/omron_v2/mobilebase0_support/agentview_left",
+                    offset=TiledCameraCfg.OffsetCfg(pos=(-0.5, 0.35, 1.05),
+                                                    rot=(0.556238, 0.299353, -0.376787, -0.677509),
+                                                    convention="opengl"),
+                    data_types=["rgb"],
+                    spawn=sim_utils.PinholeCameraCfg(
+                        focal_length=24.0,
+                        focus_distance=400.0,
+                        horizontal_aperture=27.7,  # Adjusted for 60° FOV
+                        clipping_range=(0.1, 1.0e5),
+                        lock_camera=True
+                    ),
+                    width=224,
+                    height=224,
+                    update_period=0.05,
+                ),
+                "tags": ["teleop"]
+            },
+            "agentview_right_camera": {
+                "camera_cfg": TiledCameraCfg(
+                    prim_path="{ENV_REGEX_NS}/Robot/omron_v2/mobilebase0_support/agentview_right",
+                    offset=TiledCameraCfg.OffsetCfg(pos=(-0.5, -0.35, 1.05), rot=(0.677509, 0.376787, -0.299353, -0.556239), convention="opengl"),
+                    data_types=["rgb"],
+                    spawn=sim_utils.PinholeCameraCfg(
+                        focal_length=24.0,
+                        focus_distance=400.0,
+                        horizontal_aperture=27.7,  # Adjusted for 60° FOV
+                        clipping_range=(0.1, 1.0e5),
+                        lock_camera=True
+                    ),
+                    width=224,
+                    height=224,
+                    update_period=0.05,
+                ),
+                "tags": ["teleop"]
+            },
+            "eye_in_hand_camera": {
+                "camera_cfg": TiledCameraCfg(
+                    prim_path="{ENV_REGEX_NS}/Robot/omron_v2/Franka/panda_hand/eye_in_hand",
+                    offset=TiledCameraCfg.OffsetCfg(pos=(0.05, 0, 0), rot=(0, 0.707107, 0.707107, 0), convention="opengl"),
+                    data_types=["rgb"],
+                    spawn=sim_utils.PinholeCameraCfg(
+                        focal_length=24.0,
+                        focus_distance=400.0,
+                        horizontal_aperture=36.83,  # For a 75° FOV (assuming square image)
+                        clipping_range=(0.01, 50.0),  # Closer clipping for hand camera
+                        lock_camera=True
+                    ),
+                    width=224,
+                    height=224,
+                    update_period=0.05,
+                ),
+                "tags": ["teleop"]
+            }
+        }
+
+    def setup_env_config(self, orchestrator):
+        super().setup_env_config(orchestrator)
+        self._setup_camera_config(orchestrator.task.task_type)
+
+    def _setup_camera_config(self, task_type: str):
+        for cam_name, cam_info in self.observation_cameras.items():
+            if task_type not in cam_info["tags"]:
+                continue
+            setattr(self.camera_config, cam_name, cam_info["camera_cfg"])
 
     def _update_scene_cfg_with_robot_initial_pose(self, scene_config: Any, pose: Pose) -> Any:
         # We override the default initial pose setting function in order to also set
@@ -189,64 +257,9 @@ class PandaOmronSceneCfg:
 
 @configclass
 class PandaOmronCameraCfg:
-    observation_cameras: dict = {
-        "agentview_left_camera": {
-            "camera_cfg": TiledCameraCfg(
-                prim_path="{ENV_REGEX_NS}/Robot/omron_v2/mobilebase0_support/agentview_left",
-                offset=TiledCameraCfg.OffsetCfg(pos=(-0.5, 0.35, 1.05),
-                                                rot=(0.556238, 0.299353, -0.376787, -0.677509),
-                                                convention="opengl"),
-                data_types=["rgb"],
-                spawn=sim_utils.PinholeCameraCfg(
-                    focal_length=24.0,
-                    focus_distance=400.0,
-                    horizontal_aperture=27.7,  # Adjusted for 60° FOV
-                    clipping_range=(0.1, 1.0e5),
-                    lock_camera=True
-                ),
-                width=224,
-                height=224,
-                update_period=0.05,
-            ),
-            "tags": ["teleop"]
-        },
-        "agentview_right_camera": {
-            "camera_cfg": TiledCameraCfg(
-                prim_path="{ENV_REGEX_NS}/Robot/omron_v2/mobilebase0_support/agentview_right",
-                offset=TiledCameraCfg.OffsetCfg(pos=(-0.5, -0.35, 1.05), rot=(0.677509, 0.376787, -0.299353, -0.556239), convention="opengl"),
-                data_types=["rgb"],
-                spawn=sim_utils.PinholeCameraCfg(
-                    focal_length=24.0,
-                    focus_distance=400.0,
-                    horizontal_aperture=27.7,  # Adjusted for 60° FOV
-                    clipping_range=(0.1, 1.0e5),
-                    lock_camera=True
-                ),
-                width=224,
-                height=224,
-                update_period=0.05,
-            ),
-            "tags": ["teleop"]
-        },
-        "eye_in_hand_camera": {
-            "camera_cfg": TiledCameraCfg(
-                prim_path="{ENV_REGEX_NS}/Robot/omron_v2/Franka/panda_hand/eye_in_hand",
-                offset=TiledCameraCfg.OffsetCfg(pos=(0.05, 0, 0), rot=(0, 0.707107, 0.707107, 0), convention="opengl"),
-                data_types=["rgb"],
-                spawn=sim_utils.PinholeCameraCfg(
-                    focal_length=24.0,
-                    focus_distance=400.0,
-                    horizontal_aperture=36.83,  # For a 75° FOV (assuming square image)
-                    clipping_range=(0.01, 50.0),  # Closer clipping for hand camera
-                    lock_camera=True
-                ),
-                width=224,
-                height=224,
-                update_period=0.05,
-            ),
-            "tags": ["teleop"]
-        }
-    }
+    agentview_left_camera: TiledCameraCfg = None
+    agentview_right_camera: TiledCameraCfg = None
+    eye_in_hand_camera: TiledCameraCfg = None
 
 
 from isaaclab.managers import ObservationGroupCfg as ObsGroup
@@ -289,7 +302,7 @@ class PandaOmronMimicEnv:
 
 class PandaOmronRelEmbodiment(PandaOmronEmbodiment):
     name: str = "PandaOmron-Rel"
-    
+
     def __init__(self, enable_cameras: bool = False, initial_pose: Pose | None = None):
         super().__init__(enable_cameras, initial_pose)
         self.action_config = PandaOmronRelActionsCfg()
@@ -328,8 +341,8 @@ class PandaOmronRelActionsCfg:
 class PandaOmronAbsEmbodiment(PandaOmronEmbodiment):
     name: str = "PandaOmron-Abs"
 
-    def __init__(self, enable_cameras: bool = False, initial_pose: Pose | None = None):
-        super().__init__(enable_cameras, initial_pose)
+    def __init__(self, initial_pose: Pose | None = None):
+        super().__init__(initial_pose)
         self.action_config = PandaOmronAbsActionsCfg()
 
 
@@ -364,8 +377,8 @@ class PandaOmronAbsActionsCfg:
 class PandaOmronRLEmbodiment(PandaOmronEmbodiment):
     name: str = "PandaOmron-RL"
 
-    def __init__(self, enable_cameras: bool = False, initial_pose: Pose | None = None):
-        super().__init__(enable_cameras, initial_pose)
+    def __init__(self, initial_pose: Pose | None = None):
+        super().__init__(initial_pose)
         self.action_config = PandaOmronRLActionsCfg()
 
 

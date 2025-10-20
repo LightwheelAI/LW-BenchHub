@@ -110,16 +110,16 @@ class LwLabScene(Scene):
         else:
             scene_name_split = self.scene_name.split("-")
             if len(scene_name_split) == 3:
-                self.scene_type, layout_id, style_id = scene_name_split
+                self.scene_type, self.layout_id, self.style_id = scene_name_split
             elif len(scene_name_split) == 2:
-                self.scene_type, layout_id = scene_name_split
+                self.scene_type, self.layout_id = scene_name_split
             elif len(scene_name_split) == 1:
                 self.scene_type = scene_name_split[0]
             else:
                 raise ValueError(f"Invalid scene name: {self.scene_name}")
 
-        self.layout_id = int(layout_id) if layout_id is not None else None
-        self.style_id = int(style_id) if style_id is not None else None
+        self.layout_id = int(self.layout_id) if self.layout_id is not None else None
+        self.style_id = int(self.style_id) if self.style_id is not None else None
 
     # second stage (init from ArenaEnvironment)
     def setup_env_config(self, orchestrator):
@@ -160,6 +160,7 @@ class LwLabScene(Scene):
         ep_meta = {}
         ep_meta.update(deepcopy(self._ep_meta))
         ep_meta["scene_type"] = self.scene_type
+        ep_meta["usd_path"] = self.usd_path
         ep_meta["layout_id"] = (
             self.layout_id if isinstance(self.layout_id, dict) else int(self.layout_id)
         )
