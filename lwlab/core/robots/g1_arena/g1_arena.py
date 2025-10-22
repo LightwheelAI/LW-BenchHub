@@ -13,7 +13,7 @@ import isaaclab.utils.math as math_utils
 class G1BaseEmbodiment(LwLabEmbodimentBase):
 
     def __init__(self, enable_cameras: bool = False, initial_pose: Pose | None = None):
-        super().__init__(initial_pose)
+        super().__init__(enable_cameras, initial_pose)
         self.init_robot_base_height = 0.75
         self.init_waist_yaw = 0.0
         self.init_waist_pitch = 0.0
@@ -148,7 +148,7 @@ class G1BaseEmbodiment(LwLabEmbodimentBase):
 
 class G1ArenaJointEmbodiment(G1WBCJointEmbodiment, G1BaseEmbodiment):
     def __init__(self, enable_cameras: bool = False, initial_pose: Pose | None = None):
-        super().__init__(initial_pose)
+        super().__init__(enable_cameras, initial_pose)
         self.scene_config.robot = G1_GEARWBC_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
         self.action_config.left_arm_action = None
         self.action_config.right_arm_action = None
@@ -156,7 +156,7 @@ class G1ArenaJointEmbodiment(G1WBCJointEmbodiment, G1BaseEmbodiment):
 
 class G1ArenaPinkEmbodiment(G1WBCPinkEmbodiment, G1BaseEmbodiment):
     def __init__(self, enable_cameras: bool = False, initial_pose: Pose | None = None):
-        super().__init__(initial_pose)
+        super().__init__(enable_cameras, initial_pose)
         self.scene_config.robot = G1_GEARWBC_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
         self.action_config.left_arm_action = None
         self.action_config.right_arm_action = None

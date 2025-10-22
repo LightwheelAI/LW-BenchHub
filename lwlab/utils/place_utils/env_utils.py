@@ -20,6 +20,7 @@ import lwlab.utils.math_utils.transform_utils.numpy_impl as T
 from lwlab.utils.log_utils import get_default_logger
 from lwlab.utils.usd_utils import OpenUsd
 from lwlab.core.tasks.base import LwLabTaskBase
+from lwlab.core.scenes.kitchen.kitchen import LwLabScene
 
 
 # _ROBOT_POS_OFFSETS: dict[str, list[float]] = {
@@ -107,7 +108,7 @@ def determine_face_dir(fixture_rot, ref_rot, epsilon=1e-2):
         return 2
 
 
-def get_current_layout_stool_rotations(task: LwLabTaskBase):
+def get_current_layout_stool_rotations(scene: LwLabScene, task: LwLabTaskBase):
     """
     Automatically detect the current layout and extract unique stool rotation values (z_rot)
     from a YAML layout file associated with the environment.
@@ -118,7 +119,7 @@ def get_current_layout_stool_rotations(task: LwLabTaskBase):
     Returns:
         list: List of unique rotation values (floats) found in stool configurations
     """
-    root_prim = task.lwlab_arena.stage.GetPseudoRoot()
+    root_prim = scene.lwlab_arena.stage.GetPseudoRoot()
     stool_prims = OpenUsd.get_prim_by_prefix(root_prim, "stool", only_xform=True)
 
     unique_rots = set()
@@ -235,7 +236,7 @@ def get_combined_counters_2d_bbox_corners(task: LwLabTaskBase, counter_names):
     return abs_sites
 
 
-def compute_robot_base_placement_pose(task: LwLabTaskBase, ref_fixture, ref_object=None, offset=None):
+def compute_robot_base_placement_pose(scene: LwLabScene, task: LwLabTaskBase, ref_fixture, ref_object=None, offset=None):
     """
     steps:
     1. find the nearest counter to this fixture
@@ -926,6 +927,7 @@ def init_robot_base_pose(orchestrator):
             break
 
     robot_base_pos, robot_base_ori = compute_robot_base_placement_pose(
+        orchestrator.scene,
         orchestrator.task,
         ref_fixture=ref_fixture,
         ref_object=ref_object,

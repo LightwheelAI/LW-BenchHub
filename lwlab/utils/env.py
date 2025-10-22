@@ -236,7 +236,7 @@ def parse_env_cfg(
 
     isaac_arena_environment = IsaacArenaEnvironment(
         name=task_name,
-        embodiment=robot(),
+        embodiment=robot(enable_cameras=enable_cameras),
         scene=scene(),
         task=task(),
         orchestrator=LwLabBaseOrchestrator(),

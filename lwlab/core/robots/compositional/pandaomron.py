@@ -50,8 +50,8 @@ class PandaOmronEmbodiment(LwLabEmbodimentBase):
     robot_base_link: str = "mobilebase0_wheeled_base"
     robot_vis_helper_cfg = VIS_HELPER_CFG
 
-    def __init__(self, initial_pose: Optional[Pose] = None):
-        super().__init__(initial_pose)
+    def __init__(self, enable_cameras: bool = False, initial_pose: Optional[Pose] = None):
+        super().__init__(enable_cameras, initial_pose)
         self.scene_config = PandaOmronSceneCfg()
         self.action_config = None
         self.observation_config = PandaOmronObservationsCfg()
@@ -331,8 +331,8 @@ class PandaOmronRelActionsCfg:
 class PandaOmronAbsEmbodiment(PandaOmronEmbodiment):
     name: str = "PandaOmron-Abs"
 
-    def __init__(self, initial_pose: Pose | None = None):
-        super().__init__(initial_pose)
+    def __init__(self, enable_cameras: bool = False, initial_pose: Pose | None = None):
+        super().__init__(enable_cameras, initial_pose)
         self.action_config = PandaOmronAbsActionsCfg()
 
 
@@ -367,7 +367,7 @@ class PandaOmronAbsActionsCfg:
 class PandaOmronRLEmbodiment(PandaOmronEmbodiment):
     name: str = "PandaOmron-RL"
 
-    def __init__(self, initial_pose: Pose | None = None):
+    def __init__(self, enable_cameras: bool = False, initial_pose: Pose | None = None):
         super().__init__(initial_pose)
         self.action_config = PandaOmronRLActionsCfg()
 
