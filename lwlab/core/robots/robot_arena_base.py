@@ -147,6 +147,15 @@ class LwLabEmbodimentBase(EmbodimentBase):
 
         self.set_default_offset_config()
 
+    def modify_observation_cameras(self, task_type: str):
+        if "render_resolution" in self.context.replay_cfgs:
+            render_resolution = self.context.replay_cfgs["render_resolution"]
+            if render_resolution is not None:
+                for cam_name, cam_info in self.observation_cameras.items():
+                    if task_type in cam_info["tags"]:
+                        cam_info["camera_cfg"].width = render_resolution[0]
+                        cam_info["camera_cfg"].height = render_resolution[1]
+
     def _setup_camera_config(self, task_type: str):
         for cam_name, cam_info in self.observation_cameras.items():
             if task_type not in cam_info["tags"]:
@@ -227,6 +236,7 @@ class LwLabEmbodimentBase(EmbodimentBase):
     def setup_env_config(self, orchestrator):
         self.init_robot_base_pos_anchor, self.init_robot_base_ori_anchor = self.get_robot_anchor(orchestrator)
         self.scene_config.robot.init_state.rot = Tn.convert_quat(Tn.mat2quat(Tn.euler2mat(self.init_robot_base_ori_anchor)), to="wxyz")
+        self.modify_observation_cameras(orchestrator.task.task_type)
         self._setup_camera_config(orchestrator.task.task_type)
 
     def get_robot_anchor(self, orchestrator):

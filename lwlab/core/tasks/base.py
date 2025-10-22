@@ -189,6 +189,8 @@ class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
     SHELVES_INCLUDED_LAYOUT: list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     DOUBLE_CAB_EXCLUDED_LAYOUTS: list = [32, 41, 59]
     _start_success_check_count: int = 10
+    enable_fixtures: list[str] = []
+    movable_fixtures: list[str] = []
 
     def __init__(self):
         self.context = get_context()
@@ -205,8 +207,6 @@ class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
         if self.context.resample_robot_placement_on_reset is not None:
             self.resample_robot_placement_on_reset = self.context.resample_robot_placement_on_reset
         self.init_robot_base_ref = None
-        self.enable_fixtures = []
-        self.movable_fixtures = []
         self.events_cfg = EventCfg(
             init_task=EventTerm(func=self.init_fixtures, mode="startup")
         )

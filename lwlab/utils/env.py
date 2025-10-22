@@ -204,11 +204,13 @@ def parse_env_cfg(
     context.object_projects = object_projects
     context.headless_mode = headless_mode
     context.extra_params = kwargs
-    context.replay_cfgs = replay_cfgs
     context.resample_objects_placement_on_reset = resample_objects_placement_on_reset
     context.resample_robot_placement_on_reset = resample_robot_placement_on_reset
     context.num_envs = num_envs
     context.use_fabric = use_fabric
+    context.replay_cfgs = replay_cfgs
+    if "ep_meta" in replay_cfgs:
+        context.ep_meta = replay_cfgs["ep_meta"]
     discover_and_import_lwlab_modules()
 
     from isaac_arena.environments.isaac_arena_environment import IsaacArenaEnvironment
