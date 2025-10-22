@@ -1093,6 +1093,7 @@ def main():
         import traceback
         traceback.print_exc()
         handle_exception_and_log()
+        raise
 
     # close the simulator
     env.close()
