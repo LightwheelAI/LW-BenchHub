@@ -141,7 +141,7 @@ class ManipulateLowerDoor(ManipulateDoor):
 
     def _setup_scene(self, env, env_ids=None):
         super()._setup_scene(env, env_ids)
-        self._place_robot(scene=env.cfg.isaac_arene_env.scene)
+        self._place_robot(scene=env.cfg.isaac_arena_env.scene)
 
     def _place_robot(self, scene: LwLabScene):
         x_ofs = (self.fxtr.width / 2) + self.X_OFS

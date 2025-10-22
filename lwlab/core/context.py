@@ -29,6 +29,7 @@ class Context:
     resample_robot_placement_on_reset: bool | None = None
     num_envs: int | None = 1
     device: str | None = "cpu"
+    use_fabric: bool | None = None
 
 
 def get_context():

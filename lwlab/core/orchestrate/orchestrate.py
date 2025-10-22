@@ -108,7 +108,7 @@ class LwLabBaseOrchestrator(OrchestratorBase, NoDeepcopyMixin):
             reset_objs = updated_obj_names
         for obj_name in reset_objs:
             obj_poses, obj_quat, _ = object_placements[obj_name]
-            obj_pos = torch.tensor(obj_poses, device=self.context.device, dtype=torch.float32)[env_ids] + env.scene.env_origins[env_ids]
+            obj_pos = torch.tensor(obj_poses, device=self.context.device, dtype=torch.float32) + env.scene.env_origins[env_ids]
             obj_quat = Tt.convert_quat(torch.tensor(obj_quat, device=self.context.device, dtype=torch.float32), to="wxyz")
             obj_quat = obj_quat.unsqueeze(0).repeat(obj_pos.shape[0], 1)
             root_pos = torch.concatenate([obj_pos, obj_quat], dim=-1)

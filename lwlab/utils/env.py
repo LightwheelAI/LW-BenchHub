@@ -146,7 +146,9 @@ def parse_env_cfg(
     execute_mode: ExecuteMode,
     for_rl: bool = False,
     rl_variant: str = None,
-    device: str = "cuda:0", num_envs: int | None = None, use_fabric: bool | None = None,
+    device: str = "cuda:0",
+    num_envs: int | None = None,
+    use_fabric: bool | None = None,
     replay_cfgs: dict | None = None,
     first_person_view: bool = False,
     enable_cameras: bool = False,
@@ -205,6 +207,8 @@ def parse_env_cfg(
     context.replay_cfgs = replay_cfgs
     context.resample_objects_placement_on_reset = resample_objects_placement_on_reset
     context.resample_robot_placement_on_reset = resample_robot_placement_on_reset
+    context.num_envs = num_envs
+    context.use_fabric = use_fabric
     discover_and_import_lwlab_modules()
 
     from isaac_arena.environments.isaac_arena_environment import IsaacArenaEnvironment
