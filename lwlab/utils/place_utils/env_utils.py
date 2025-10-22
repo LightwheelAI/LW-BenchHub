@@ -108,7 +108,7 @@ def determine_face_dir(fixture_rot, ref_rot, epsilon=1e-2):
         return 2
 
 
-def get_current_layout_stool_rotations(scene: LwLabScene, task: LwLabTaskBase):
+def get_current_layout_stool_rotations(scene: LwLabScene):
     """
     Automatically detect the current layout and extract unique stool rotation values (z_rot)
     from a YAML layout file associated with the environment.
@@ -187,7 +187,7 @@ def categorize_stool_rotations(stool_rotations, ground_fixture_rot=None):
     return categorized_rotations
 
 
-def get_island_group_counter_names(task: LwLabTaskBase):
+def get_island_group_counter_names(scene: LwLabScene):
     """
     Automatically detect all counter fixture names under all island_group groups in the current layout.
     Used to get bounding box combo of multiple counters.
@@ -196,7 +196,7 @@ def get_island_group_counter_names(task: LwLabTaskBase):
     Returns:
         list: List of counter fixture names (str) under all island_group groups
     """
-    root_prim = task.lwlab_arena.stage.GetPseudoRoot()
+    root_prim = scene.lwlab_arena.stage.GetPseudoRoot()
     island_prims = OpenUsd.get_prim_by_suffix(root_prim, "island_group", only_xform=True)
     counter_names = []
     for island_prim in island_prims:
@@ -339,7 +339,7 @@ def compute_robot_base_placement_pose(scene: LwLabScene, task: LwLabTaskBase, re
 
     face_dir = 1  # 1 is facing front of fixture, -1 is facing south end of fixture
     if fixture_is_type(ground_fixture, FixtureType.DINING_COUNTER) or stool_only:
-        stool_rotations = get_current_layout_stool_rotations(task)
+        stool_rotations = get_current_layout_stool_rotations(scene)
 
         # for dining counters, can face either north of south end of fixture
         if ref_object is not None:
@@ -362,7 +362,7 @@ def compute_robot_base_placement_pose(scene: LwLabScene, task: LwLabTaskBase, re
         elif fixture_is_type(ref_fixture, FixtureType.STOOL) and ref_object is None:
             face_dir = determine_face_dir(ground_fixture.rot, ref_fixture.rot)
         else:
-            island_group_counter_names = get_island_group_counter_names(task)
+            island_group_counter_names = get_island_group_counter_names(scene)
             if len(island_group_counter_names) > 1:
                 abs_sites = get_combined_counters_2d_bbox_corners(
                     task, island_group_counter_names
@@ -419,7 +419,7 @@ def compute_robot_base_placement_pose(scene: LwLabScene, task: LwLabTaskBase, re
                 # these dining counters only have 1 accesssible side for robot to spawn
                 one_accessible_layout_ids = [11, 27, 30, 35, 49, 60]
                 if task.layout_id in one_accessible_layout_ids:
-                    stool_rotations = get_current_layout_stool_rotations(task)
+                    stool_rotations = get_current_layout_stool_rotations(scene)
                     categorized_stool_rotations = categorize_stool_rotations(
                         stool_rotations, ground_fixture.rot
                     )
@@ -469,7 +469,7 @@ def compute_robot_base_placement_pose(scene: LwLabScene, task: LwLabTaskBase, re
         abs_sites = ground_fixture.get_ext_sites(relative=False)
         stool = ref_to_fixture or task.get_fixture(FixtureType.STOOL)
 
-        stool_rotations = get_current_layout_stool_rotations(task)
+        stool_rotations = get_current_layout_stool_rotations(scene)
 
         def rotation_matrix_z(theta):
             """
