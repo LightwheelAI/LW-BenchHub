@@ -38,7 +38,7 @@ class ManipulateDrawer(LwLabTaskBase):
     drawer_id: FixtureType = FixtureType.TOP_DRAWER
     behavior: str = "open"
 
-    def _place_robot(self):
+    def _place_robot(self, scene):
         x_ofs = (self.drawer.width / 2) + 0.20
         TEST_OFS = 0.23
         inits = []
@@ -48,11 +48,11 @@ class ManipulateDrawer(LwLabTaskBase):
             robot_base_pos_left,
             robot_base_ori_left,
         ) = EnvUtils.compute_robot_base_placement_pose(
-            self, ref_fixture=self.drawer, offset=(-x_ofs, -0.10)
+            scene, self, ref_fixture=self.drawer, offset=(-x_ofs, -0.10)
         )
         # get a test point to check if the robot is in contact with any fixture.
         test_pos_left, _ = EnvUtils.compute_robot_base_placement_pose(
-            self, ref_fixture=self.drawer, offset=(-x_ofs - TEST_OFS, -0.10)
+            scene, self, ref_fixture=self.drawer, offset=(-x_ofs - TEST_OFS, -0.10)
         )
 
         # check if the robot will be in contact with any fixture or wall during initialization
@@ -67,11 +67,11 @@ class ManipulateDrawer(LwLabTaskBase):
             robot_base_pos_right,
             robot_base_ori_right,
         ) = EnvUtils.compute_robot_base_placement_pose(
-            self, ref_fixture=self.drawer, offset=(x_ofs, -0.10)
+            scene, self, ref_fixture=self.drawer, offset=(x_ofs, -0.10)
         )
         # get a test point to check if the robot is in contact with any fixture if initialized to the right of the drawer
         test_pos_right, _ = EnvUtils.compute_robot_base_placement_pose(
-            self, ref_fixture=self.drawer, offset=(x_ofs + TEST_OFS, -0.10)
+            scene, self, ref_fixture=self.drawer, offset=(x_ofs + TEST_OFS, -0.10)
         )
 
         if not self.check_fxtr_contact(
@@ -99,15 +99,15 @@ class ManipulateDrawer(LwLabTaskBase):
         super()._setup_scene(env, env_ids)
         self.drawer.update_state(env)
 
-    def _setup_kitchen_references(self):
+    def _setup_kitchen_references(self, scene):
         """
         Setup the kitchen references for the drawer tasks
         """
-        super()._setup_kitchen_references()
+        super()._setup_kitchen_references(scene)
         valid_drawer = False
         for i in range(7):
             self.drawer = self.get_fixture(id=self.drawer_id)
-            if self._place_robot():
+            if self._place_robot(scene=scene):
                 valid_drawer = True
                 break
         if not valid_drawer:
@@ -299,8 +299,8 @@ class SlideDishwasherRack(LwLabTaskBase):
     """
     task_name: str = "SlideDishwasherRack"
 
-    def _setup_kitchen_references(self):
-        super()._setup_kitchen_references()
+    def _setup_kitchen_references(self, scene):
+        super()._setup_kitchen_references(scene)
         self.dishwasher = self.register_fixture_ref(
             "dishwasher", dict(id=FixtureType.DISHWASHER)
         )

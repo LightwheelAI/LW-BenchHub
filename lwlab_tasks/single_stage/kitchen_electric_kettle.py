@@ -25,8 +25,8 @@ class CloseElectricKettleLid(LwLabTaskBase):
     task_name: str = "CloseElectricKettleLid"
     enable_fixtures: list[str] = ["electric_kettle"]
 
-    def _setup_kitchen_references(self):
-        super()._setup_kitchen_references()
+    def _setup_kitchen_references(self, scene):
+        super()._setup_kitchen_references(scene)
 
         self.electric_kettle = self.register_fixture_ref(
             "electric_kettle", dict(id=FixtureType.ELECTRIC_KETTLE)
@@ -59,8 +59,8 @@ class OpenElectricKettleLid(LwLabTaskBase):
         kwargs["enable_fixtures"] = ["electric_kettle"]
         super().__init__(*args, **kwargs)
 
-    def _setup_kitchen_references(self):
-        super()._setup_kitchen_references()
+    def _setup_kitchen_references(self, scene):
+        super()._setup_kitchen_references(scene)
 
         self.electric_kettle = self.register_fixture_ref(
             "electric_kettle", dict(id=FixtureType.ELECTRIC_KETTLE)

@@ -17,7 +17,7 @@ from dataclasses import MISSING
 from lwlab.core.models.fixtures import FixtureType
 import lwlab.utils.place_utils.env_utils as EnvUtils
 from lwlab.core.models.fixtures import fixture_is_type
-
+from lwlab.core.scenes.kitchen.kitchen import LwLabScene
 from lwlab.core.tasks.base import LwLabTaskBase
 import lwlab.utils.object_utils as OU
 from lwlab.core.models.fixtures import HingeCabinet, FridgeFrenchDoor, FridgeBottomFreezer, Drawer, Microwave, Counter, Stove, Stovetop, HousingCabinet, SingleCabinet, Fridge, Wall, Floor, Dishwasher
@@ -37,11 +37,11 @@ class ManipulateDoor(LwLabTaskBase):
     behavior: str = "open"
     fixture_id: FixtureType = MISSING
 
-    def _setup_kitchen_references(self):
+    def _setup_kitchen_references(self, scene):
         """
         Setup the kitchen references for the door tasks.
         """
-        super()._setup_kitchen_references()
+        super()._setup_kitchen_references(scene)
         self.fxtr = self.register_fixture_ref("fxtr", dict(id=self.fixture_id))
         self.init_robot_base_ref = self.fxtr
 
@@ -141,9 +141,9 @@ class ManipulateLowerDoor(ManipulateDoor):
 
     def _setup_scene(self, env, env_ids=None):
         super()._setup_scene(env, env_ids)
-        self._place_robot()
+        self._place_robot(scene=env.cfg.isaac_arene_env.scene)
 
-    def _place_robot(self):
+    def _place_robot(self, scene: LwLabScene):
         x_ofs = (self.fxtr.width / 2) + self.X_OFS
         TEST_OFS = 0.23
         inits = []
@@ -153,11 +153,17 @@ class ManipulateLowerDoor(ManipulateDoor):
             robot_base_pos_left,
             robot_base_ori_left,
         ) = EnvUtils.compute_robot_base_placement_pose(
-            self, ref_fixture=self.fxtr, offset=(-x_ofs, self.Y_OFS)
+            scene=scene,
+            task=self,
+            ref_fixture=self.fxtr,
+            offset=(-x_ofs, self.Y_OFS)
         )
         # get a test point to check if the robot is in contact with any fixture.
         test_pos_left, _ = EnvUtils.compute_robot_base_placement_pose(
-            self, ref_fixture=self.fxtr, offset=(-x_ofs - TEST_OFS, self.Y_OFS)
+            scene=scene,
+            task=self,
+            ref_fixture=self.fxtr,
+            offset=(-x_ofs - TEST_OFS, self.Y_OFS)
         )
 
         # check if the robot will be in contact with any fixture or wall during initialization
@@ -172,11 +178,17 @@ class ManipulateLowerDoor(ManipulateDoor):
             robot_base_pos_right,
             robot_base_ori_right,
         ) = EnvUtils.compute_robot_base_placement_pose(
-            self, ref_fixture=self.fxtr, offset=(x_ofs, self.Y_OFS)
+            scene=scene,
+            task=self,
+            ref_fixture=self.fxtr,
+            offset=(x_ofs, self.Y_OFS)
         )
         # get a test point to check if the robot is in contact with any fixture if initialized to the right of the drawer
         test_pos_right, _ = EnvUtils.compute_robot_base_placement_pose(
-            self, ref_fixture=self.fxtr, offset=(x_ofs + TEST_OFS, self.Y_OFS)
+            scene=scene,
+            task=self,
+            ref_fixture=self.fxtr,
+            offset=(x_ofs + TEST_OFS, self.Y_OFS)
         )
 
         if not self.check_fxtr_contact(
@@ -268,9 +280,9 @@ class OpenFridge(OpenDoor):
 
     def _load_model(self, *args, **kwargs):
         super()._load_model(*args, **kwargs)
-        self._place_robot()
+        self._place_robot(scene=env.cfg.isaac_arene_env.scene)
 
-    def _place_robot(self):
+    def _place_robot(self, scene: LwLabScene):
         if isinstance(self.fxtr, FridgeBottomFreezer):
             OFFSET = (-0.30, -0.30)
         else:
@@ -280,7 +292,10 @@ class OpenFridge(OpenDoor):
             init_robot_base_pos_anchor,
             init_robot_base_ori_anchor,
         ) = EnvUtils.compute_robot_base_placement_pose(
-            self, ref_fixture=self.fxtr, offset=OFFSET
+            scene=scene,
+            task=self,
+            ref_fixture=self.fxtr,
+            offset=OFFSET
         )
         if hasattr(self, "init_robot_base_pos_anchor"):
             self.init_robot_base_pos_anchor[:2] = init_robot_base_pos_anchor[:2]
@@ -297,9 +312,9 @@ class CloseFridge(CloseDoor):
 
     def _load_model(self, *args, **kwargs):
         super()._load_model(*args, **kwargs)
-        self._place_robot()
+        self._place_robot(scene=env.cfg.isaac_arene_env.scene)
 
-    def _place_robot(self):
+    def _place_robot(self, scene: LwLabScene):
         if isinstance(self.fxtr, FridgeBottomFreezer):
             OFFSET = (-0.30, -0.30)
         else:
@@ -309,7 +324,10 @@ class CloseFridge(CloseDoor):
             init_robot_base_pos_anchor,
             init_robot_base_ori_anchor,
         ) = EnvUtils.compute_robot_base_placement_pose(
-            self, ref_fixture=self.fxtr, offset=OFFSET
+            scene=scene,
+            task=self,
+            ref_fixture=self.fxtr,
+            offset=OFFSET
         )
         if hasattr(self, "init_robot_base_pos_anchor"):
             self.init_robot_base_pos_anchor[:2] = init_robot_base_pos_anchor[:2]
@@ -367,8 +385,8 @@ class OpenToasterOvenDoor(LwLabTaskBase):
     task_name: str = "OpenToasterOvenDoor"
     enable_fixtures = ["toaster_oven"]
 
-    def _setup_kitchen_references(self):
-        super()._setup_kitchen_references()
+    def _setup_kitchen_references(self, scene):
+        super()._setup_kitchen_references(scene)
         self.toaster_oven = self.register_fixture_ref(
             "toaster_oven", dict(id=FixtureType.TOASTER_OVEN)
         )
@@ -394,8 +412,8 @@ class CloseToasterOvenDoor(LwLabTaskBase):
     task_name: str = "CloseToasterOvenDoor"
     enable_fixtures = ["toaster_oven"]
 
-    def _setup_kitchen_references(self):
-        super()._setup_kitchen_references()
+    def _setup_kitchen_references(self, scene):
+        super()._setup_kitchen_references(scene)
         self.toaster_oven = self.register_fixture_ref(
             "toaster_oven", dict(id=FixtureType.TOASTER_OVEN)
         )

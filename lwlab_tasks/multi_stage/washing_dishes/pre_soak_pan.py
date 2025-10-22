@@ -16,8 +16,8 @@ class PreSoakPan(LwLabTaskBase):
 
     task_name: str = "PreSoakPan"
 
-    def _setup_kitchen_references(self):
-        super()._setup_kitchen_references()
+    def _setup_kitchen_references(self, scene):
+        super()._setup_kitchen_references(scene)
         self.sink = self.register_fixture_ref("sink", dict(id=FixtureType.SINK))
         self.counter = self.register_fixture_ref(
             "counter", dict(id=FixtureType.COUNTER, ref=self.sink, size=(0.6, 0.4))

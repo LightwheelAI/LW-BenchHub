@@ -89,12 +89,12 @@ class LiftObj(LwLabTaskBase):
     events: EventCfg = EventCfg()
     observations: LeRobotVisualObservationsCfg = LeRobotVisualObservationsCfg()
 
-    def _setup_kitchen_references(self):
+    def _setup_kitchen_references(self, scene):
         """
         Setup the kitchen references for the counter to cabinet pick and place task:
         The cabinet to place object in and the counter to initialize it on
         """
-        super()._setup_kitchen_references()
+        super()._setup_kitchen_references(scene)
 
         self.counter = self.register_fixture_ref("counter", dict(id=self.counter_id, fix_id=2))
         # self.useful_fixture_names = [self.counter.name]

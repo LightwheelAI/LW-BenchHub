@@ -35,12 +35,12 @@ class PnPCounterToCabinet(PnP):  # DONE
     cab_id: FixtureType = FixtureType.CABINET
     task_name: str = "PnPCounterToCabinet"
 
-    def _setup_kitchen_references(self):
+    def _setup_kitchen_references(self, scene):
         """
         Setup the kitchen references for the counter to cabinet pick and place task:
         The cabinet to place object in and the counter to initialize it on
         """
-        super()._setup_kitchen_references()
+        super()._setup_kitchen_references(scene)
         self.cab = self.register_fixture_ref("cab", dict(id=self.cab_id))
         self.counter = self.register_fixture_ref(
             "counter", dict(id=FixtureType.COUNTER, ref=self.cab)
@@ -148,12 +148,12 @@ class PnPCabinetToCounter(PnP):  # DONE
     cab_id: FixtureType = FixtureType.CABINET
     task_name: str = "PnPCabinetToCounter"
 
-    def _setup_kitchen_references(self):
+    def _setup_kitchen_references(self, scene):
         """
         Setup the kitchen references for the cabinet to counter pick and place task:
         The cabinet to pick object from and the counter to place it on
         """
-        super()._setup_kitchen_references()
+        super()._setup_kitchen_references(scene)
         self.cab = self.register_fixture_ref(
             "cab",
             dict(id=self.cab_id),
@@ -259,12 +259,12 @@ class PnPCounterToSink(PnP):  # DONE
     obj_groups: str = "all"
     task_name: str = "PnPCounterToSink"
 
-    def _setup_kitchen_references(self):
+    def _setup_kitchen_references(self, scene):
         """
         Setup the kitchen references for the counter to sink pick and place task:
         The sink to place object in and the counter to initialize it on
         """
-        super()._setup_kitchen_references()
+        super()._setup_kitchen_references(scene)
         self.sink = self.register_fixture_ref(
             "sink",
             dict(id=FixtureType.SINK),
@@ -369,12 +369,12 @@ class PnPSinkToCounter(PnP):  # DONE
     obj_groups: str = "food"
     task_name: str = "PnPSinkToCounter"
 
-    def _setup_kitchen_references(self):
+    def _setup_kitchen_references(self, scene):
         """
         Setup the kitchen references for the sink to counter pick and place task:
         The sink to pick object from and the counter to place it on
         """
-        super()._setup_kitchen_references()
+        super()._setup_kitchen_references(scene)
         self.sink = self.register_fixture_ref(
             "sink",
             dict(id=FixtureType.SINK),
@@ -482,12 +482,12 @@ class PnPCounterToMicrowave(PnP):  # DONE
     obj_groups: str = "food"
     task_name: str = "PnPCounterToMicrowave"
 
-    def _setup_kitchen_references(self):
+    def _setup_kitchen_references(self, scene):
         """
         Setup the kitchen references for the counter to microwave pick and place task:
         The microwave to place object on, the counter to initialize it/the container on, and a distractor counter
         """
-        super()._setup_kitchen_references()
+        super()._setup_kitchen_references(scene)
         self.microwave = self.register_fixture_ref(
             "microwave",
             dict(id=FixtureType.MICROWAVE),
@@ -607,12 +607,12 @@ class PnPMicrowaveToCounter(PnP):  # DONE
     obj_groups: str = "food"
     task_name: str = "PnPMicrowaveToCounter"
 
-    def _setup_kitchen_references(self):
+    def _setup_kitchen_references(self, scene):
         """
         Setup the kitchen references for the microwave to counter pick and place task:
         The microwave to pick object from, the counter to place it on, and a distractor counter
         """
-        super()._setup_kitchen_references()
+        super()._setup_kitchen_references(scene)
         self.microwave = self.register_fixture_ref(
             "microwave",
             dict(id=FixtureType.MICROWAVE),
@@ -723,8 +723,8 @@ class PnPCounterToOven(PnP):  # DONE
     EXCLUDE_LAYOUTS = LwLabTaskBase.OVEN_EXCLUDED_LAYOUTS  # TODO
     task_name: str = "PnPCounterToOven"
 
-    def _setup_kitchen_references(self):
-        super()._setup_kitchen_references()
+    def _setup_kitchen_references(self, scene):
+        super()._setup_kitchen_references(scene)
         self.oven = self.register_fixture_ref("oven", dict(id=FixtureType.OVEN))
         self.counter = self.register_fixture_ref(
             "counter", dict(id=FixtureType.COUNTER, ref=self.oven)
@@ -807,8 +807,8 @@ class PnPOvenToCounter(PnP):  # DONE
     EXCLUDE_LAYOUTS = LwLabTaskBase.OVEN_EXCLUDED_LAYOUTS
     task_name: str = "PnPOvenToCounter"
 
-    def _setup_kitchen_references(self):
-        super()._setup_kitchen_references()
+    def _setup_kitchen_references(self, scene):
+        super()._setup_kitchen_references(scene)
         self.oven = self.register_fixture_ref("oven", dict(id=FixtureType.OVEN))
         self.counter = self.register_fixture_ref(
             "counter", dict(id=FixtureType.COUNTER, ref=self.oven)
@@ -894,12 +894,12 @@ class PnPCounterToStove(PnP):  # DONE
     obj_groups: str = "food"
     task_name: str = "PnPCounterToStove"
 
-    def _setup_kitchen_references(self):
+    def _setup_kitchen_references(self, scene):
         """
         Setup the kitchen references for the counter to stove pick and place task:
         The stove to place object on and the counter to initialize it/container on
         """
-        super()._setup_kitchen_references()
+        super()._setup_kitchen_references(scene)
         self.stove = self.register_fixture_ref("stove", dict(id=FixtureType.STOVE))
         self.counter = self.register_fixture_ref(
             "counter", dict(id=FixtureType.COUNTER, ref=self.stove, size=[0.30, 0.40])
@@ -982,12 +982,12 @@ class PnPStoveToCounter(PnP):  # DONE
     obj_groups: str = "food"
     task_name: str = "PnPStoveToCounter"
 
-    def _setup_kitchen_references(self):
+    def _setup_kitchen_references(self, scene):
         """
         Setup the kitchen references for the stove to counter pick and place task:
         The counter to place object/container on and the stove to initialize it/the pan on
         """
-        super()._setup_kitchen_references()
+        super()._setup_kitchen_references(scene)
         self.stove = self.register_fixture_ref("stove", dict(id=FixtureType.STOVE))
         self.counter = self.register_fixture_ref(
             "counter", dict(id=FixtureType.COUNTER, ref=self.stove, size=[0.30, 0.40])
@@ -1073,11 +1073,11 @@ class PnPToasterToCounter(PnP):  # DONE
 
     task_name: str = "PnPToasterToCounter"
 
-    def _setup_kitchen_references(self):
+    def _setup_kitchen_references(self, scene):
         """
         Setup the kitchen references for the toaster to plate task
         """
-        super()._setup_kitchen_references()
+        super()._setup_kitchen_references(scene)
         self.toaster = self.get_fixture(FixtureType.TOASTER)
         self.counter = self.register_fixture_ref(
             "counter", dict(id=FixtureType.COUNTER, ref=self.toaster)
@@ -1148,8 +1148,8 @@ class PnPCounterToToasterOven(PnP):  # DONE
     task_name: str = "PnPCounterToToasterOven"
     enable_fixtures: list[str] = ["toaster_oven"]
 
-    def _setup_kitchen_references(self):
-        super()._setup_kitchen_references()
+    def _setup_kitchen_references(self, scene):
+        super()._setup_kitchen_references(scene)
         self.toaster_oven = self.register_fixture_ref(
             "toaster_oven", dict(id=FixtureType.TOASTER_OVEN)
         )
@@ -1221,8 +1221,8 @@ class PnPToasterOvenToCounter(PnP):  # DONE
     task_name: str = "PnPToasterOvenToCounter"
     enable_fixtures: list[str] = ["toaster_oven"]
 
-    def _setup_kitchen_references(self):
-        super()._setup_kitchen_references()
+    def _setup_kitchen_references(self, scene):
+        super()._setup_kitchen_references(scene)
         self.toaster_oven = self.register_fixture_ref(
             "toaster_oven", dict(id=FixtureType.TOASTER_OVEN)
         )
@@ -1309,8 +1309,8 @@ class PnPCounterToStandMixer(PnP):  # DONE
     task_name: str = "PnPCounterToStandMixer"
     enable_fixtures: list[str] = ["stand_mixer"]
 
-    def _setup_kitchen_references(self):
-        super()._setup_kitchen_references()
+    def _setup_kitchen_references(self, scene):
+        super()._setup_kitchen_references(scene)
         self.stand_mixer = self.get_fixture(FixtureType.STAND_MIXER)
         self.counter = self.get_fixture(
             FixtureType.COUNTER_NON_CORNER, ref=self.stand_mixer

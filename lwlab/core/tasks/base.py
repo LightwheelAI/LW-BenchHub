@@ -580,7 +580,7 @@ class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
                 )
         return objects_placement
 
-    def _setup_kitchen_references(self):
+    def _setup_kitchen_references(self, scene):
         """
         setup fixtures (and their references). this function is called within load_model function for kitchens
         """
@@ -741,7 +741,7 @@ class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
         self.scene_assets = orchestrator.scene.assets
         self.scene_type = orchestrator.scene.scene_type
         self.fixtures = orchestrator.scene.fixtures
-        self._setup_kitchen_references()
+        self._setup_kitchen_references(orchestrator.scene)
         self._init_ref_fixtures()
         self._get_obj_cfgs()
         self._create_objects()

@@ -61,7 +61,7 @@ class LwLabBaseOrchestrator(OrchestratorBase, NoDeepcopyMixin):
             new_stage.GetRootLayer().Export(self.scene.usd_path)
             # modify background
             self.scene.assets[self.scene.scene_type].usd_path = self.scene.usd_path
-        del self.scene.lwlab_arena
+        # del self.scene.lwlab_arena
 
     def _reset_internal(self, env, env_ids):
         """
