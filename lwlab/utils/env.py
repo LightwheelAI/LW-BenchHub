@@ -209,7 +209,7 @@ def parse_env_cfg(
     context.num_envs = num_envs
     context.use_fabric = use_fabric
     context.replay_cfgs = replay_cfgs
-    if "ep_meta" in replay_cfgs:
+    if replay_cfgs and "ep_meta" in replay_cfgs:
         context.ep_meta = replay_cfgs["ep_meta"]
     discover_and_import_lwlab_modules()
 
