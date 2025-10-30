@@ -172,7 +172,7 @@ class Stove(Fixture):
         obj_on_stove = OU.check_obj_fixture_contact(env, obj_name, self)
         stove_pos = torch.tensor(self.pos, device=self.device)
         stove_rot = T.euler2mat(torch.tensor([0.0, 0.0, self.rot], device=self.device)).to(dtype=torch.float32)
-        locations = []
+        locations = [[] for _ in range(env.num_envs)]
         for env_id in range(len(obj_on_stove)):
             found_location = False
             if obj_on_stove[env_id]:
@@ -189,10 +189,10 @@ class Stove(Fixture):
                         check_result = obj_on_site if not need_knob_on else obj_on_site and knob_on
                         if check_result:
                             found_location = True
-                            locations.append(location)
+                            locations[env_id].append(location)
                             break
             if not found_location:
-                locations.append(None)
+                locations[env_id].append(None)
         return locations
 
     @cached_property
