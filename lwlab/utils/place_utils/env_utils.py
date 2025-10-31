@@ -1286,10 +1286,15 @@ def check_valid_robot_pose(env: ManagerBasedRLEnv, robot_pos, env_ids=None):
             get_default_logger().info(f"Object Prim Size: {obs_bbox.GetSize()}")
             return False
 
+    for fixtr in env.cfg.isaac_arena_env.task.fixture_refs.values():
+        fixtr_body_bboxes = fixtr.get_body_bbox(env)
+        for body_name, body_bbox in fixtr_body_bboxes.items():
+            if check_overlap(env, robot_bbox, body_bbox):
+                return False
     return True
 
 
-def calculate_robot_bbox(env: ManagerBasedRLEnv, robot_pos, arm_margin=0.08, floor_margin=0.1, env_ids=None):
+def calculate_robot_bbox(env: ManagerBasedRLEnv, robot_pos, arm_margin=0.1, floor_margin=0.1, env_ids=None):
     """
     Calculate the bounding box of the robot in the environment.
 

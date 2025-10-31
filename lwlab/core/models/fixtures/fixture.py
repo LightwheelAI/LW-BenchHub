@@ -87,6 +87,12 @@ class Fixture:
             self._regions = dict()
 
         geom_prim_list = usd.get_prim_by_type(self.prim, exclude_types=["Xform", "Scope"])
+        child_prim_infos = usd.get_all_child_xform_infos(self.prim)
+        self.body_bbox_map = {}
+        for child_prim in child_prim_infos:
+            prim_name = child_prim['prim'].GetName()
+            prim_size = usd.get_prim_size(child_prim['prim'])
+            self.body_bbox_map[prim_name] = prim_size
         self._pos = np.array(list(prim.GetAttribute("xformOp:translate").Get()))
         self._scale = prim.GetAttribute("xformOp:scale").Get()
         self._scale = np.array(self._scale) if self._scale is not None else np.array([1, 1, 1])
@@ -207,6 +213,88 @@ class Fixture:
     def set_euler(self, euler):
         self._euler = euler
         self._rot = euler
+
+    def get_body_bbox(self, env, env_ids=None):
+        """
+        Calculate bbox for each body based on physics state
+
+        Args:
+            env: Environment object
+            env_ids: List of environment IDs, if None use all environments
+
+        Returns:
+            dict: {body_name: Gf.Range3d object containing min and max bounds}
+        """
+        if self.name not in env.scene.articulations:
+            return {}
+        from pxr import Gf
+        if env_ids is None:
+            env_ids = list(range(env.num_envs))
+
+        articulation = env.scene.articulations[self.name]
+        body_bboxes = {}
+
+        for i, body_name in enumerate(articulation.data.body_names):
+            try:
+                body_pos = articulation.data.body_com_pos_w[env_ids, i, :3]
+                body_quat = articulation.data.body_com_quat_w[env_ids, i, :4]
+
+                if body_name in self.body_bbox_map:
+                    body_size = self.body_bbox_map[body_name]
+                else:
+                    print(f"Body {body_name} not found in body_bbox_map")
+                    continue
+
+                half_x = body_size[0] / 2
+                half_y = body_size[1] / 2
+                half_z = body_size[2] / 2
+
+                # Define 8 corners of the bounding box in local coordinates
+                corners = [
+                    [-half_x, -half_y, -half_z],  # 0: min corner
+                    [half_x, -half_y, -half_z],   # 1: +x
+                    [-half_x, half_y, -half_z],   # 2: +y
+                    [half_x, half_y, -half_z],    # 3: +x+y
+                    [-half_x, -half_y, half_z],   # 4: +z
+                    [half_x, -half_y, half_z],    # 5: +x+z
+                    [-half_x, half_y, half_z],    # 6: +y+z
+                    [half_x, half_y, half_z]      # 7: max corner
+                ]
+
+                world_corners = []
+                for env_idx in env_ids:
+                    pos = body_pos[env_idx].cpu().numpy()
+                    body_quat = body_quat[env_idx].cpu().numpy()  # w,x,y,z - body relative to articulation root
+
+                    from scipy.spatial.transform import Rotation as R
+
+                    fixture_rotation = R.from_euler('xyz', self._rot, degrees=False)
+
+                    body_quat_scipy = [body_quat[1], body_quat[2], body_quat[3], body_quat[0]]
+
+                    body_rotation = R.from_quat(body_quat_scipy)
+
+                    # Combine rotations: fixture_rotation * body_rotation
+                    rotation = fixture_rotation * body_rotation
+
+                    env_corners = []
+                    for corner in corners:
+                        rotated_corner = rotation.apply(corner)
+                        world_corner = rotated_corner + pos
+                        env_corners.append(world_corner)
+
+                    world_corners.extend(env_corners)
+
+                if world_corners:
+                    min_point = Gf.Vec3d(*np.min(world_corners, axis=0))
+                    max_point = Gf.Vec3d(*np.max(world_corners, axis=0))
+                    body_bboxes[body_name] = Gf.Range3d(min_point, max_point)
+
+            except Exception as e:
+                print(f"Error calculating bbox for body {body_name}: {e}")
+                continue
+
+        return body_bboxes
 
     # def set_origin(self, origin):
     #     """
