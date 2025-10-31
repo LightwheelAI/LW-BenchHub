@@ -592,8 +592,8 @@ def obj_cos(env: ManagerBasedEnv, obj_name: str = "obj", ref: Tuple[float, float
         return np.dot(u, v) / max(np.linalg.norm(u) * np.linalg.norm(v), 1e-10)
 
     obj_quat = torch.mean(env.scene.rigid_objects[obj_name].data.body_com_quat_w, dim=1)[0]
-    obj_mat = T.quat2mat(obj_quat)
-
+    obj_quat_np = obj_quat.detach().cpu().numpy()
+    obj_mat = T.quat2mat(obj_quat_np)
     return cos(obj_mat[:, 2], np.array(ref))
 
 
