@@ -8,7 +8,7 @@ from .libero_90_tomoto_sauce_on_tray import L90L3PickUpTheTomatoSauceAndPutItInT
 
 class L90L3PickUpTheKetchupAndPutItInTheTray(L90L3PickUpTheTomatoSauceAndPutItInTheTray):
     """
-    L90L3PickUpTheKetchupAndPutItInTheTray    : pick up the ketchup and put it in the wooden_tray
+    L90L3PickUpTheKetchupAndPutItInTheTray: pick up the ketchup and put it in the wooden_tray
 
     Steps:
         pick up the ketchup
@@ -16,7 +16,7 @@ class L90L3PickUpTheKetchupAndPutItInTheTray(L90L3PickUpTheTomatoSauceAndPutItIn
 
     """
 
-    task_name: str = "L90L3PickUpTheKetchupAndPutItInTheTray    "
+    task_name: str = "L90L3PickUpTheKetchupAndPutItInTheTray"
 
     def get_ep_meta(self):
         ep_meta = super().get_ep_meta()

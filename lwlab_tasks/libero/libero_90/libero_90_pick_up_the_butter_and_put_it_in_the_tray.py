@@ -113,7 +113,6 @@ class L90L3PickUpTheButterAndPutItInTheTray(LwLabTaskBase):
                 name=self.cream_cheese_stick,
                 obj_groups=self.cream_cheese_stick,
                 graspable=True,
-                object_scale=0.2,
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.5, 0.5),

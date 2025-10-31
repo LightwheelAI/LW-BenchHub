@@ -858,9 +858,9 @@ class L90K10PutTheButterAtTheFrontInTheTopDrawerOfTheCabinetAndCloseIt(_BaseDraw
         return butter_2_in_drawer & drawer_closed & gripper_far_2
 
 
-class L90K10PutTheChocolatePuddingInTheTopDrawerOfTheCabinetAndCloseIt    (_BaseDrawerTasksWithoutWineRack):
+class L90K10PutTheChocolatePuddingInTheTopDrawerOfTheCabinetAndCloseIt(_BaseDrawerTasksWithoutWineRack):
     """
-    L90K10PutTheChocolatePuddingInTheTopDrawerOfTheCabinetAndCloseIt    : put the chocolate pudding in the top drawer of the cabinet and close it
+    L90K10PutTheChocolatePuddingInTheTopDrawerOfTheCabinetAndCloseIt: put the chocolate pudding in the top drawer of the cabinet and close it
 
     Steps:
         1. open the top drawer of the cabinet
@@ -869,8 +869,7 @@ class L90K10PutTheChocolatePuddingInTheTopDrawerOfTheCabinetAndCloseIt    (_Base
         4. close the top drawer
 
     """
-
-    task_name: str = "L90K10PutTheChocolatePuddingInTheTopDrawerOfTheCabinetAndCloseIt    "
+    task_name: str = "L90K10PutTheChocolatePuddingInTheTopDrawerOfTheCabinetAndCloseIt"
 
     def get_ep_meta(self):
         ep_meta = super().get_ep_meta()

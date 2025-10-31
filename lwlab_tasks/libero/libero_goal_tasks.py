@@ -116,7 +116,7 @@ class LGOpenTheMiddleDrawerOfTheCabinet(LiberoGoalTasksBase):
                 mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
         add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
                 mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement, scale=0.2,
+        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
                 mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
 
         return cfgs
@@ -205,7 +205,7 @@ class LGPutTheBowlOnTopOfTheCabinet(LiberoGoalTasksBase):
                 mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
         add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
                 mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement, scale=0.2,
+        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
                 mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
 
         return cfgs
@@ -285,7 +285,7 @@ class LiberoGoalOpenTopDrawerOfCabinet(LiberoGoalTasksBase):
                 mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
         add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
                 mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement, scale=0.2,
+        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
                 mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
 
         return cfgs
@@ -374,7 +374,7 @@ class LGPutTheWineBottleOnTopOfTheCabinet(LiberoGoalTasksBase):
                 mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
         add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
                 mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement, scale=0.2,
+        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
                 mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
 
         return cfgs
@@ -456,7 +456,7 @@ class LGOpenTheTopDrawerAndPutTheBowlInside(LiberoGoalTasksBase):
                 mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
         add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
                 mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement, scale=0.2,
+        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
                 mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
 
         return cfgs
@@ -555,7 +555,7 @@ class LGPutTheBowlOnThePlate(LiberoGoalTasksBase):
                 mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
         add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
                 mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement, scale=0.2,
+        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
                 mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
 
         return cfgs
@@ -640,7 +640,7 @@ class LGPutTheCreamCheeseInTheBowl(LiberoGoalTasksBase):
                 mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
         add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
                 mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement, scale=0.2,
+        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
                 mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
 
         return cfgs
@@ -723,7 +723,7 @@ class LGPushThePlateToTheFrontOfTheStove(LiberoGoalTasksBase):
                 mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
         add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
                 mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement, scale=0.2,
+        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
                 mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
 
         return cfgs
@@ -803,7 +803,7 @@ class LGPutTheBowlOnTheStove(LiberoGoalTasksBase):
                 mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml", scale=0.8)
         add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
                 mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement, scale=0.2,
+        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
                 mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
 
         return cfgs
@@ -885,7 +885,7 @@ class LGPutTheWineBottleOnTheRack(LiberoGoalTasksBase):
                 mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
         add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
                 mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement, scale=0.2,
+        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
                 mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
 
         return cfgs
@@ -968,7 +968,7 @@ class LGTurnOnTheStove(LiberoGoalTasksBase):
                 mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
         add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
                 mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement, scale=0.2,
+        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
                 mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
 
         return cfgs

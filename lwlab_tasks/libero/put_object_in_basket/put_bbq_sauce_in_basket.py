@@ -67,7 +67,6 @@ class LOPickUpTheBbqSauceAndPlaceItInTheBasket(PutObjectInBasket):
                 name=self.cream_cheese_stick,
                 obj_groups=self.cream_cheese_stick,
                 graspable=True,
-                object_scale=0.2,
                 placement=dict(
                     fixture=self.floor,
                     size=(0.4, 0.25),

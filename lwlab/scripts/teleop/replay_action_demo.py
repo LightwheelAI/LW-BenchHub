@@ -196,10 +196,10 @@ def main():
         env_cfg = parse_env_cfg(
             args_cli.task, device=args_cli.device, num_envs=args_cli.num_envs, use_fabric=not args_cli.disable_fabric
         )
-        task_name = args_cli.task
+        task_name = args_cli.task.strip()
     else:  # robocasa
         from lwlab.utils.env import parse_env_cfg, ExecuteMode
-        task_name = env_args["task_name"] if args_cli.task is None else args_cli.task
+        task_name = env_args["task_name"] if args_cli.task is None else args_cli.task.strip()
         # TODO delete the hardcoded task names
         if task_name == "PutButterInBasket":
             if "PutButterInBasket2" in env_args["env_name"]:

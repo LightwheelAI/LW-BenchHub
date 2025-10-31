@@ -92,7 +92,6 @@ class L90L1PickUpTheAlphabetSoupAndPutItInTheBasket(LwLabTaskBase):
             dict(
                 name="cream_cheese",
                 obj_groups="cream_cheese_stick",
-                object_scale=0.2,
                 init_robot_here=True,
                 graspable=True,
                 info=dict(
