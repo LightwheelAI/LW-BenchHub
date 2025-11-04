@@ -239,8 +239,7 @@ class Fridge(Fixture):
         """
         compartment_drawer_joints = []
         for joint_name in self._drawer_joint_names:
-            stripped_name = joint_name[len(self.name) + 1:]
-            if compartment in stripped_name:
+            if compartment in joint_name:
                 compartment_drawer_joints.append(joint_name)
 
         if not compartment_drawer_joints:
