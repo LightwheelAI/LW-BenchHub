@@ -73,6 +73,8 @@ class FixtureType(IntEnum):
     FLOOR_OBJ = 59
     FLOOR_LAYOUT = 60
     HOOD = 61
+    DISHTOWEL = 62
+    BATTERY = 63
 
 
 # Mapping from FixtureType to layout registry names (strings used by floorplan_loader)

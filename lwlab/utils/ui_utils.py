@@ -2,24 +2,23 @@ from lwlab.core.checks.checker_factory import get_checkers_from_cfg
 import time
 
 
-def get_task_desc(isaaclab_arena_env):
+def get_task_desc(env_cfg):
     """
     Get the task description from the environment configuration.
     """
     base_desc = ""
-    if hasattr(isaaclab_arena_env.task, 'task_name') and hasattr(isaaclab_arena_env.scene, 'layout_id') and hasattr(isaaclab_arena_env.scene, 'style_id') and hasattr(isaaclab_arena_env.orchestrator, 'get_ep_meta'):
-        base_desc = "Task name: {}\nLayout id: {}\nStyle id: {}\nDesc: {}".format(isaaclab_arena_env.task.task_name, isaaclab_arena_env.scene.layout_id, isaaclab_arena_env.scene.style_id, isaaclab_arena_env.orchestrator.get_ep_meta()["lang"])
-    elif hasattr(isaaclab_arena_env.task, 'task_name') and hasattr(isaaclab_arena_env.scene, 'usd_path') and hasattr(isaaclab_arena_env.orchestrator, 'get_ep_meta'):
-        base_desc = "Task name: {}\nUSD path: {}\nDesc: {}".format(isaaclab_arena_env.scene.task_name, isaaclab_arena_env.scene.usd_path, isaaclab_arena_env.orchestrator.get_ep_meta()["lang"])
+    if hasattr(env_cfg.task, 'task_name') and hasattr(env_cfg.scene, 'layout_id') and hasattr(env_cfg.scene, 'style_id') and hasattr(env_cfg.task, 'get_ep_meta'):
+        base_desc = "Task name: {}\nLayout id: {}\nStyle id: {}\nDesc: {}".format(env_cfg.task.task_name, env_cfg.scene.layout_id, env_cfg.scene.style_id, env_cfg.task.get_ep_meta()["lang"])
+    elif hasattr(env_cfg.task, 'task_name') and hasattr(env_cfg.task, 'usd_path') and hasattr(env_cfg.task, 'get_ep_meta'):
+        base_desc = "Task name: {}\nUSD path: {}\nDesc: {}".format(env_cfg.task.task_name, env_cfg.task.usd_path, env_cfg.task.get_ep_meta()["lang"])
     return base_desc
 
 
-def setup_task_description_ui(isaaclab_arena_env, env):
+def setup_task_description_ui(env):
     """
     Set up UI for displaying task description in the overlay window.
 
     Args:
-        env_cfg: Configuration for the environment.
         env: Environment object.
 
     Returns:
@@ -28,7 +27,8 @@ def setup_task_description_ui(isaaclab_arena_env, env):
     import omni.ui as ui
 
     desc = None
-    base_desc = get_task_desc(isaaclab_arena_env)
+    env_cfg = env.cfg.isaaclab_arena_env
+    base_desc = get_task_desc(env_cfg)
 
     if base_desc is not None:
         desc = base_desc + "\nCheckpoints: not saved"
@@ -54,11 +54,11 @@ def setup_task_description_ui(isaaclab_arena_env, env):
     checker_labels = {}
     checkers = None
 
-    if hasattr(isaaclab_arena_env.task, "checkers_cfg") and get_checkers_from_cfg is not None:
+    if hasattr(env_cfg, "checkers_cfg") and get_checkers_from_cfg is not None:
         try:
             filtered_cfg = {
                 name: cfg
-                for name, cfg in isaaclab_arena_env.task.checkers_cfg.items()
+                for name, cfg in env_cfg.checkers_cfg.items()
                 if cfg.get("warning_on_screen", False)
             }
             if filtered_cfg:
@@ -133,7 +133,7 @@ def setup_task_description_ui(isaaclab_arena_env, env):
     return overlay_window
 
 
-def update_task_desc(env, env_cfg):
+def update_task_desc(env):
     """
     Update the motion warning label with new warning text.
 
@@ -141,6 +141,7 @@ def update_task_desc(env, env_cfg):
         warning_label: The UI label to update
         warning_text: The warning text to display
     """
+    env_cfg = env.cfg.isaaclab_arena_env
     if env._task_desc_label:
         env._task_desc_label.text = get_task_desc(env_cfg)
 
@@ -375,7 +376,7 @@ def spawn_cylinder_with_xform(
 
 def spawn_robot_vis_helper_general(env):
     # check if the robot_vis_helper_cfg is available
-    if env.cfg.isaaclab_arena_env.embodiment.robot_vis_helper_cfg is None:
+    if not hasattr(env.cfg, "robot_vis_helper_cfg"):
         return
 
     vis_helper_prims = []
@@ -383,7 +384,7 @@ def spawn_robot_vis_helper_general(env):
     for prim in env.sim.stage.Traverse():
         if prim.GetName().lower() == "robot":
             robot_prim_path = prim.GetPath()
-    for key, cfg in env.cfg.isaaclab_arena_env.embodiment.robot_vis_helper_cfg.items():
+    for key, cfg in env.cfg.robot_vis_helper_cfg.items():
         prim_path = robot_prim_path.AppendPath(cfg["relative_prim_path"])
         cylinder_prim = spawn_cylinder_with_xform(
             parent_prim_path=prim_path,
@@ -399,7 +400,7 @@ def spawn_robot_vis_helper_general(env):
 def spawn_robot_vis_helper(env):
     # Have problems with Isaaclab/IsaacSim 4.5, works fine with Isaaclab/IsaacSim 5.0
     # check if the robot_vis_helper_cfg is available
-    if env.cfg.isaaclab_arena_env.embodiment.robot_vis_helper_cfg is None:
+    if not hasattr(env.cfg, "robot_vis_helper_cfg"):
         return
     import isaaclab.sim as sim_utils
 
@@ -410,7 +411,7 @@ def spawn_robot_vis_helper(env):
         if prim.GetName().lower() == "robot":
             robot_prim = prim
             robot_prim_path = prim.GetPath()
-    for key, cfg in env.cfg.isaaclab_arena_env.embodiment.robot_vis_helper_cfg.items():
+    for key, cfg in env.cfg.robot_vis_helper_cfg.items():
         prim_path = robot_prim_path.AppendPath(cfg["relative_prim_path"])
         prim = sim_utils.spawn_cylinder(prim_path, cfg['spawn'], translation=cfg['translation'], orientation=cfg['orientation'])
         vis_helper_prims.append(prim)
@@ -514,3 +515,132 @@ def setup_batch_name_gui(initial_batch_name='default-batch'):
 
     batch_name_gui = BatchNameGUI(initial_batch_name)
     return batch_name_gui
+
+
+def generate_box_edges(center, extents):
+    """
+    Generate the edges of a bounding box given its center and extents.
+
+    Parameters:
+    - center: Tuple of (x, y, z) coordinates for the box's center
+    - extents: Tuple of (width, depth, height) extents of the box
+
+    Returns:
+    - A list of tuples, each representing an edge of the box
+    """
+    x_c, y_c, z_c = center
+    w, d, h = extents
+
+    corners = [
+        (x_c - w, y_c - h, z_c - d),
+        (x_c - w, y_c - h, z_c + d),
+        (x_c - w, y_c + h, z_c - d),
+        (x_c - w, y_c + h, z_c + d),
+        (x_c + w, y_c - h, z_c - d),
+        (x_c + w, y_c - h, z_c + d),
+        (x_c + w, y_c + h, z_c - d),
+        (x_c + w, y_c + h, z_c + d),
+    ]
+
+    edges = [
+        (corners[0], corners[1]),
+        (corners[0], corners[2]),
+        (corners[1], corners[3]),
+        (corners[2], corners[3]),
+        (corners[4], corners[5]),
+        (corners[4], corners[6]),
+        (corners[5], corners[7]),
+        (corners[6], corners[7]),
+        (corners[0], corners[4]),
+        (corners[1], corners[5]),
+        (corners[2], corners[6]),
+        (corners[3], corners[7]),
+    ]
+
+    return edges
+
+
+def draw_line(start, end, color=(1.0, 0.0, 0.0, 1.0), size=1.0):
+    """
+    Draws a single line between two points.
+    """
+    import isaacsim.util.debug_draw._debug_draw as omni_debug_draw
+    draw = omni_debug_draw.acquire_debug_draw_interface()
+    draw.draw_lines([start], [end], [color], [size])
+
+
+def draw_box(center, extents, color=(1.0, 0.0, 0.0, 1.0), size=1.0):
+    """
+    Draws a box defined by its center and extents.
+    """
+    edges = generate_box_edges(center, extents)
+    for start, end in edges:
+        draw_line(start, end, color, size)
+
+
+def draw_aabb_from_bbox(bbox):
+    """
+    Draws the axis-aligned bounding box of a given object.
+    """
+    ctr = bbox.GetMidpoint()
+    ext = bbox.GetSize() / 2.0
+    draw_box(ctr, ext)
+
+
+def clear_debug_drawing():
+    """
+    Clears all debug drawings.
+    """
+    import isaacsim.util.debug_draw._debug_draw as omni_debug_draw
+    draw = omni_debug_draw.acquire_debug_draw_interface()
+    draw.clear_lines()
+
+
+def show_upload_dialog(upload_dialog_state):
+    """
+    Show upload dialog to user (non-blocking)
+
+    Args:
+        upload_dialog_state (dict): Global state dictionary for dialog management
+    """
+    import omni.ui as ui
+
+    def on_upload_click():
+        upload_dialog_state["result"] = True
+        if upload_dialog_state["window"]:
+            # Hide the window instead of close
+            upload_dialog_state["window"].visible = False
+
+    def on_skip_click():
+        upload_dialog_state["result"] = False
+        if upload_dialog_state["window"]:
+            # Hide the window instead of close
+            upload_dialog_state["window"].visible = False
+
+    # Create dialog window
+    dialog_window = ui.Window(
+        "Upload Choice",
+        width=400,
+        height=200,
+        flags=ui.WINDOW_FLAGS_NO_SCROLLBAR | ui.WINDOW_FLAGS_MODAL
+    )
+    upload_dialog_state["window"] = dialog_window
+
+    with dialog_window.frame:
+        with ui.VStack(spacing=20):
+            # Title
+            ui.Label("Task Completed Successfully!", style={"fontSize": 18, "color": 0xFF00FF00})
+
+            # Message
+            ui.Label(f"1 demonstrations recorded successfully.", style={"fontSize": 14})
+            ui.Label("Do you want to upload this data?", style={"fontSize": 14})
+
+            # Buttons
+            with ui.HStack():
+                upload_btn = ui.Button("Upload Data", width=150, height=40)
+                upload_btn.set_clicked_fn(on_upload_click)
+
+                skip_btn = ui.Button("Skip Upload", width=150, height=40)
+                skip_btn.set_clicked_fn(on_skip_click)
+
+    upload_dialog_state["shown"] = True

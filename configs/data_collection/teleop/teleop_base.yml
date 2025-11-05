@@ -34,16 +34,22 @@ record: false
 dataset_file: ./datasets/dataset.hdf5
 num_demos: 1
 enable_debug_log: false
-continue_teleop_after_success: true
+continue_teleop_after_success: false
 
 # =========================
 # Teleoperation Device Settings
 # =========================
 enable_pinocchio: false
 teleop_device: keyboard
+relative_control: false
 first_person_view: false
 enable_optimization: true
 enable_multiple_viewports: false
+action_delay_async: false
+action_delay_time_s: 0
+action_delay_type: fixed
+action_buffer_size: 100
+
 
 # =========================
 # Video Saving Settings

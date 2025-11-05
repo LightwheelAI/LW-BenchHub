@@ -184,13 +184,13 @@ class LwLabEmbodimentBase(EmbodimentBase):
             render_resolution = self.context.replay_cfgs["render_resolution"]
             if render_resolution is not None:
                 for cam_info in self.observation_cameras.values():
-                    if task_type in cam_info["tags"]:
+                    if self.context.execute_mode in cam_info["execute_mode"]:
                         cam_info["camera_cfg"].width = render_resolution[0]
                         cam_info["camera_cfg"].height = render_resolution[1]
 
     def _setup_camera_config(self, task_type):
         for cam_name, cam_info in self.observation_cameras.items():
-            if task_type in cam_info["tags"]:
+            if self.context.execute_mode in cam_info["execute_mode"]:
                 cam_info = self.observation_cameras[cam_name]
                 setattr(self.camera_config, cam_name, cam_info["camera_cfg"])
         if self.enable_cameras and self.camera_config and self.add_camera_to_observation:

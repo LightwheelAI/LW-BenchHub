@@ -894,7 +894,9 @@ class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
         if self.task_type != "teleop" or self.context.execute_mode == ExecuteMode.TELEOP:
             return
         for name, camera_infos in env_cfg.isaaclab_arena_env.embodiment.observation_cameras.items():
-            if self.task_type not in camera_infos["tags"]:
+            if self.context.execute_mode not in camera_infos["execute_mode"]:
+                continue
+            if self.task_type == "teleop" and self.context.execute_mode is not ExecuteMode.TELEOP:
                 continue
             setattr(
                 env_cfg.observations.policy,

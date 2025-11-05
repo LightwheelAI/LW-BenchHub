@@ -12,7 +12,6 @@ import isaaclab.sim as sim_utils
 
 import lwlab.core.mdp as mdp
 
-from lwlab.core.robots.base import BaseRobotCfg
 ##
 # Pre-defined configs
 ##
@@ -23,6 +22,7 @@ from lwlab.utils.math_utils import transform_utils as T
 import isaaclab.utils.math as math_utils
 from lwlab.core.robots.robot_arena_base import LwLabEmbodimentBase
 from isaaclab_arena.utils.pose import Pose
+from lwlab.utils.env import ExecuteMode
 
 FRAME_MARKER_SMALL_CFG = FRAME_MARKER_CFG.copy()
 FRAME_MARKER_SMALL_CFG.markers["frame"].scale = (0.10, 0.10, 0.10)
@@ -179,7 +179,8 @@ class LeRobotBiArmRL(LwLabEmbodimentBase):
                     height=224,
                     update_period=0.05,
                 ),
-                "tags": ["rl"]
+                "tags": [],
+                "execute_mode": [ExecuteMode.TRAIN, ExecuteMode.EVAL]
             },
             "right_hand_camera": {
                 "camera_cfg": TiledCameraCfg(
@@ -197,7 +198,8 @@ class LeRobotBiArmRL(LwLabEmbodimentBase):
                     height=224,
                     update_period=0.05,
                 ),
-                "tags": ["rl"]
+                "tags": [],
+                "execute_mode": [ExecuteMode.TRAIN, ExecuteMode.EVAL]
             },
             "global_camera": {
                 "camera_cfg": TiledCameraCfg(
@@ -215,7 +217,8 @@ class LeRobotBiArmRL(LwLabEmbodimentBase):
                     height=224,
                     update_period=0.05,
                 ),
-                "tags": ["rl"]
+                "tags": [],
+                "execute_mode": [ExecuteMode.TRAIN, ExecuteMode.EVAL]
             }
         }
         self.viewport_cfg = {

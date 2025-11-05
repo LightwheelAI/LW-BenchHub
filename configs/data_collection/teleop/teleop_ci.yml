@@ -2,7 +2,7 @@ _base_:
 - teleop_base
 device: cpu
 enable_cameras: false
-enable_log: false
+enable_debug_log: false
 enable_multiple_viewports: false
 layout: robocasakitchen-2-2
 num_envs: 2

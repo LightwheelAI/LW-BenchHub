@@ -165,6 +165,7 @@ ASSET_PATH = LWLAB_DATA_PATH / "assets" / "panda_2.usd"
 ##
 
 DOUBLE_PANDA_CFG = ArticulationCfg(
+    prim_path="{ENV_REGEX_NS}/Robot",
     spawn=sim_utils.UsdFileCfg(
         usd_path=str(ASSET_PATH),
         activate_contact_sensors=True,

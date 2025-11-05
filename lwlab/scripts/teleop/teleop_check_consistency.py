@@ -56,7 +56,7 @@ from pathlib import Path
 import argparse
 import os
 import time
-import torch
+import yaml
 import json
 import select
 import sys
@@ -70,7 +70,6 @@ from isaaclab.app import AppLauncher
 from lwlab.utils.profile_utils import trace_profile, DEBUG_FRAME_ANALYZER, debug_print
 from lwlab.utils.config_loader import config_loader
 from termcolor import colored
-from lwlab.utils.isaaclab_utils import update_sensors
 
 
 def _check_no_task_signal():
@@ -101,26 +100,6 @@ def _check_no_task_signal():
         print(f"Error checking no-task signal: {e}")
 
     return False
-
-
-def get_joint_pos_offset(env):
-    import re
-    joint_pos_offsets = {}
-    init_state = env.cfg.robot_cfg.init_state
-    if hasattr(init_state, 'joint_pos') and init_state.joint_pos:
-        # Get all joint names from the robot
-        robot = env.scene.articulations.get('robot')
-        if robot is not None:
-            all_joint_names = robot.joint_names
-            # Process each pattern in joint_pos config
-            for pattern, value in init_state.joint_pos.items():
-                # Compile regex pattern
-                regex = re.compile(pattern)
-                # Match against all joint names
-                for joint_name in all_joint_names:
-                    if regex.match(joint_name):
-                        joint_pos_offsets[joint_name] = float(value)
-    return joint_pos_offsets
 
 
 # add argparse arguments
@@ -222,7 +201,7 @@ def optimize_rendering(env):
     # enable DLSS and performance optimization
     settings.set_bool("/rtx-transient/dlssg/enabled", True)
     settings.set_int("/rtx/post/dlss/execMode", 0)  # "Performance"
-    settings.set_bool("/rtx/raytracing/fractionalCutoutOpacity", True)
+    settings.set_bool("/rtx/raytracing/fractionalCutoutOpacity", False)
 
     # TODO this option affects the rendering of dynamic spawned objects
     settings.set_bool("/app/renderer/skipMaterialLoading", False)
@@ -258,74 +237,38 @@ def optimize_rendering(env):
     # settings.set_int("/persistent/physics/numThreads", 0)
 
 
-def log_sliding_window_delay_statistics(delay_stats, sliding_window_manager, args_cli):
-    """Log sliding window delay statistics for async mode.
-
-    Args:
-        delay_stats: Dictionary containing delay statistics
-        sliding_window_manager: Sliding window manager instance
-        args_cli: Command line arguments containing delay configuration
-    """
-    if not args_cli.action_delay_async or delay_stats["async_actions_buffered"] <= 0:
-        return
-
-    logger = get_default_logger()
-    logger.info("[Sliding Window Action Delay Statistics]")
-    logger.info("  Sliding window mode: ENABLED")
-    logger.info(f"  Actions buffered: {delay_stats['async_actions_buffered']}")
-    logger.info(f"  Actions executed: {delay_stats['async_actions_executed']}")
-    logger.info(f"  Window utilization: {delay_stats['buffer_utilization']:.2%}")
-    logger.info(f"  Window size: {args_cli.action_buffer_size}")
-
-    # Get detailed window statistics
-    window_stats = sliding_window_manager.get_window_stats()
-    if window_stats['window_size'] > 0:
-        logger.info(f"  Current window size: {window_stats['window_size']}")
-        logger.info(f"  Average delay in window: {window_stats['avg_delay']:.3f}s")
-        logger.info(f"  Oldest delay: {window_stats['oldest_delay']:.3f}s")
-        logger.info(f"  Newest delay: {window_stats['newest_delay']:.3f}s")
-        logger.info(f"  Total executions: {window_stats['execution_count']}")
-
-    logger.info(f"  Delay type: {args_cli.action_delay_type}")
-    logger.info(f"  Base delay: {args_cli.action_delay_time:.3f}s")
-
-
 def main():
     """Running keyboard teleoperation with Isaac Lab manipulation environment."""
 
     teleoperation_active = None
-    should_reset_env = None
+    should_reset_recording_instance = None
+    should_reset_env_instance = None
     should_reset_env_keep_placement = None
-    should_remake_env = None
-    should_remake_env_with_fixed_layout = None
     flush_recorder_manager_flag = None
     rollback_to_checkpoint_flag = None
 
-    def reset_env():
-        print("reset env and random placement", flush=True)
-        nonlocal should_reset_env
-        should_reset_env = True
+    def reset_recording_instance():
+        print("reset recording instance", flush=True)
+        nonlocal should_reset_recording_instance
+        should_reset_recording_instance = True
 
-    def reset_env_keep_placement():
-        print("reset env and keep placement", flush=True)
+    def reset_env_instance_no_keep_placement():
+        print("reset env instance", flush=True)
+        nonlocal should_reset_env_instance
+        should_reset_env_instance = True
+        nonlocal should_reset_env_keep_placement
+        should_reset_env_keep_placement = False
+
+    def reset_env_instance_keep_placement():
+        print("reset env instance keep placement", flush=True)
+        nonlocal should_reset_env_instance
+        should_reset_env_instance = True
         nonlocal should_reset_env_keep_placement
         should_reset_env_keep_placement = True
-
-    def remake_env_with_random_layout():
-        print("remake env with random layout", flush=True)
-        nonlocal should_remake_env
-        should_remake_env = True
-
-    def remake_env_with_fixed_layout():
-        print("remake env with fixed layout", flush=True)
-        nonlocal should_remake_env_with_fixed_layout
-        should_remake_env_with_fixed_layout = True
 
     def start_teleoperation():
         nonlocal teleoperation_active
         teleoperation_active = True
-        if teleop_interface is not None and hasattr(teleop_interface, "send_robot_state"):
-            teleop_interface.reset()
 
     def stop_teleoperation():
         nonlocal teleoperation_active
@@ -336,144 +279,9 @@ def main():
         flush_recorder_manager_flag = True
 
     def call_save_checkpoint():
-        frame_index = save_checkpoint(teleop_interface.env, args_cli.checkpoint_path)
+        frame_index = save_checkpoint(env, args_cli.checkpoint_path)
         if isinstance(teleop_interface, VRController):
             teleop_interface.set_checkpoint_frame_idx(frame_index)
-
-    class SlidingWindowActionDelay:
-        """Asynchronous action delay system with sliding window implementation"""
-
-        def __init__(self):
-            self.action_window = []  # Sliding window of actions
-            self.window_size = args_cli.action_buffer_size
-            self.current_time = 0.0
-            self.last_executed_time = 0.0
-            self.execution_history = []  # Track execution timing
-
-        def calculate_delay(self):
-            """Calculate delay based on configuration"""
-            if args_cli.action_delay_time <= 0.0:
-                return 0.0
-
-            import random
-            import numpy as np
-
-            delay = args_cli.action_delay_time
-
-            if args_cli.action_delay_type == "random":
-                delay = random.uniform(0, args_cli.action_delay_time)
-
-            return delay
-
-        def add_action_to_window(self, action, current_time):
-            """Add action to sliding window with calculated delay"""
-            if not args_cli.action_delay_async or args_cli.action_delay_time <= 0.0:
-                return action
-
-            delay = self.calculate_delay()
-            execute_time = current_time + delay
-
-            # Add to sliding window
-            window_entry = {
-                'action': action,
-                'execute_time': execute_time,
-                'delay': delay,
-                'added_time': current_time,
-                'index': len(self.action_window)
-            }
-
-            self.action_window.append(window_entry)
-
-            # Maintain sliding window size
-            if len(self.action_window) > self.window_size:
-                # Remove oldest entry (sliding window behavior)
-                removed = self.action_window.pop(0)
-                # Update indices
-                for i, entry in enumerate(self.action_window):
-                    entry['index'] = i
-
-            return None  # No immediate action
-
-        def get_action_from_window(self, current_time):
-            """Get action from sliding window based on timing and window strategy"""
-            if not self.action_window:
-                return None
-
-            # Strategy 1: Execute ready actions (FIFO)
-            ready_actions = [entry for entry in self.action_window
-                             if entry['execute_time'] <= current_time]
-
-            if ready_actions:
-                # Execute the oldest ready action
-                ready_actions.sort(key=lambda x: x['execute_time'])
-                executed_entry = ready_actions[0]
-
-                # Remove from window
-                self.action_window = [entry for entry in self.action_window
-                                      if entry['index'] != executed_entry['index']]
-
-                # Update indices
-                for i, entry in enumerate(self.action_window):
-                    entry['index'] = i
-
-                # Record execution
-                self.execution_history.append({
-                    'execute_time': current_time,
-                    'delay': executed_entry['delay'],
-                    'window_position': executed_entry['index']
-                })
-
-                return executed_entry['action']
-
-            # Strategy 2: Use sliding window interpolation
-            return self._interpolate_from_window(current_time)
-
-        def _interpolate_from_window(self, current_time):
-            """Interpolate action from sliding window based on timing"""
-            if not self.action_window:
-                return None
-
-            # Find the closest actions in time
-            future_actions = [entry for entry in self.action_window
-                              if entry['execute_time'] > current_time]
-            past_actions = [entry for entry in self.action_window
-                            if entry['execute_time'] <= current_time]
-
-            if past_actions:
-                # Use the most recent past action
-                past_actions.sort(key=lambda x: x['execute_time'], reverse=True)
-                return past_actions[0]['action']
-
-            if future_actions:
-                # Use the nearest future action
-                future_actions.sort(key=lambda x: x['execute_time'])
-                return future_actions[0]['action']
-
-            # Fallback: use the latest action in window
-            return self.action_window[-1]['action']
-
-        def get_window_stats(self):
-            """Get sliding window statistics"""
-            if not self.action_window:
-                return {
-                    'window_size': 0,
-                    'oldest_delay': 0,
-                    'newest_delay': 0,
-                    'avg_delay': 0,
-                    'execution_count': len(self.execution_history)
-                }
-
-            delays = [entry['delay'] for entry in self.action_window]
-            return {
-                'window_size': len(self.action_window),
-                'oldest_delay': min(delays),
-                'newest_delay': max(delays),
-                'avg_delay': sum(delays) / len(delays),
-                'execution_count': len(self.execution_history)
-            }
-
-    # Create sliding window delay manager
-    sliding_window_manager = SlidingWindowActionDelay()
 
     def rollback_to_checkpoint():
         nonlocal rollback_to_checkpoint_flag
@@ -493,9 +301,6 @@ def main():
             except Exception as e:
                 print(f"Failed to save metrics: {e}")
 
-    # Global variable to track upload dialog state
-    upload_dialog_state = {"shown": False, "result": None, "window": None}
-
     def create_teleop_interface(env):
         """Create teleoperation interface based on device type."""
         if args_cli.headless:
@@ -505,26 +310,21 @@ def main():
         nonlocal teleoperation_active
 
         teleoperation_callbacks: dict[str, Callable[[], None]] = {
-            "X": reset_env,
-            "R": reset_env_keep_placement,
-            "Y": remake_env_with_random_layout,
-            "U": remake_env_with_fixed_layout,
+            "X": reset_recording_instance,
+            "Y": reset_env_instance_no_keep_placement,
+            "R": reset_env_instance_keep_placement,
             "T": flush_recorder_manager,
             "M": call_save_checkpoint,
             "N": rollback_to_checkpoint,
-            "B": start_teleoperation,
-            # TODO not enable now
             # Add new shortcut: quick rewind 10 frames
-            "P": lambda: quick_rewind(teleop_interface.env, 10),
+            "B": lambda: quick_rewind(env, 10),
         }
 
-        if hasattr(env_cfg.isaaclab_arena_env.embodiment, "teleop_devices") and args_cli.teleop_device in isaaclab_arena_env.embodiment.teleop_devices.devices:
-            teleoperation_active = False
+        if hasattr(env_cfg, "teleop_devices") and args_cli.teleop_device in env_cfg.teleop_devices.devices:
+            teleoperation_active = True
             teleop_interface = create_teleop_device(
                 env, args_cli.teleop_device, env_cfg.teleop_devices.devices, teleoperation_callbacks
             )
-            if hasattr(teleop_interface, "init_internal_state"):
-                teleop_interface.init_internal_state(get_joint_pos_offset(env), env.scene.articulations["robot"].data.joint_names)
         else:
             if args_cli.teleop_device.lower() == "keyboard":
                 device_type = KEYCONTROLLER_MAP[args_cli.teleop_device.lower() + "-" + args_cli.robot.lower().split("-")[0]]
@@ -532,12 +332,10 @@ def main():
                     pos_sensitivity=0.05 * args_cli.sensitivity, rot_sensitivity=0.05 * args_cli.sensitivity,
                     base_sensitivity=0.5 * args_cli.sensitivity, base_yaw_sensitivity=0.8 * args_cli.sensitivity
                 )
-                teleop_interface.env = env
             elif args_cli.teleop_device.lower() == "spacemouse":
                 teleop_interface = Se3SpaceMouse(env,
                                                  pos_sensitivity=0.1 * args_cli.sensitivity, rot_sensitivity=0.2 * args_cli.sensitivity
                                                  )
-                teleop_interface.env = env
             # elif args_cli.teleop_device.lower() == "gamepad":
             #     teleop_interface = Se3Gamepad(
             #         pos_sensitivity=0.1 * args_cli.sensitivity, rot_sensitivity=0.1 * args_cli.sensitivity
@@ -557,7 +355,6 @@ def main():
                 )
                 teleoperation_active = False
             elif args_cli.teleop_device.lower().startswith("vr"):
-                teleoperation_active = True
                 image_size = (720, 1280)
                 shm = shared_memory.SharedMemory(
                     create=True,
@@ -569,8 +366,7 @@ def main():
                 }[args_cli.teleop_device.lower()]
                 teleop_interface = vr_device_type(env,
                                                   img_shape=image_size,
-                                                  shm_name=shm.name,
-                                                  relative_control=args_cli.relative_control)
+                                                  shm_name=shm.name,)
             else:
                 raise ValueError(
                     f"Invalid device interface '{args_cli.teleop_device}'. Supported: 'keyboard', 'spacemouse''handtracking'."
@@ -580,19 +376,16 @@ def main():
             if not args_cli.headless and isinstance(teleop_interface, LwOpenXRDevice):
                 teleoperation_active = False
                 teleoperation_callbacks: dict[str, Callable[[], None]] = {
-                    "RESET": reset_env,
+                    "RESET": reset_recording_instance,
                     "START": start_teleoperation,
                     "STOP": stop_teleoperation,
-                    "SAVE": lambda: save_checkpoint(teleop_interface.env, args_cli.checkpoint_path),
-                    "LOAD": lambda: load_checkpoint(teleop_interface.env, args_cli.checkpoint_path),
+                    "SAVE": lambda: save_checkpoint(env, args_cli.checkpoint_path),
+                    "LOAD": lambda: load_checkpoint(env, args_cli.checkpoint_path),
                     # Add new shortcut: quick rewind 10 frames
-                    "REWIND": lambda: quick_rewind(teleop_interface.env, 10),
+                    "REWIND": lambda: quick_rewind(env, 10),
                 }
             elif teleop_interface is not None:
-                if args_cli.teleop_device.lower().startswith("vr"):
-                    teleoperation_active = True
-                else:
-                    teleoperation_active = False
+                teleoperation_active = True
                 for key, callback in teleoperation_callbacks.items():
                     try:
                         teleop_interface.add_callback(key, callback)
@@ -601,14 +394,11 @@ def main():
             else:
                 teleoperation_active = False
 
-        if args_cli.headless:
-            teleoperation_active = True
-
         print(teleop_interface)
 
         return teleop_interface
 
-    def create_env_config(object_cfgs=None, cache_usd_version=None, scene_name=None, initial_state=None):
+    def create_env_config(initial_state=None, object_cfgs=None, cache_usd_version=None, scene_name=None):
         """Create environment configuration based on task type."""
         import omni.usd
         omni.usd.get_context().new_stage()
@@ -650,15 +440,12 @@ def main():
                         pass
                 if scene_name is None:
                     scene_name = args_cli.layout
-
                 env_cfg = parse_env_cfg(
                     task_name=args_cli.task,
                     robot_name=args_cli.robot,
                     scene_name=scene_name,
                     robot_scale=args_cli.robot_scale,
-                    device=args_cli.device,
-                    num_envs=args_cli.num_envs,
-                    use_fabric=not args_cli.disable_fabric,
+                    device=args_cli.device, num_envs=args_cli.num_envs, use_fabric=not args_cli.disable_fabric,
                     replay_cfgs=replay_cfgs,
                     first_person_view=args_cli.first_person_view,
                     enable_cameras=app_launcher._enable_cameras,
@@ -670,13 +457,11 @@ def main():
                     seed=args_cli.seed,
                     sources=args_cli.sources,
                     object_projects=args_cli.object_projects,
+                    initial_state=initial_state,
                     headless_mode=args_cli.headless,
-                    teleop_device=args_cli.teleop_device,
                     resample_objects_placement_on_reset=args_cli.resample_objects_placement_on_reset,
                     resample_robot_placement_on_reset=args_cli.resample_robot_placement_on_reset,
                 )
-                if hasattr(args_cli, "reset_objects_enabled"):
-                    env_cfg.reset_objects_enabled = args_cli.reset_objects_enabled
             env_name = f"Robocasa-{args_cli.task}-{args_cli.robot}-v0"
             env_cfg.env_name = env_name
             env_cfg.terminations.time_out = None
@@ -701,19 +486,42 @@ def main():
         set_seed(env_cfg.seed, new_env)
         return new_env
 
-    def remake_env(env, teleop_interface, viewports, scene_name=None):
+    def reset_env(env, teleop_interface, viewports, keep_placement=True, initial_state=None):
         """Reset environment by creating a new one with fresh configuration."""
-        # Reset object cache to ensure reload new object samples
-        reset_obj_cache()
-
-        # Close current environment
+        initial_state = None
+        cache_usd_version = None
+        object_cfgs = None
+        scene_name = None
+        if keep_placement:
+            # if initial_state is None:
+            #     initial_state = copy.deepcopy(env.recorder_manager.get_episode(0).data["initial_state"])
+            if "robocasalibero" in env.cfg.isaaclab_arena_env.scene.usd_path:
+                scene_name = "robocasalibero"
+            else:
+                scene_name = "robocasakitchen"
+            scene_name = f"{scene_name}-{env.cfg.isaaclab_arena_env.scene.layout_id}-{env.cfg.isaaclab_arena_env.scene.style_id}"
+            object_cfgs = copy.deepcopy(env.cfg.isaaclab_arena_env.task.object_cfgs)
+            cache_usd_version = {
+                "floorplan_version": env.cfg.isaaclab_arena_env.scene.floorplan_version,
+                "objects_version": env.cfg.isaaclab_arena_env.task.objects_version
+            }
+            cache_usd_version["keep_placement"] = True
+            from lwlab.utils.robocasa_utils import convert_fixture_to_name
+            for obj in object_cfgs:
+                obj["placement"] = convert_fixture_to_name(obj["placement"])
+        else:
+            initial_state = None
+            # Close current environment
         env.close()
+        print(f"reset env, initial_state: {initial_state}, object_cfgs: {object_cfgs}, scene_name: {scene_name}")
         # Create fresh configuration using the same logic
-        new_env = create_env_config(scene_name=scene_name)
+        new_env = create_env_config(initial_state=initial_state,
+                                    cache_usd_version=cache_usd_version,
+                                    object_cfgs=object_cfgs,
+                                    scene_name=scene_name)
 
         get_default_logger().info(f"env_cfg: {new_env.cfg}")
 
-        reset_physx(new_env)
         new_env.reset(seed=new_env.cfg.seed)
 
         if args_cli.enable_optimization:
@@ -728,8 +536,8 @@ def main():
         return new_env, teleop_interface, viewports, overlay_window
 
     def setup_env_config_with_args(env, viewports=None):
-        isaaclab_arena_env = env.cfg.isaaclab_arena_env
-        if not args_cli.headless and args_cli.enable_cameras and args_cli.enable_multiple_viewports:
+        env_cfg = env.cfg
+        if not args_cli.headless and env_cfg.enable_cameras and args_cli.enable_multiple_viewports:
             viewports = setup_cameras(env, viewports)
             for key, v_p in viewports.items():
                 res = v_p.viewport_api.get_texture_resolution()
@@ -745,41 +553,34 @@ def main():
     def run_simulation(env, teleop_interface):
         env_cfg = env.cfg
         # add teleoperation key for env reset
-        nonlocal should_reset_env
-        nonlocal should_reset_env_keep_placement
-        nonlocal should_remake_env
-        nonlocal should_remake_env_with_fixed_layout
+        nonlocal should_reset_recording_instance
         nonlocal flush_recorder_manager_flag
         nonlocal rollback_to_checkpoint_flag
-        nonlocal teleoperation_active
-        should_reset_env = False
-        should_reset_env_keep_placement = False
-        should_remake_env = False
-        should_remake_env_with_fixed_layout = False
+        nonlocal should_reset_env_instance
+        nonlocal should_reset_env_keep_placement
+        should_reset_recording_instance = False
         flush_recorder_manager_flag = False
         rollback_to_checkpoint_flag = False
-
+        should_reset_env_instance = False
+        should_reset_env_keep_placement = True  # Default to keep placement
         ci_start_flag = None
+
         rate_limiter = RateLimiter(args_cli.step_hz)
 
         # reset environment
-        initial_state = None
-        reset_physx(env)
-        env.reset(seed=env.cfg.seed)
-        initial_state = copy.deepcopy(env.recorder_manager.get_episode(0).data.get("initial_state", None))
-
+        env.reset()
         if teleop_interface is not None:
             teleop_interface.reset()
         # auto load checkpoint if enabled
         if getattr(args_cli, "auto_load_checkpoint", False) and os.path.exists(args_cli.checkpoint_path):
-            load_checkpoint(env, args_cli.checkpoint_path)
+            load_checkpoint()
 
         viewports = None
         overlay_window = None
         if not args_cli.headless:
             viewports, overlay_window = setup_env_config_with_args(env)
 
-        print(colored(env.cfg.isaaclab_arena_env.orchestrator.get_ep_meta()["lang"], "green"))
+        print(colored(env_cfg.isaaclab_arena_env.orchestrator.get_ep_meta()["lang"], "green"))
 
         current_recorded_demo_count = 0
         success_step_count = 0
@@ -798,16 +599,10 @@ def main():
         debug_print("Frame rate analyzer initialized in debug mode")
 
         vis_helper_prims = []
-
-        # Initialize delay statistics (only for async mode)
-        delay_stats = {
-            "async_actions_buffered": 0,
-            "async_actions_executed": 0,
-            "buffer_utilization": 0.0
-        }
         action_idx = 0
 
         # simulate environment
+        initial_state = None
         while simulation_app.is_running():
             if _check_no_task_signal():
                 print(colored("No task available signal received, stopping teleoperation", "yellow"))
@@ -818,24 +613,6 @@ def main():
                     command = sys.stdin.readline().strip()
                     print(f"get command is {command}", flush=True)
                     if command.lower() == "r":
-                        reset_env()
-                        action_idx = 0
-
-                    if command.lower() == "x":
-                        reset_env_keep_placement()
-                        action_idx = 0
-
-                    if command.lower() == "u":
-                        remake_env_with_fixed_layout()
-
-                    if command.lower() == "b":
-                        start_teleoperation()
-                        ci_start_flag = True
-
-                    if command.lower() == "t":
-                        flush_recorder_manager()
-
-                    if command.lower() == "x":
                         reset_env_instance_keep_placement()
                         action_idx = 0
 
@@ -857,9 +634,12 @@ def main():
             # run everything in inference mode
             # with torch.inference_mode():
             teleop_start = time.time()
+
             if teleop_interface is None and args_cli.teleop_device == "vr-controller":
+                import torch
+                # actions = torch.zeros(env.action_space.shape)
                 if ci_start_flag:
-                    with open("ci_run/g1wbc_action_data/actions.txt", "r") as f:
+                    with open("configs/data_collection/teleop/g1wbc_action_data/actions.txt", "r") as f:
                         actions_history = [torch.tensor(eval(line.strip())) for line in f.readlines()]
                     if action_idx < len(actions_history):
                         actions = actions_history[action_idx]
@@ -868,88 +648,28 @@ def main():
                         break
                 else:
                     actions = None
-
-            elif teleop_interface is None:
-                actions = torch.zeros(env.action_space.shape)
             else:
                 actions = teleop_interface.advance()
-                # safety coding
-                if isinstance(actions, torch.Tensor) and actions.shape[0] == 1 and env.num_envs != actions.shape[0]:
-                    actions = actions.repeat(env.num_envs, 1)
-
-            if actions is not None and hasattr(actions, 'clone'):
-                env.latest_action = actions.clone()
-            else:
-                env.latest_action = None
 
             teleop_time = time.time() - teleop_start
             frame_analyzer.record_stage('teleop_advance', teleop_time)
-
-            # Handle sliding window action delay (only async mode supported)
-            current_time = time.time()
-            if actions is not None and args_cli.action_delay_async:
-                # Add action to sliding window
-                delayed_action = sliding_window_manager.add_action_to_window(actions, current_time)
-                if delayed_action is not None:
-                    actions = delayed_action
-                    delay_stats["async_actions_executed"] += 1
-                else:
-                    delay_stats["async_actions_buffered"] += 1
-                    # Get action from sliding window
-                    window_action = sliding_window_manager.get_action_from_window(current_time)
-                    if window_action is not None:
-                        actions = window_action
-                        delay_stats["async_actions_executed"] += 1
-
-                # Update window statistics
-                window_stats = sliding_window_manager.get_window_stats()
-                delay_stats["buffer_utilization"] = window_stats['window_size'] / args_cli.action_buffer_size
-
-            if (
-                actions is None
-                or should_reset_env
-                or should_reset_env_keep_placement
-                or should_remake_env_with_fixed_layout
-                or should_remake_env
-            ):
+            if actions is None or should_reset_recording_instance or should_reset_env_instance:
                 destroy_robot_vis_helper(vis_helper_prims, env)
-                if should_reset_env_keep_placement:
-                    reset_physx(env)
-                    from lwlab.utils.teleop_utils import convert_list_to_2d_tensor
-                    initial_state_converted = convert_list_to_2d_tensor(initial_state)
-                    env.reset_to(initial_state_converted, torch.tensor([0], device=env.device), seed=env.cfg.seed, is_relative=False)
-                    if teleop_interface is not None:
-                        teleop_interface.reset()
-
-                    should_reset_env_keep_placement = False
+                if should_reset_env_instance:
+                    env, teleop_interface, viewports, overlay_window = reset_env(env, teleop_interface, viewports=viewports,
+                                                                                 initial_state=initial_state,
+                                                                                 keep_placement=should_reset_env_keep_placement)
+                    env_cfg = env.cfg
+                    should_reset_env_instance = False
+                    should_reset_env_keep_placement = True
                     action_idx = 0
                     ci_start_flag = None
-                elif should_reset_env:
-                    reset_physx(env)
-                    env.reset(seed=env.cfg.seed)
-                    if teleop_interface is not None:
-                        teleop_interface.reset()
-                    should_reset_env = False
-                elif should_remake_env:
-                    env, teleop_interface, viewports, overlay_window = remake_env(env, teleop_interface, viewports)
-                    env_cfg = env.cfg
-                    should_remake_env = False
-                elif should_remake_env_with_fixed_layout:
-                    if "robocasalibero" in env.cfg.isaaclab_arena_env.scene.usd_path:
-                        scene_name = "robocasalibero"
-                    else:
-                        scene_name = "robocasakitchen"
-                    if env.cfg.isaaclab_arena_env.scene.layout_id and env.cfg.isaaclab_arena_env.scene.style_id:
-                        scene_name = f"{scene_name}-{env.cfg.isaaclab_arena_env.scene.layout_id}-{env.cfg.isaaclab_arena_env.scene.style_id}"
-                    else:
-                        scene_name = args_cli.layout
-                    env, teleop_interface, viewports, overlay_window = remake_env(env, teleop_interface, viewports, scene_name)
-                    env_cfg = env.cfg
-                    should_remake_env_with_fixed_layout = False
-                initial_state = copy.deepcopy(env.recorder_manager.get_episode(0).data.get("initial_state", None))
+                elif should_reset_recording_instance:
+                    env.reset()
+                    should_reset_recording_instance = False
 
                 if not args_cli.headless:
-                    update_task_desc(env)
+                    update_task_desc(env, env_cfg)
 
                 frame_count = 0
                 # Reset demo counter for new session
@@ -983,32 +703,46 @@ def main():
                     for _ in range(env.cfg.warmup_steps):
                         update_sensors(env, env.physics_dt)
 
-                frame_count += 1
-                step_start = time.time()
-                if rollback_to_checkpoint_flag:
-                    load_checkpoint(env, args_cli.checkpoint_path)
-                    rollback_to_checkpoint_flag = False
+                if args_cli.enable_debug_log:
+                    try:
+                        env.step(actions)
+                        if initial_state is None:
+                            initial_state = copy.deepcopy(env.recorder_manager.get_episode(0).data["initial_state"])
+                        update_checkers_status(env, env_cfg.isaaclab_arena_env.task.get_warning_text())
+                    except Exception as e:
+                        print(f"Error during env step: {traceback.format_exc()}")
+                        handle_exception_and_log(e, log_path)
+                        break
 
-                if not args_cli.headless and isinstance(teleop_interface, VRController):
-                    if teleop_interface.tv.left_controller_state["b_button"]:
-                        if teleop_interface.get_rollback_action() is not None:
-                            actions = teleop_interface.get_rollback_action()
-                        else:
+                else:
+                    frame_count += 1
+                    step_start = time.time()
+                    if rollback_to_checkpoint_flag:
+                        load_checkpoint(env, args_cli.checkpoint_path)
+                        rollback_to_checkpoint_flag = False
+
+                    if not args_cli.headless and isinstance(teleop_interface, VRController):
+                        if teleop_interface.tv.left_controller_state["b_button"]:
+                            if teleop_interface.get_rollback_action() is not None:
+                                actions = teleop_interface.get_rollback_action()
+                            else:
+                                continue
+
+                    with trace_profile(f"env_step_frame_{frame_count:06d}"):
+                        carb.profiler.begin(1, "env_step")
+                        if actions is None:
                             continue
+                        obs, *_ = env.step(actions)
+                        carb.profiler.end(1)
+                    if initial_state is None:
+                        initial_state = copy.deepcopy(env.recorder_manager.get_episode(0).data["initial_state"])
+                    step_time = time.time() - step_start
+                    frame_analyzer.record_stage('env_step', step_time)
 
-                with trace_profile(f"env_step_frame_{frame_count:06d}"):
-                    carb.profiler.begin(1, "env_step")
-                    if actions is None:
-                        continue
-                    obs, *_ = env.step(actions)
-                    carb.profiler.end(1)
-                step_time = time.time() - step_start
-                frame_analyzer.record_stage('env_step', step_time)
-
-                update_checkers_status(env, env_cfg.isaaclab_arena_env.task.get_warning_text())
+                    update_checkers_status(env, env_cfg.isaaclab_arena_env.task.get_warning_text())
 
                 # Recorded
-                if args_cli.enable_cameras and start_record_state and video_recorder is not None:
+                if env_cfg.enable_cameras and start_record_state and video_recorder is not None:
                     camera_data, camera_name = get_camera_images(env)
                     if camera_name is not None:
                         video_recorder.add_frame(camera_data)
@@ -1023,88 +757,59 @@ def main():
                     save_metrics(env)
                     print(f"All {args_cli.num_demos} demonstrations recorded. Resetting environment for new session.")
 
-                    if (not args_cli.continue_teleop_after_success) or args_cli.headless:
+                    if not args_cli.continue_teleop_after_success:
                         break
 
-                    # Show upload dialog to user (non-blocking)
-                    if not upload_dialog_state["shown"]:
-                        show_upload_dialog(upload_dialog_state)
-                        print("Upload dialog shown. Please make your choice in the dialog window.")
+                    # Rename hdf5 file to indicate successful completion
+                    try:
+                        import shutil
+                        original_hdf5_path = args_cli.dataset_file
+                        success_hdf5_path = os.path.splitext(original_hdf5_path)[0] + "_success.hdf5"
 
-                    # Check if user has made a choice
-                    if upload_dialog_state["result"] is not None:
-                        upload_choice = upload_dialog_state["result"]
-                        # Hide the dialog window before resetting state
-                        if upload_dialog_state["window"] is not None:
-                            upload_dialog_state["window"].visible = False
-                        # Reset dialog state
-                        upload_dialog_state["shown"] = False
-                        upload_dialog_state["result"] = None
-                        upload_dialog_state["window"] = None
-                    else:
-                        continue
+                        if os.path.exists(original_hdf5_path):
+                            shutil.move(original_hdf5_path, success_hdf5_path)
+                            print(f"Renamed dataset file to: {success_hdf5_path}")
 
-                    if args_cli.teleop_device.lower().startswith("vr"):
-                        teleoperation_active = True
-                    else:
-                        teleoperation_active = False
+                            # Send signal to teleop_launcher for upload using upload shared memory
+                            try:
+                                from multiprocessing import shared_memory
+                                import json
 
-                    if start_record_state:
-                        start_record_state = False
+                                # Create upload signal data
+                                upload_signal_data = {
+                                    "action": "upload_success",
+                                    "hdf5_path": success_hdf5_path,
+                                    "timestamp": time.time(),
+                                    "has_success_file": True
+                                }
 
-                    if upload_choice:
-                        # User chose to upload - continue with existing upload logic
-                        try:
-                            import shutil
-                            original_hdf5_path = args_cli.dataset_file
-                            success_hdf5_path = os.path.splitext(original_hdf5_path)[0] + "_success.hdf5"
+                                # Serialize signal data
+                                signal_json = json.dumps(upload_signal_data)
+                                signal_bytes = signal_json.encode('utf-8')
 
-                            if os.path.exists(original_hdf5_path):
-                                shutil.move(original_hdf5_path, success_hdf5_path)
-                                print(f"Renamed dataset file to: {success_hdf5_path}")
-
-                                # Send signal to teleop_launcher for upload using upload shared memory
+                                # Create or access upload shared memory
                                 try:
-                                    from multiprocessing import shared_memory
-                                    import json
+                                    # Try to access existing upload shared memory
+                                    shm = shared_memory.SharedMemory(name="teleop_upload_signal", create=False)
+                                except FileNotFoundError:
+                                    # Create new upload shared memory if it doesn't exist
+                                    shm = shared_memory.SharedMemory(name="teleop_upload_signal", create=True, size=4096)
 
-                                    # Create upload signal data
-                                    upload_signal_data = {
-                                        "action": "upload_success",
-                                        "hdf5_path": success_hdf5_path,
-                                        "timestamp": time.time(),
-                                        "has_success_file": True
-                                    }
+                                # Write signal data to upload shared memory
+                                shm.buf[:len(signal_bytes)] = signal_bytes
+                                shm.buf[len(signal_bytes)] = 0  # Null terminator
 
-                                    # Serialize signal data
-                                    signal_json = json.dumps(upload_signal_data)
-                                    signal_bytes = signal_json.encode('utf-8')
+                                print(f"Upload signal sent via upload shared memory: {upload_signal_data}")
 
-                                    # Create or access upload shared memory
-                                    try:
-                                        # Try to access existing upload shared memory
-                                        shm = shared_memory.SharedMemory(name="teleop_upload_signal", create=False)
-                                    except FileNotFoundError:
-                                        # Create new upload shared memory if it doesn't exist
-                                        shm = shared_memory.SharedMemory(name="teleop_upload_signal", create=True, size=4096)
+                            except Exception as signal_e:
+                                print(f"Error sending upload signal via shared memory: {signal_e}")
+                        else:
+                            print(f"Warning: Original dataset file not found: {original_hdf5_path}")
+                    except Exception as e:
+                        print(f"Error renaming dataset file: {e}")
 
-                                    # Write signal data to upload shared memory
-                                    shm.buf[:len(signal_bytes)] = signal_bytes
-                                    shm.buf[len(signal_bytes)] = 0  # Null terminator
-
-                                    print(f"Upload signal sent via upload shared memory: {upload_signal_data}")
-
-                                except Exception as signal_e:
-                                    print(f"Error sending upload signal via shared memory: {signal_e}")
-                            else:
-                                print(f"Warning: Original dataset file not found: {original_hdf5_path}")
-                        except Exception as e:
-                            print(f"Error renaming dataset file: {e}")
-                        remake_env_with_random_layout()
-                    else:
-                        env, teleop_interface, viewports, overlay_window = remake_env(env, teleop_interface, viewports)
-                        initial_state = copy.deepcopy(env.recorder_manager.get_episode(0).data.get("initial_state", None))
-                        env_cfg = env.cfg
+                    # Reset environment with keep_placement=False for new session
+                    reset_env_instance_no_keep_placement()
 
             if not args_cli.headless and teleoperation_active:
                 env.sim.render()
@@ -1117,19 +822,12 @@ def main():
                 rate_time = time.time() - rate_start
                 frame_analyzer.record_stage('rate_limiter', rate_time)
 
-            # send robot state if needed
-            if hasattr(teleop_interface, "send_robot_state"):
-                teleop_interface.send_robot_state()
-
             # end frame analysis (debug mode only)
             frame_analyzer.end_frame()
 
         # ensure to stop recording before exiting
         if video_recorder is not None:
             video_recorder.stop_recording()
-
-        # Print sliding window delay statistics (only for async mode)
-        log_sliding_window_delay_statistics(delay_stats, sliding_window_manager, args_cli)
 
         return env
 
@@ -1159,7 +857,7 @@ def main():
     from lwlab.utils.video_recorder import VideoRecorder, get_camera_images
     from lwlab.utils.teleop_utils import save_checkpoint, load_checkpoint, quick_rewind
     from lwlab.utils.place_utils.env_utils import set_seed
-    from lwlab.utils.place_utils.env_utils import reset_obj_cache, reset_physx
+    from lwlab.utils.isaaclab_utils import update_sensors
     import carb
 
     from omni.log import get_log
@@ -1214,7 +912,7 @@ def main():
         update_checkers_status,
         update_task_desc,
         hide_ui_windows,
-        show_upload_dialog
+        setup_batch_name_gui
     )
 
     # Global variable for batch name GUI
@@ -1235,7 +933,6 @@ def main():
         print(f"Error during mainloop execution: {e}")
         import traceback
         traceback.print_exc()
-        handle_exception_and_log()
 
     # close the simulator
     env.close()

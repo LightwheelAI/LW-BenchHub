@@ -14,6 +14,7 @@
 
 # base class for kitchen arena
 
+import os
 import numpy as np
 from lwlab.core.models.fixtures.fixture import FIXTURES
 from lwlab.utils.usd_utils import OpenUsd as usd
@@ -33,6 +34,8 @@ def parse_fixtures(stage, num_envs, seed, device):
     root_prim = stage.GetPseudoRoot().GetChildren()[0]
     xform_infos = usd.get_child_xform_infos(root_prim)
     for info in xform_infos:
+        if info['type'] == "Wall_obj" or info['type'] == "Floor_obj":
+            continue
         size_attr = info["prim"].GetAttribute("size").Get()
         if size_attr is None or np.fromstring(size_attr, sep=',').size == 0:
             continue

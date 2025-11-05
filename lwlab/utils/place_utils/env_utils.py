@@ -16,12 +16,14 @@ from lwlab.utils.place_utils.placement_samplers import (
 )
 from lwlab.utils.env import ExecuteMode
 from lwlab.utils.errors import SamplingError
-from lwlab.utils.place_utils.kitchen_object_utils import extract_failed_object_name, recreate_object
+from lwlab.utils.place_utils.kitchen_object_utils import extract_failed_object_name, recreate_object, clear_obj_cache
 import lwlab.utils.math_utils.transform_utils.numpy_impl as T
 from lwlab.utils.log_utils import get_default_logger
 from lwlab.utils.usd_utils import OpenUsd
 from lwlab.core.tasks.base import LwLabTaskBase
 from lwlab.core.scenes.kitchen.kitchen import LwLabScene
+from lwlab.utils.ui_utils import draw_aabb_from_bbox, clear_debug_drawing
+from lwlab.utils.place_utils.kitchen_objects import OBJECT_INFO_CACHE
 
 
 # _ROBOT_POS_OFFSETS: dict[str, list[float]] = {
@@ -68,6 +70,10 @@ VALID_CFG_KEYS = set(
         "rotate_upright",
         "rgb_replace",
         "auxiliary_obj_placement",
+        "is_fixture",
+        "merged_obj",
+        "load_from_local",
+        "asset_name",
         *VALID_PROPERTY_KEYS,
     }
 )
@@ -117,7 +123,7 @@ def get_current_layout_stool_rotations(scene: LwLabScene):
     from a YAML layout file associated with the environment.
 
     Args:
-        task: The environment configuration object (must have layout_id attribute)
+        scene: The scene object
 
     Returns:
         list: List of unique rotation values (floats) found in stool configurations
@@ -1056,11 +1062,9 @@ def create_obj(task: LwLabTaskBase, cfg: Dict[str, Any], version=None, ignore_ca
         ignore_cache=ignore_cache,
     )
 
-# replay mode load placement
-# some parameters used in the function change from context
-# placement_initializer
-# sample
-# retry
+
+def reset_obj_cache():
+    clear_obj_cache()
 
 
 def sample_object_placements(orchestrator, need_retry=True) -> dict:
@@ -1263,6 +1267,7 @@ def check_valid_robot_pose(env: ManagerBasedRLEnv, robot_pos, env_ids=None):
     #     return False
 
     # 2. check if the robot is out of the scene
+    # clear_debug_drawing()
     robot_bbox = calculate_robot_bbox(env, robot_pos)
     scene_prim = None
     for prim in env.sim.stage.Traverse():
@@ -1271,13 +1276,16 @@ def check_valid_robot_pose(env: ManagerBasedRLEnv, robot_pos, env_ids=None):
             break
     scene_bbox = OpenUsd.get_prim_aabb_bounding_box(scene_prim) if scene_prim else None
 
+    # draw_aabb_from_bbox(robot_bbox)
+
     if scene_bbox is not None:
         if detect_robot_out_of_scene(env, robot_bbox, scene_bbox):
-            print(f"Robot pose: {robot_pos} is out of the scene bounds: {scene_bbox.GetMin()} - {scene_bbox.GetMax()}")
+            get_default_logger().info(f"Robot pose: {robot_pos} is out of the scene bounds: {scene_bbox.GetMin()} - {scene_bbox.GetMax()}")
             return False
 
     # 3. check if the robot is in overlap with the objects in the scene
     # all rigid prim in the scene except the robot
+    # get_default_logger().info(f"check env prim collision with robot")
     for obs_prim in scene_prim.GetChildren():
         if not obs_prim.IsValid() or obs_prim.GetAttribute("type").Get() == "WallLayout":
             continue
@@ -1454,3 +1462,31 @@ def set_camera_follow_pose(env: ManagerBasedRLEnv, offset, lookat):
         robot_lookat = robot_pos + (robot_mat @ np.array(lookat).reshape(3, 1))[:, 0]
 
     env.sim.set_camera_view(robot_pos, robot_lookat)
+
+
+def reset_physx(env):
+    env.sim.reset(soft=True)
+    for env_id in range(env.num_envs):
+        env.cfg.isaaclab_arena_env.task.contact_queues[env_id].clear()
+    env.common_step_counter = 0
+
+
+class ContactQueue:
+    def __init__(self):
+        self.queue = deque()
+
+    def is_empty(self):
+        return len(self.queue) == 0
+
+    def add(self, contact_view):
+        self.queue.append(contact_view)
+
+    def pop(self):
+        if self.is_empty():
+            return None
+        contact_view = self.queue.popleft()
+        self.queue.append(contact_view)
+        return contact_view
+
+    def clear(self):
+        self.queue.clear()

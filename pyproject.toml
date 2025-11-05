@@ -25,6 +25,7 @@ dependencies = [
 [project.optional-dependencies]
 
 lerobot = [
+    "lerobot==0.3.3",
     "pyserial>=3.5",
     "deepdiff>=7.0.1,<9.0.0",
     "feetech-servo-sdk>=1.0.0"

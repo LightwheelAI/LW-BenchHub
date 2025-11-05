@@ -28,6 +28,7 @@ import isaaclab.utils.math as math_utils
 import lwlab.core.mdp as mdp
 from lwlab.utils.math_utils import transform_utils as T
 from lwlab.core.robots.compositional.assets_cfg import FRANKA_OMRON_CFG, FRANKA_OMRON_HIGH_PD_CFG, OFFSET_CONFIG, VIS_HELPER_CFG  # isort: skip
+from lwlab.utils.env import ExecuteMode
 
 ##
 # Pre-defined configs
@@ -78,7 +79,8 @@ class PandaOmronEmbodiment(LwLabEmbodimentBase):
                     height=224,
                     update_period=0.05,
                 ),
-                "tags": ["teleop"]
+                "tags": [],
+                "execute_mode": [ExecuteMode.TELEOP, ExecuteMode.REPLAY_STATE]
             },
             "agentview_right_camera": {
                 "camera_cfg": TiledCameraCfg(
@@ -96,7 +98,8 @@ class PandaOmronEmbodiment(LwLabEmbodimentBase):
                     height=224,
                     update_period=0.05,
                 ),
-                "tags": ["teleop"]
+                "tags": [],
+                "execute_mode": [ExecuteMode.TELEOP, ExecuteMode.REPLAY_STATE]
             },
             "eye_in_hand_camera": {
                 "camera_cfg": TiledCameraCfg(
@@ -114,7 +117,8 @@ class PandaOmronEmbodiment(LwLabEmbodimentBase):
                     height=224,
                     update_period=0.05,
                 ),
-                "tags": ["teleop"]
+                "tags": [],
+                "execute_mode": [ExecuteMode.TELEOP, ExecuteMode.REPLAY_STATE, ExecuteMode.REPLAY_ACTION, ExecuteMode.REPLAY_JOINT_TARGETS]
             }
         }
 

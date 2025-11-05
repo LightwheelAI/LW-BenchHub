@@ -22,8 +22,11 @@ from isaaclab.sensors.frame_transformer.frame_transformer_cfg import OffsetCfg
 from isaaclab.sensors import ContactSensorCfg
 from isaaclab.markers.config import FRAME_MARKER_CFG  # isort: skip
 
+from typing import Dict, List, Optional, Set, Union
+from isaaclab_arena.utils.pose import Pose
+
 import lwlab.core.mdp as mdp
-from lwlab.core.robots.base import BaseRobotCfg
+from lwlab.core.robots.robot_arena_base import LwLabEmbodimentBase, EmbodimentBaseObservationCfg, EmbodimentBasePolicyObservationCfg
 from .assets_cfg import DOUBLE_PANDA_CFG, DOUBLE_PANDA_HIGH_PD_CFG, DOUBLE_PANDA_OFFSET_CONFIG  # isort: skip
 
 ##
@@ -44,73 +47,102 @@ class ActionsCfg:
     right_gripper_action: mdp.BinaryJointPositionActionCfg = MISSING
 
 
-# @configclass
-class DoublePandaEnvCfg(BaseRobotCfg):
-    actions: ActionsCfg = ActionsCfg()
-    robot_scale: float = MISSING
-    robot_cfg: ArticulationCfg = DOUBLE_PANDA_HIGH_PD_CFG
-    offset_config = DOUBLE_PANDA_OFFSET_CONFIG
+@configclass
+class DoublePandaActionsCfg:
+    left_arm_action = mdp.DifferentialInverseKinematicsActionCfg(
+        asset_name="robot",
+        joint_names=["panda_L_joint.*"],
+        body_name="panda_L_hand",
+        controller=mdp.DifferentialIKControllerCfg(command_type="pose", use_relative_mode=True, ik_method="dls"),
+        scale=1,
+        body_offset=mdp.DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=(0.0, 0.0, 0.0434),
+                                                                         ),
+    )
+    right_arm_action = mdp.DifferentialInverseKinematicsActionCfg(
+        asset_name="robot",
+        joint_names=["panda_R_joint.*"],
+        body_name="panda_R_hand",
+        controller=mdp.DifferentialIKControllerCfg(command_type="pose", use_relative_mode=True, ik_method="dls"),
+        scale=1,
+        body_offset=mdp.DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=(0.0, 0.0, 0.0434),
+                                                                         ),
+    )
+    left_gripper_action = mdp.BinaryJointPositionActionCfg(
+        asset_name="robot",
+        joint_names=["panda_L_finger.*"],
+        open_command_expr={"panda_L_finger.*": 0.04},
+        close_command_expr={"panda_L_finger.*": 0.0},
+    )
+    right_gripper_action = mdp.BinaryJointPositionActionCfg(
+        asset_name="robot",
+        joint_names=["panda_R_finger.*"],
+        open_command_expr={"panda_R_finger.*": 0.04},
+        close_command_expr={"panda_R_finger.*": 0.0},
+    )
+
+
+@configclass
+class DoublePandaSceneCfg:
+    robot: ArticulationCfg = DOUBLE_PANDA_HIGH_PD_CFG
+    ee_frame: FrameTransformerCfg = FrameTransformerCfg(
+        prim_path="{ENV_REGEX_NS}/Robot/root_link",
+        debug_vis=False,
+        visualizer_cfg=FRAME_MARKER_SMALL_CFG.replace(prim_path="/Visuals/EndEffectorFrameTransformer"),
+        target_frames=[
+            FrameTransformerCfg.FrameCfg(
+                  prim_path="{ENV_REGEX_NS}/Robot/panda_L/panda_L_hand",
+                  name="ee_tcp_L",
+                  offset=OffsetCfg(
+                      pos=(0.0, 0.0, 0.1034),
+                  ),
+            ),
+            FrameTransformerCfg.FrameCfg(
+                prim_path="{ENV_REGEX_NS}/Robot/panda_R/panda_R_hand",
+                name="ee_tcp_R",
+                offset=OffsetCfg(
+                    pos=(0.0, 0.0, 0.1034),
+                ),
+            ),
+        ]
+    )
+    base_contact = ContactSensorCfg(
+        prim_path=f"{{ENV_REGEX_NS}}/Robot/panda_R/panda_R_link0",
+        update_period=0.0,
+        history_length=1,
+        debug_vis=False,
+        filter_prim_paths_expr=[f"{{ENV_REGEX_NS}}/Scene/floor*"],
+    )
+
+
+@configclass
+class DoublePandaObservationsCfg(EmbodimentBaseObservationCfg):
+    """Observation specifications for the MDP."""
+
+
+@configclass
+class DoublePandaPolicyObservationsCfg(EmbodimentBasePolicyObservationCfg):
+    """Observations for policy group with state values."""
 
     def __post_init__(self):
-        # post init of parent
-        super().__post_init__()
-        # Set Actions for the specific robot type (franka)
-        self.scene.robot.spawn.scale = (self.robot_scale, self.robot_scale, self.robot_scale)
-        self.actions.left_gripper_action = mdp.BinaryJointPositionActionCfg(
-            asset_name="robot",
-            joint_names=["panda_L_finger.*"],
-            open_command_expr={"panda_L_finger.*": 0.04},
-            close_command_expr={"panda_L_finger.*": 0.0},
-        )
-        self.actions.right_gripper_action = mdp.BinaryJointPositionActionCfg(
-            asset_name="robot",
-            joint_names=["panda_R_finger.*"],
-            open_command_expr={"panda_R_finger.*": 0.04},
-            close_command_expr={"panda_R_finger.*": 0.0},
-        )
+        self.concatenate_terms = False
 
-        # Listens to the required transforms
-        # IMPORTANT: The order of the frames in the list is important. The first frame is the tool center point (TCP)
-        # the other frames are the fingers
-        self.scene.ee_frame = FrameTransformerCfg(
-            prim_path="{ENV_REGEX_NS}/Robot/root_link",
-            debug_vis=False,
-            visualizer_cfg=FRAME_MARKER_SMALL_CFG.replace(prim_path="/Visuals/EndEffectorFrameTransformer"),
-            target_frames=[
-                FrameTransformerCfg.FrameCfg(
-                    prim_path="{ENV_REGEX_NS}/Robot/panda_L/panda_L_hand",
-                    name="ee_tcp_L",
-                    offset=OffsetCfg(
-                        pos=(0.0, 0.0, 0.1034),
-                    ),
-                ),
-                FrameTransformerCfg.FrameCfg(
-                    prim_path="{ENV_REGEX_NS}/Robot/panda_R/panda_R_hand",
-                    name="ee_tcp_R",
-                    offset=OffsetCfg(
-                        pos=(0.0, 0.0, 0.1034),
-                    ),
-                ),
-            ]
-        )
-        base_contact = ContactSensorCfg(
-            prim_path=f"{{ENV_REGEX_NS}}/Robot/panda_R/panda_R_link0",
-            update_period=0.0,
-            history_length=1,
-            debug_vis=False,
-            filter_prim_paths_expr=[f"{{ENV_REGEX_NS}}/Scene/floor*"],
-        )
-        setattr(self.scene, "base_contact", base_contact)
-        self.viewport_cfg = {
-            "offset": [-1.0, 0.0, 2.0],
-            "lookat": [1.0, 0.0, -0.7]
-        }
+
+class DoublePandaEnvCfg(LwLabEmbodimentBase):
+
+    def __init__(self, enable_cameras: bool = False, initial_pose: Optional[Pose] = None):
+        super().__init__(enable_cameras, initial_pose)
+        self.name = "DoublePanda"
+        self.action_config = DoublePandaActionsCfg()
+        self.scene_config = DoublePandaSceneCfg()
+        self.offset_config = DOUBLE_PANDA_OFFSET_CONFIG
+        self.observation_config = DoublePandaObservationsCfg()
+        self.policy_observation_config = DoublePandaPolicyObservationsCfg()
 
     def preprocess_device_action(self, action: dict[str, torch.Tensor], device) -> torch.Tensor:
         num_envs = device.env.num_envs
         left_arm_action = None
         right_arm_action = None
-        if self.actions.left_arm_action.controller.use_relative_mode:  # Relative mode
+        if self.action_config.left_arm_action.controller.use_relative_mode:  # Relative mode
             left_arm_action = action["left_arm_delta"]
             right_arm_action = action["right_arm_delta"]
         else:  # Absolute mode
@@ -131,59 +163,38 @@ class DoublePandaEnvCfg(BaseRobotCfg):
 # @configclass
 class DoublePandaRelEnvCfg(DoublePandaEnvCfg):
     # We switch here to a stiffer PD controller for IK tracking to be better.
-    robot_cfg: ArticulationCfg = DOUBLE_PANDA_CFG
-    robot_name: str = "DoublePanda-Rel"
-
-    def __post_init__(self):
-        # post init of parent
-        super().__post_init__()
-
-        # Set actions for the specific robot type (franka)
-        self.actions.left_arm_action = mdp.DifferentialInverseKinematicsActionCfg(
-            asset_name="robot",
-            joint_names=["panda_L_joint.*"],
-            body_name="panda_L_hand",
-            controller=mdp.DifferentialIKControllerCfg(command_type="pose", use_relative_mode=True, ik_method="dls"),
-            scale=1,
-            body_offset=mdp.DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=(0.0, 0.0, 0.0434),
-                                                                             ),
-        )
-        self.actions.right_arm_action = mdp.DifferentialInverseKinematicsActionCfg(
-            asset_name="robot",
-            joint_names=["panda_R_joint.*"],
-            body_name="panda_R_hand",
-            controller=mdp.DifferentialIKControllerCfg(command_type="pose", use_relative_mode=True, ik_method="dls"),
-            scale=1,
-            body_offset=mdp.DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=(0.0, 0.0, 0.0434),
-                                                                             ),
-        )
+    def __init__(self, enable_cameras: bool = False, initial_pose: Optional[Pose] = None):
+        super().__init__(enable_cameras, initial_pose)
+        self.scene_config.robot = DOUBLE_PANDA_CFG
+        self.offset_config = DOUBLE_PANDA_OFFSET_CONFIG
+        self.name = "DoublePanda-Rel"
 
 
-# @configclass
+@configclass
+class DoublePandaAbsActionsCfg(DoublePandaActionsCfg):
+    # Set actions for the specific robot type (franka)
+    left_arm_action = mdp.DifferentialInverseKinematicsActionCfg(
+        asset_name="robot",
+        joint_names=["panda_L_joint.*"],
+        body_name="panda_L_hand",
+        controller=mdp.DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, ik_method="dls"),
+        scale=1,
+        body_offset=mdp.DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=(0.0, 0.0, 0.0434),
+                                                                         ),
+    )
+    right_arm_action = mdp.DifferentialInverseKinematicsActionCfg(
+        asset_name="robot",
+        joint_names=["panda_R_joint.*"],
+        body_name="panda_R_hand",
+        controller=mdp.DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, ik_method="dls"),
+        scale=1,
+        body_offset=mdp.DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=(0.0, 0.0, 0.0434),
+                                                                         ),
+    )
+
+
 class DoublePandaAbsEnvCfg(DoublePandaEnvCfg):
-    robot_cfg: ArticulationCfg = DOUBLE_PANDA_CFG
-    robot_name: str = "DoublePanda-Abs"
-
-    def __post_init__(self):
-        # post init of paren
-        super().__post_init__()
-
-        # Set actions for the specific robot type (franka)
-        self.actions.left_arm_action = mdp.DifferentialInverseKinematicsActionCfg(
-            asset_name="robot",
-            joint_names=["panda_L_joint.*"],
-            body_name="panda_L_hand",
-            controller=mdp.DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, ik_method="dls"),
-            scale=1,
-            body_offset=mdp.DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=(0.0, 0.0, 0.0434),
-                                                                             ),
-        )
-        self.actions.right_arm_action = mdp.DifferentialInverseKinematicsActionCfg(
-            asset_name="robot",
-            joint_names=["panda_R_joint.*"],
-            body_name="panda_R_hand",
-            controller=mdp.DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, ik_method="dls"),
-            scale=1,
-            body_offset=mdp.DifferentialInverseKinematicsActionCfg.OffsetCfg(pos=(0.0, 0.0, 0.0434),
-                                                                             ),
-        )
+    def __init__(self, enable_cameras: bool = False, initial_pose: Optional[Pose] = None):
+        super().__init__(enable_cameras, initial_pose)
+        self.scene_config.robot = DOUBLE_PANDA_CFG
+        self.name = "DoublePanda-Abs"

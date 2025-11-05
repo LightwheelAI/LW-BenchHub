@@ -1,6 +1,9 @@
 from lightwheel_sdk.loader import object_loader
 
 
+OBJECT_INFO_CACHE = {}
+
+
 def postprocess_obj_categories(obj_categories, exclude_fixture=True):
     updated_categories = []
     for obj_cat in obj_categories:

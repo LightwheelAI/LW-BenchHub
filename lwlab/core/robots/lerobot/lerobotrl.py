@@ -25,6 +25,7 @@ import isaaclab.utils.math as math_utils
 from lwlab.core.mdp.actions.joint_position_limit_action import JointPositionLimitActionCfg
 from lwlab.core.robots.robot_arena_base import LwLabEmbodimentBase
 from isaaclab_arena.utils.pose import Pose
+from lwlab.utils.env import ExecuteMode
 FRAME_MARKER_SMALL_CFG = FRAME_MARKER_CFG.copy()
 FRAME_MARKER_SMALL_CFG.markers["frame"].scale = (0.10, 0.10, 0.10)
 
@@ -231,7 +232,8 @@ class BaseLeRobot(LwLabEmbodimentBase):
                     height=224,
                     update_period=0.05,
                 ),
-                "tags": ["teleop"]
+                "tags": [],
+                "execute_mode": [ExecuteMode.TELEOP, ExecuteMode.REPLAY_STATE]
             },
             "global_camera": {
                 "camera_cfg": TiledCameraCfg(
@@ -250,7 +252,8 @@ class BaseLeRobot(LwLabEmbodimentBase):
                     height=224,
                     update_period=0.05,
                 ),
-                "tags": ["rl", "teleop"]
+                "tags": [],
+                "execute_mode": [ExecuteMode.TELEOP, ExecuteMode.REPLAY_STATE, ExecuteMode.TRAIN, ExecuteMode.EVAL]
             }
         }
 
@@ -294,7 +297,8 @@ class LeRobot100RL(LeRobotRL):
                     height=224,
                     update_period=0.05,
                 ),
-                "tags": ["rl"]
+                "tags": [],
+                "execute_mode": [ExecuteMode.TRAIN, ExecuteMode.EVAL]
             }
         }
 
@@ -322,7 +326,8 @@ class LeRobotAbsJointGripperRL(LeRobotRL):
                     height=480,
                     update_period=0.05,
                 ),
-                "tags": ["rl", "teleop"]
+                "tags": [],
+                "execute_mode": [ExecuteMode.TELEOP, ExecuteMode.REPLAY_STATE, ExecuteMode.TRAIN, ExecuteMode.EVAL]
             },
             "global_camera": {
                 "camera_cfg": TiledCameraCfg(
@@ -340,7 +345,8 @@ class LeRobotAbsJointGripperRL(LeRobotRL):
                     height=480,
                     update_period=0.05,
                 ),
-                "tags": ["rl", "teleop"]
+                "tags": [],
+                "execute_mode": [ExecuteMode.TELEOP, ExecuteMode.REPLAY_STATE, ExecuteMode.TRAIN, ExecuteMode.EVAL]
             }
         }
 

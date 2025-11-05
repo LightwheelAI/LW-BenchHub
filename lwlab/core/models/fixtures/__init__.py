@@ -45,4 +45,7 @@ from .storage_furniture import StorageFurniture
 from .moka_pot import MokaPot
 from .floor_obj import FloorLayout
 from .wine_rack import WineRack
+from .dish_towel import DishTowel
+from .battery import Battery
+from .shelf import Shelf
 from lwlab.utils.fixture_utils import fixture_is_type

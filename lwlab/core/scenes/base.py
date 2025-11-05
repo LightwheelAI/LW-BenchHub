@@ -78,7 +78,7 @@ class BaseSceneEnvCfg(LwBaseCfg):
             render_resolution = None
             if hasattr(self, "replay_cfgs") and self.replay_cfgs.get("render_resolution", None) is not None:
                 render_resolution = self.replay_cfgs["render_resolution"]
-            task_obs_cameras = [(n, c) for n, c in self.observation_cameras.items() if self.task_type in c["tags"]]
+            task_obs_cameras = [(n, c) for n, c in self.observation_cameras.items() if self.execute_mode in c["execute_mode"]]
             for name, camera_infos in task_obs_cameras:
                 camera_cfg = camera_infos["camera_cfg"]
                 if render_resolution is not None:

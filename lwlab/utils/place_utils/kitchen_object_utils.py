@@ -216,6 +216,7 @@ def sample_kitchen_object(
         for i in range(3):
             if max_size[i] is not None and obj_info.size[i] > max_size[i]:
                 valid_object_sampled = False
+                OBJECT_INFO_CACHE.clear()
                 break
 
         groups_containing_sampled_obj = []
@@ -294,3 +295,7 @@ def recreate_object(orchestrator, failed_obj_name):
     except Exception as e:
         print(f"Failed to replace object {failed_obj_name}: {str(e)}")
         return False
+
+
+def clear_obj_cache():
+    OBJECT_INFO_CACHE.clear()
