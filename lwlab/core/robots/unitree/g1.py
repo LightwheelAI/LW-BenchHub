@@ -32,7 +32,6 @@ import lwlab.core.mdp as lwlab_mdp
 from lwlab.core.robots.robot_arena_base import LwLabEmbodimentBase, EmbodimentBaseObservationCfg, EmbodimentBasePolicyObservationCfg
 from isaaclab_arena.utils.pose import Pose
 from isaaclab_arena.environments.isaaclab_arena_manager_based_env import IsaacLabArenaManagerBasedRLEnvCfg
-from isaaclab_tasks.manager_based.manipulation.stack.mdp.observations import ee_frame_pos, ee_frame_quat, gripper_pos
 ##
 # Pre-defined configs
 ##

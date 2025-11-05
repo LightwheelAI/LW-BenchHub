@@ -118,154 +118,155 @@ def run_teleop(rerun_count, reset_count=0):
     }
 
     try:
-        # Update the config file with the specified task
-        original_task = update_config_task(args.task, args.layout)
-        if original_task is None:
-            print("Failed to update config file")
-            return False
-
-        print(f"\n[RUN] Start teleop: rerun={rerun_count}, reset={reset_count}")
-
-        process = subprocess.Popen(
-            ["python3", "-u", f"{LWLAB_ROOT}/lwlab/scripts/teleop/teleop_check_consistency.py", "--task_config=check_consistency", "--headless"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            universal_newlines=True,
-            bufsize=1,
-            preexec_fn=os.setsid
-        )
-
-        # Register cleanup functions for all exit scenarios
-        atexit.register(cleanup_process, process)
-
-        # Register signal handlers
-        def signal_handler(signum, frame):  # pylint: disable=unused-argument
-            print(f"received signal {signum}, cleaning up...")
-            cleanup_process(process)
-            sys.exit(0)
-
-        signal.signal(signal.SIGINT, signal_handler)   # Ctrl+C
-        signal.signal(signal.SIGTERM, signal_handler)  # Termination signal
-        signal.signal(signal.SIGHUP, signal_handler)   # Hangup signal
-
-        teleop_begins_detected = False
-        traceback_lines = []
-        success_message_detected = False
-
-        print("wait for 'Start Recording' output...")
-
-        monitor_start_time = time.time()
-        timeout = 300
-
-        # --------------------------First run or rerun-----------------
-        in_traceback = False
-        for line in iter(process.stdout.readline, ''):
-            if line:
-                line = line.strip()
-                print(f"[TELEOP] {line}")
-
-                if "Traceback (most recent call last):" in line:
-                    in_traceback = True
-                    traceback_lines = [line]
-                elif in_traceback:
-                    if line == "" or ("ms]" in line):
-                        in_traceback = False
-                        if traceback_lines:
-                            test_result["error"] = traceback_lines
-                            last_three_lines = traceback_lines[-3:] if len(traceback_lines) >= 3 else traceback_lines
-                            test_result["desc"] = "\n".join(last_three_lines)
-                    else:
-                        traceback_lines.append(line)
-
-                if "Start Recording" in line and not teleop_begins_detected:
-                    teleop_begins_detected = True
-                    print("Detect keyword 'Start Recording', start to monitor...")
-                    break
-
-                if "Starting teleoperation" in line:
-                    print("Detect keyword 'Starting teleoperation', teleop_main is ready for input...")
-                    time.sleep(8)  # wait a bit to ensure teleop is fully started
-                    send_keyboard_input(process, "b")
-
-        if process.poll() is not None:
-            print("Process exited during main loop, reading remaining output...")
-            remaining_output = process.stdout.read()
-            if remaining_output:
-                print(f"[REMAINING OUTPUT] {remaining_output}")
-                for line in remaining_output.split('\n'):
-                    if line.strip():
-                        line = line.strip()
-                        print(f"[TELEOP] {line}")
-                        if "Traceback (most recent call last):" in line:
-                            in_traceback = True
-                            traceback_lines = [line]
-                        elif in_traceback:
-                            if line == "" or ("ms]" in line):
-                                in_traceback = False
-                                if traceback_lines:
-                                    test_result["error"] = traceback_lines
-                                    last_three_lines = traceback_lines[-3:] if len(traceback_lines) >= 3 else traceback_lines
-                                    test_result["desc"] = "\n".join(last_three_lines)
-                            else:
-                                traceback_lines.append(line)
-
-        if in_traceback and traceback_lines:
-            print("Found incomplete traceback after main loop, saving it...")
-            test_result["error"] = traceback_lines
-            last_three_lines = traceback_lines[-3:] if len(traceback_lines) >= 3 else traceback_lines
-            test_result["desc"] = "\n".join(last_three_lines)
-
-        if not teleop_begins_detected:
-            if process.poll() is None:
-                if time.time() - monitor_start_time > timeout:
-                    # If traceback_lines is non-empty, success should be False
-                    if traceback_lines:
-                        test_result["success"] = False
-                        test_result["desc"] = "Start over 5 minutes but with errors"
-                    else:
-                        test_result["success"] = True
-                        test_result["desc"] = "Start over 5 minutes"
-                    test_result["error"] = traceback_lines
-                    cleanup_process(process)
-                    return test_result["success"]
-            else:
-                test_result["success"] = False
-                if not traceback_lines:
-                    test_result["desc"] = "not detect Start keyword, teleop did not start"
-                else:
-                    last_three_lines = traceback_lines[-3:] if len(traceback_lines) >= 3 else traceback_lines
-                    test_result["desc"] = "\n".join(last_three_lines)
-                test_result["error"] = traceback_lines
-            return False
-
-        wait_duration = 30
-        print(f"[STEP] Wait {wait_duration}s before first save (with monitoring)...")
-
-        wait_end_time = time.time() + wait_duration
-
-        process_alive = True
-        while time.time() < wait_end_time:
-            if process.poll() is not None:
-                print(f"[ERROR] Process terminated unexpectedly during the first wait. Exit code: {process.returncode}")
-                test_result["success"] = False
-                test_result["desc"] = f"Process terminated unexpectedly during the first wait.{wait_duration}"
-                process_alive = False
-                break
-            time.sleep(0.1)
-
-        if process_alive:
-            print("[STEP] Sending 't' to save dataset 1...")
-            send_keyboard_input(process, "t")
-            time.sleep(5)
-            rename_dataset(rerun_count, 0)
-        else:
-            return False
-
-        # --------------------------Reset-----------------
         if rerun_count == 0:
-            print("[STEP] Sending 'r' to reset...")
-            send_keyboard_input(process, "r")
+            # Update the config file with the specified task
+            original_task = update_config_task(args.task, args.layout)
+            if original_task is None:
+                print("Failed to update config file")
+                return False
+
+            print(f"\n[RUN] Start teleop: rerun={rerun_count}, reset={reset_count}")
+
+            process = subprocess.Popen(
+                ["python3", "-u", f"{LWLAB_ROOT}/lwlab/scripts/teleop/teleop_main.py", "--task_config=check_consistency", "--headless"],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True,
+                bufsize=1,
+                preexec_fn=os.setsid
+            )
+
+            # Register cleanup functions for all exit scenarios
+            atexit.register(cleanup_process, process)
+
+            # Register signal handlers
+            def signal_handler(signum, frame):  # pylint: disable=unused-argument
+                print(f"received signal {signum}, cleaning up...")
+                cleanup_process(process)
+                sys.exit(0)
+
+            signal.signal(signal.SIGINT, signal_handler)   # Ctrl+C
+            signal.signal(signal.SIGTERM, signal_handler)  # Termination signal
+            signal.signal(signal.SIGHUP, signal_handler)   # Hangup signal
+
+            teleop_begins_detected = False
+            traceback_lines = []
+            success_message_detected = False
+
+            print("wait for 'Start Recording' output...")
+
+            monitor_start_time = time.time()
+            timeout = 300
+
+            # --------------------------First run-----------------
+            in_traceback = False
+            for line in iter(process.stdout.readline, ''):
+                if line:
+                    line = line.strip()
+                    print(f"[TELEOP] {line}")
+
+                    if "Traceback (most recent call last):" in line:
+                        in_traceback = True
+                        traceback_lines = [line]
+                    elif in_traceback:
+                        if line == "" or ("ms]" in line):
+                            in_traceback = False
+                            if traceback_lines:
+                                test_result["error"] = traceback_lines
+                                last_three_lines = traceback_lines[-3:] if len(traceback_lines) >= 3 else traceback_lines
+                                test_result["desc"] = "\n".join(last_three_lines)
+                        else:
+                            traceback_lines.append(line)
+
+                    if "Start Recording" in line and not teleop_begins_detected:
+                        teleop_begins_detected = True
+                        print("Detect keyword 'Start Recording', start to monitor...")
+                        break
+
+                    if "Starting teleoperation" in line:
+                        print("Detect keyword 'Starting teleoperation', teleop_main is ready for input...")
+                        time.sleep(8)  # wait a bit to ensure teleop is fully started
+                        send_keyboard_input(process, "b")
+
+            if process.poll() is not None:
+                print("Process exited during main loop, reading remaining output...")
+                remaining_output = process.stdout.read()
+                if remaining_output:
+                    print(f"[REMAINING OUTPUT] {remaining_output}")
+                    for line in remaining_output.split('\n'):
+                        if line.strip():
+                            line = line.strip()
+                            print(f"[TELEOP] {line}")
+                            if "Traceback (most recent call last):" in line:
+                                in_traceback = True
+                                traceback_lines = [line]
+                            elif in_traceback:
+                                if line == "" or ("ms]" in line):
+                                    in_traceback = False
+                                    if traceback_lines:
+                                        test_result["error"] = traceback_lines
+                                        last_three_lines = traceback_lines[-3:] if len(traceback_lines) >= 3 else traceback_lines
+                                        test_result["desc"] = "\n".join(last_three_lines)
+                                else:
+                                    traceback_lines.append(line)
+
+            if in_traceback and traceback_lines:
+                print("Found incomplete traceback after main loop, saving it...")
+                test_result["error"] = traceback_lines
+                last_three_lines = traceback_lines[-3:] if len(traceback_lines) >= 3 else traceback_lines
+                test_result["desc"] = "\n".join(last_three_lines)
+
+            if not teleop_begins_detected:
+                if process.poll() is None:
+                    if time.time() - monitor_start_time > timeout:
+                        # If traceback_lines is non-empty, success should be False
+                        if traceback_lines:
+                            test_result["success"] = False
+                            test_result["desc"] = "Start over 5 minutes but with errors"
+                        else:
+                            test_result["success"] = True
+                            test_result["desc"] = "Start over 5 minutes"
+                        test_result["error"] = traceback_lines
+                        cleanup_process(process)
+                        return test_result["success"]
+                else:
+                    test_result["success"] = False
+                    if not traceback_lines:
+                        test_result["desc"] = "not detect Start keyword, teleop did not start"
+                    else:
+                        last_three_lines = traceback_lines[-3:] if len(traceback_lines) >= 3 else traceback_lines
+                        test_result["desc"] = "\n".join(last_three_lines)
+                    test_result["error"] = traceback_lines
+                return False
+
+            wait_duration = 30
+            print(f"[STEP] Wait {wait_duration}s before first save (with monitoring)...")
+
+            wait_end_time = time.time() + wait_duration
+
+            process_alive = True
+            while time.time() < wait_end_time:
+                if process.poll() is not None:
+                    print(f"[ERROR] Process terminated unexpectedly during the first wait. Exit code: {process.returncode}")
+                    test_result["success"] = False
+                    test_result["desc"] = f"Process terminated unexpectedly during the first wait.{wait_duration}"
+                    process_alive = False
+                    break
+                time.sleep(0.1)
+
+            if process_alive:
+                print("[STEP] Sending 't' to save dataset 1...")
+                send_keyboard_input(process, "t")
+                time.sleep(5)
+                rename_dataset(rerun_count, 0)
+            else:
+                return False
+
+            # --------------------------Reset-----------------
+
+            print("[STEP] Sending 'x' to reset...")
+            send_keyboard_input(process, "x")
             print("[STEP] Wait 15s for reset to complete...")
             time.sleep(15)
             print("[STEP] Reset done.")
@@ -292,9 +293,29 @@ def run_teleop(rerun_count, reset_count=0):
             else:
                 return False
 
-        print("[STEP] Terminating teleop_main ...")
+            print("[STEP] Terminating teleop_main ...")
 
-        print(f"[DONE] teleop_main run {rerun_count} finished.\n")
+            print(f"[DONE] teleop_main run {rerun_count} finished.\n")
+        else:
+            print(f"\n[RUN] Start replay: rerun={rerun_count}, reset={reset_count}")
+
+            process = subprocess.Popen(
+                ["python3", "-u", f"{LWLAB_ROOT}/lwlab/scripts/teleop/replay_action_demo.py", f"--dataset_file={DATASET_PATH}/dataset_0_0.hdf5", "--replay_mode=joint_target", "--device=cpu", "--record", "--headless"],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True,
+                bufsize=1,
+                preexec_fn=os.setsid
+            )
+            for line in iter(process.stdout.readline, ''):
+                if "Finished replaying" in line:
+                    print("Detect keyword 'Finished replaying', renaming dataset...")
+                    time.sleep(3)
+                    rename_dataset(rerun_count, 0)
+            print("[STEP] Terminating replay ...")
+
+            print(f"[DONE] replay finished.\n")
 
         if "success" not in test_result:
             test_result["success"] = True
@@ -324,9 +345,13 @@ def main():
 def rename_dataset(rerun_count, reset_count):
     new_name = f"{DATASET_PATH}/dataset_{rerun_count}_{reset_count}.hdf5"
     old_name = f"{DATASET_PATH}/dataset.hdf5"
+    old_name_replay_joint_target = f"{DATASET_PATH}/dataset_0_0_joint_target_replay_record.hdf5"
     if os.path.exists(old_name):
         shutil.move(old_name, new_name)
         print(f"[INFO] Renamed dataset.hdf5 -> {new_name}")
+    elif os.path.exists(old_name_replay_joint_target):
+        shutil.move(old_name_replay_joint_target, new_name)
+        print(f"[INFO] Renamed dataset_0_0_joint_target_replay_record.hdf5 -> {new_name}")
     else:
         print(f"[WARN] dataset.hdf5 not found, skip rename")
 
@@ -342,16 +367,17 @@ def generate_result_json(test_result):
         print(f"fail to create result.json: {e}")
 
 
-import h5py
-import numpy as np
-
-
 def check_dataset_consistency():
     """
     Check data consistency among dataset_0_0.hdf5, dataset_0_1.hdf5, dataset_1_0.hdf5
-    for specified paths under /data/demo_0/.
     Compare first 200 rows of each dataset.
+    For dataset_1_0.hdf5, compare /data/demo_0/actions (in dataset_1_0) with
+    /data/demo_0/joint_targets/joint_pos_target (in others).
     """
+    import os
+    import h5py
+    import numpy as np
+
     datasets = [
         f"{DATASET_PATH}/dataset_0_0.hdf5",
         f"{DATASET_PATH}/dataset_0_1.hdf5",
@@ -363,18 +389,15 @@ def check_dataset_consistency():
         "/data/demo_0/states/articulation/robot/joint_position"
     ]
 
-    test_result = {
-        "success": True,
-        "desc": "",
-        "error": ""
-    }
+    test_result = {"success": True, "desc": "", "error": ""}
     precision = 1e-8
+    max_rows = 300
 
-    # Check if dataset files exist
+    # Check file existence
     for fpath in datasets:
         if not os.path.exists(fpath):
             test_result["success"] = False
-            test_result["error"] += f"missing file: {fpath}\n"
+            test_result["error"] = f"missing file: {fpath}"
             test_result["desc"] = "One or more dataset files not found."
             generate_result_json(test_result)
             return test_result
@@ -384,100 +407,93 @@ def check_dataset_consistency():
     inconsistencies = []
 
     try:
-        # Load all three files
+        # Open all files
         files = [h5py.File(fpath, "r") for fpath in datasets]
+        file_names = [os.path.basename(f) for f in datasets]
+        print("[INFO]      First run : dataset_0_0.hdf5")
+        print("[INFO]          Reset : dataset_0_1.hdf5")
+        print("[INFO]         Replay : dataset_1_0.hdf5")
 
-        for h5_path in check_paths:
-            print(f"[CHECK] Comparing data at {h5_path} ...")
-            try:
-                # Read data from each file
-                data_list = []
-                row_counts = []
+        # Compare each pair
+        for i in range(len(files)):
+            for j in range(i + 1, len(files)):
+                f1, f2 = files[i], files[j]
+                n1, n2 = file_names[i], file_names[j]
 
-                for f in files:
-                    if h5_path not in f:
-                        raise KeyError(f"path not found: {h5_path}")
-                    dset = f[h5_path][()]
-                    if dset.ndim == 0:  # Empty dataset
-                        raise ValueError(f"empty data at {h5_path}")
-                    data_list.append(dset)
-                    row_counts.append(dset.shape[0])
+                print(f"\n[PAIR] Comparing {n1} and {n2}")
 
-                # Use the shortest row length among all datasets to avoid index overflow
-                min_rows = min(row_counts)
-                if min_rows == 0:
-                    raise ValueError(f"no valid rows found at {h5_path}")
+                for h5_path in check_paths:
+                    # Determine which internal paths to use
+                    if "dataset_1_0" in n1 and "actions" in h5_path:
+                        path1, path2 = "/data/demo_0/actions", "/data/demo_0/joint_targets/joint_pos_target"
+                    elif "dataset_1_0" in n2 and "actions" in h5_path:
+                        path1, path2 = "/data/demo_0/joint_targets/joint_pos_target", "/data/demo_0/actions"
+                    else:
+                        path1 = path2 = h5_path
 
-                # Align all datasets by truncating to the shortest length
-                data_list = [d[:min_rows] for d in data_list]
+                    # Skip if either path missing
+                    if path1 not in f1 or path2 not in f2:
+                        continue
 
-                # Print debug info
-                print(f"[INFO] Using first {min_rows} rows for {h5_path}")
+                    try:
+                        data1 = f1[path1][()]
+                        data2 = f2[path2][()]
+                        min_rows = min(data1.shape[0], data2.shape[0], max_rows)
+                        data1, data2 = data1[:min_rows], data2[:min_rows]
 
-                # Compare with numpy
-                base = data_list[0]
-                for i, d in enumerate(data_list[1:], start=1):
-                    if not np.allclose(base, d, atol=precision, equal_nan=True):
-                        all_ok = False
+                        print(f"[CHECK] Comparing first {min_rows} rows: {n1}:{path1} vs {n2}:{path2}")
 
-                        # Find difference locations
-                        diff_mask = ~np.isclose(base, d, atol=precision, equal_nan=True)
-                        diff_indices = np.argwhere(diff_mask)
-
-                        # Extract a few sample differences
-                        diff_samples = []
-                        for idx in diff_indices[:10]:  # Show first 10 differences
-                            idx_tuple = tuple(idx)
-                            base_val = base[idx_tuple]
-                            diff_val = d[idx_tuple]
-                            diff_samples.append({
-                                "index": idx_tuple,
-                                "base_value": float(base_val),
-                                "compare_value": float(diff_val)
+                        if not np.allclose(data1, data2, atol=precision, equal_nan=True):
+                            all_ok = False
+                            diff_mask = ~np.isclose(data1, data2, atol=precision, equal_nan=True)
+                            diff_indices = np.argwhere(diff_mask)
+                            diff_samples = []
+                            for idx in diff_indices[:10]:
+                                idx_tuple = tuple(idx)
+                                diff_samples.append({
+                                    "index": idx_tuple,
+                                    "file1_value": float(data1[idx_tuple]),
+                                    "file2_value": float(data2[idx_tuple])
+                                })
+                            inconsistencies.append({
+                                "files": f"{n1} vs {n2}",
+                                "path1": path1,
+                                "path2": path2,
+                                "rows_compared": int(min_rows),
+                                "diff_count": len(diff_indices),
+                                "diff_samples": diff_samples
                             })
-
-                        diff_coords = [list(map(int, idx)) for idx in diff_indices[:10]]
-
+                            print(f"[DIFF] {len(diff_indices)} differences found between {n1}:{path1} and {n2}:{path2}")
+                            for ex in diff_samples:
+                                print(f"  index {ex['index']}: {ex['file1_value']} != {ex['file2_value']}")
+                    except Exception as e:
+                        all_ok = False
+                        print(f"[ERROR] Compare failed at {h5_path}: {e}")
                         inconsistencies.append({
+                            "files": f"{n1} vs {n2}",
                             "path": h5_path,
-                            "compare": f"dataset_0_0.hdf5 vs dataset_{i//2}_{i%2}.hdf5",
-                            "diff_coords": diff_coords,
-                            "note": f"{len(diff_indices)} differences found (showing first 10)"
+                            "error": str(e)
                         })
 
-                        print(f"[DIFF] Found difference at {h5_path}, total {len(diff_indices)} differences")
-                        for ex in diff_samples:
-                            print(f"index {ex['index']}: {ex['base_value']} != {ex['compare_value']}")
-
-            except Exception as e:
-                all_ok = False
-                inconsistencies.append({
-                    "path": h5_path,
-                    "error": str(e)
-                })
-                print(f"[ERROR] {e}")
-
-        # Close all opened files
         for f in files:
             f.close()
 
-        # Summarize results
         if all_ok:
+            print("[CHECK] All datasets are consistent.")
             test_result["success"] = True
             test_result["desc"] = "All compared datasets are consistent."
             test_result["error"] = "none"
-            print("[CHECK] All datasets are consistent.")
         else:
+            print("[CHECK] Inconsistencies detected!")
             test_result["success"] = False
             test_result["desc"] = "Inconsistencies found in datasets."
             test_result["error"] = inconsistencies
-            print("[CHECK] Inconsistencies detected!")
 
     except Exception as e:
+        print(f"[CHECK] Fatal error: {e}")
         test_result["success"] = False
         test_result["desc"] = "Error during consistency checking."
         test_result["error"] = str(e)
-        print(f"[CHECK] Fatal error: {e}")
 
     generate_result_json(test_result)
     return test_result

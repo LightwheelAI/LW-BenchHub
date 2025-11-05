@@ -694,8 +694,9 @@ def main():
 
         if args_cli.enable_optimization:
             optimize_rendering(new_env)
-        teleop_interface.refresh_env(new_env)
-        teleop_interface.reset()
+        if teleop_interface is not None:
+            teleop_interface.refresh_env(new_env)
+            teleop_interface.reset()
         if not args_cli.headless:
             viewports, overlay_window = setup_env_config_with_args(new_env, viewports)
         else:
@@ -730,6 +731,7 @@ def main():
         rollback_to_checkpoint_flag = False
         should_reset_env_instance = False
         should_reset_env_keep_placement = True  # Default to keep placement
+        ci_start_flag = None
 
         rate_limiter = RateLimiter(args_cli.step_hz)
 
@@ -772,6 +774,7 @@ def main():
             "async_actions_executed": 0,
             "buffer_utilization": 0.0
         }
+        action_idx = 0
 
         # simulate environment
         while simulation_app.is_running():
@@ -786,6 +789,17 @@ def main():
                     if command.lower() == "r":
                         reset_recording_instance()
 
+                    if command.lower() == "x":
+                        reset_env_instance_keep_placement()
+                        action_idx = 0
+
+                    if command.lower() == "b":
+                        start_teleoperation()
+                        ci_start_flag = True
+
+                    if command.lower() == "t":
+                        flush_recorder_manager()
+
             if flush_recorder_manager_flag:
                 env.recorder_manager.export_episodes()
                 env.recorder_manager.reset()
@@ -797,11 +811,29 @@ def main():
             # run everything in inference mode
             # with torch.inference_mode():
             teleop_start = time.time()
-            if teleop_interface is None:
+            if teleop_interface is None and args_cli.teleop_device == "vr-controller":
+                import torch
+                if ci_start_flag:
+                    with open("ci_run/g1wbc_action_data/actions.txt", "r") as f:
+                        actions_history = [torch.tensor(eval(line.strip())) for line in f.readlines()]
+                    if action_idx < len(actions_history):
+                        actions = actions_history[action_idx]
+                        action_idx += 1
+                    else:
+                        break
+                else:
+                    actions = None
+
+            elif teleop_interface is None:
                 import torch
                 actions = torch.zeros(env.action_space.shape)
             else:
                 actions = teleop_interface.advance()
+
+            if actions is not None:
+                env.latest_action = actions.clone()
+            else:
+                env.latest_action = None
 
             teleop_time = time.time() - teleop_start
             frame_analyzer.record_stage('teleop_advance', teleop_time)
@@ -834,6 +866,8 @@ def main():
                     env_cfg = env.cfg
                     should_reset_env_instance = False
                     should_reset_env_keep_placement = True
+                    action_idx = 0
+                    ci_start_flag = None
                 elif should_reset_recording_instance:
                     env.reset()
                     should_reset_recording_instance = False

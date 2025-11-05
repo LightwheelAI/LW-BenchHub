@@ -42,11 +42,11 @@ def plot_metrics(config_path):
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    kitchen_clipping = data["kitchen_clipping"]
+    clipping = data["clipping"]
 
     metrics_to_plot = ["force", "mean_force", "force_variance", "delta_force"]
 
-    parsed = {m: parse_metric(kitchen_clipping[m]) for m in metrics_to_plot}
+    parsed = {m: parse_metric(clipping[m]) for m in metrics_to_plot}
 
     # 确定纵轴范围
     if "ymin" in cfg and "ymax" in cfg:

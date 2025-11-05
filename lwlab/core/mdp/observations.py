@@ -24,9 +24,6 @@ from isaaclab.managers import SceneEntityCfg
 from isaaclab.sensors import FrameTransformer
 from isaaclab.envs import ManagerBasedRLEnv
 
-if TYPE_CHECKING:
-    from isaaclab.envs import ManagerBasedRLEnv
-
 
 def rel_ee_object_distance(env: ManagerBasedRLEnv) -> torch.Tensor:
     """The distance between the end-effector and the object."""

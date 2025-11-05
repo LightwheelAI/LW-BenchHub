@@ -624,7 +624,7 @@ def main():
     save_metrics()
     # Close environment after replay in complete
     plural_trailing_s = "s" if replayed_episode_count > 1 else ""
-    print(f"Finished replaying {replayed_episode_count} episode{plural_trailing_s}.")
+    print(f"Finished replaying {replayed_episode_count} episode{plural_trailing_s}.", flush=True)
     if args_cli.record:
         env.recorder_manager.export_episodes()
 

@@ -9,3 +9,4 @@ python3  /workspace/lwlab/ci_run/teleop_ci.py --task CloseToasterOvenDoor
 python3  /workspace/lwlab/ci_run/teleop_ci.py --task OpenDishwasher
 python3  /workspace/lwlab/ci_run/teleop_ci.py --task CloseDishwasher
 python3  /workspace/lwlab/ci_run/check_consistency.py --task OpenDishwasher
+python3  /workspace/lwlab/ci_run/check_consistency.py --task OpenDrawer

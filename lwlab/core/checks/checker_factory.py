@@ -1,18 +1,23 @@
 from lwlab.core.checks.motion_checker import MotionChecker
 from lwlab.core.checks.kitchen_coffee_collision_checker import KitchenCoffeeCollisionChecker
 from lwlab.core.checks.gripper_collision_checker import GripperCollisionChecker
-from lwlab.core.checks.kitchen_clipping_checker import KitchenClippingChecker
+from lwlab.core.checks.clipping_checker import ClippingChecker
 from lwlab.core.checks.actuator_velocity_jump_checker import VelocityJumpChecker
 from lwlab.core.checks.start_object_move_checker import StartObjectMoveChecker
-
+from lwlab.core.checks.obj_drop_checker import ObjDropChecker
+from lwlab.core.checks.arm_joint_pos_checker import ArmJointAngleChecker
+from lwlab.core.checks.action_state_inconsistency_checker import ActionStateInconsistencyChecker
 
 CHECKER_REGISTRY = {
     "motion": MotionChecker,
     "kitchen_coffee_collision": KitchenCoffeeCollisionChecker,
     "gripper_collision": GripperCollisionChecker,
-    "kitchen_clipping": KitchenClippingChecker,
+    "clipping": ClippingChecker,
     "velocity_jump": VelocityJumpChecker,
     "start_object_move": StartObjectMoveChecker,
+    "obj_drop": ObjDropChecker,
+    "arm_joint_angle": ArmJointAngleChecker,
+    "action_state_inconsistency": ActionStateInconsistencyChecker,
 }
 
 

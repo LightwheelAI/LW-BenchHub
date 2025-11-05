@@ -22,6 +22,7 @@ from .fixture_types import FixtureType
 from isaaclab.utils import math as math_utils
 import lwlab.utils.math_utils.transform_utils.torch_impl as T
 from lwlab.utils import object_utils as OU
+import re
 
 
 class CoffeeMachine(Fixture):
@@ -94,29 +95,79 @@ class CoffeeMachine(Fixture):
             env (ManagerBasedRLEnv): The environment to check the state of the coffee machine in
         """
         start_button_pressed = torch.tensor([False], device=self.device).repeat(self.num_envs)
-        gripper_names = [name for name in list(env.scene.sensors.keys()) if "gripper" in name and "contact" in name]
-        for _, button in self.start_button_infos.items():
-            for gripper_name in gripper_names:
-                start_button_pressed |= OU.check_contact(env, gripper_name.replace("_contact", ""), str(button[0].GetPrimPath()))
+        button_press_states = {}
+        gripper_names = [
+            name for name in list(env.scene.sensors.keys())
+            if "gripper" in name and "contact" in name
+        ]
+        coffee_keys = [
+            k for k in env.scene.articulations.keys()
+            if "coffee_machine" in k.lower()
+        ]
+        if not coffee_keys:
+            return torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
 
-        # detect button press (only when False to True)
+        coffee_key = coffee_keys[0]
+        articulation = env.scene.articulations[coffee_key]
+        joint_names = articulation.joint_names
+
+        for button_key, buttons in self.start_button_infos.items():
+            for button_prim in buttons:
+                prim_path = str(button_prim.GetPath())
+
+                match = re.search(r'(Button[0-9]+)', prim_path, re.IGNORECASE)
+                if not match:
+                    continue
+
+                button_name = match.group(1)
+                button_joint_name = f"{button_name}_joint"
+
+                button_joint_name_lower = button_joint_name.lower()
+                joint_lookup = [jn for jn in joint_names if jn.lower() == button_joint_name_lower]
+                if not joint_lookup:
+                    continue
+
+                button_joint_name = joint_lookup[0]
+                button_joint_index = joint_names.index(button_joint_name)
+
+                joint_pos = articulation.data.joint_pos[:, button_joint_index]
+                threshold = torch.tensor([0.0001], device=self.device).repeat(self.num_envs)
+                button_pressed = (joint_pos >= threshold)
+
+                button_press_states[button_key] = button_pressed
+                start_button_pressed |= button_pressed
+
+        # detect button press (only when False -> True)
         for env_id in range(self.num_envs):
             if not self._turned_on[env_id] and start_button_pressed[env_id]:
                 self._turned_on[env_id] = True
 
-        # if turned_on is True, accumulate time
+        # accumulate time if active
         if torch.any(self._turned_on):
             self._activation_time[self._turned_on] += 1 / 50
 
-        # judge if the coffee machine is active
         self._active = self._turned_on & (self._activation_time < self._display_duration)
 
-        # update coffee liquid sites visibility
+        has_single_button = "start_button" in button_press_states
+        has_dual_buttons = "start_button_1" in button_press_states and "start_button_2" in button_press_states
+
         for site_name in self._coffee_liquid_site_names:
             sites_for_name = self.coffee_liquid_sites[site_name]
+
+            if has_single_button and not has_dual_buttons and site_name == "coffee_liquid":
+                control_state = button_press_states["start_button"]
+            elif has_dual_buttons and site_name == "coffee_liquid_left":
+                control_state = button_press_states["start_button_1"]
+            elif has_dual_buttons and site_name == "coffee_liquid_right":
+                control_state = button_press_states["start_button_2"]
+            elif has_dual_buttons and site_name == "coffee_liquid":
+                control_state = button_press_states["start_button_1"] | button_press_states["start_button_2"]
+            else:
+                continue
+
             for i, site in enumerate(sites_for_name):
                 if site is not None and site.IsValid():
-                    if self._active[i]:
+                    if control_state[i]:
                         site.GetAttribute("visibility").Set("inherited")
                         site.GetAttribute("purpose").Set("default")
                     else:

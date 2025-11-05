@@ -1,4 +1,5 @@
 from lwlab.core.checks.checker_factory import get_checkers_from_cfg
+import time
 
 
 def get_task_desc(isaaclab_arena_env):
@@ -92,6 +93,16 @@ def setup_task_description_ui(isaaclab_arena_env, env):
                            "border_radius": 4}
                 )
 
+                yellow_warning_label = ui.Label(
+                    "",
+                    alignment=ui.Alignment.LEFT_TOP,
+                    style={"color": 0xFF00FFFF,
+                           "font_size": 18,
+                           "background_color": 0x00000080,
+                           "padding": 6,
+                           "border_radius": 4}
+                )
+
                 if checkers:
                     for checker in checkers:
                         label = ui.Label(
@@ -112,6 +123,7 @@ def setup_task_description_ui(isaaclab_arena_env, env):
     try:
         setattr(env, "_task_desc_label", task_desc_label)
         setattr(env, "_warning_label", warning_label)
+        setattr(env, "_yellow_warning_label", yellow_warning_label)
         setattr(env, "_checker_labels", checker_labels)
         setattr(env, "_base_desc", base_desc if base_desc is not None else desc)
     except Exception as e:
@@ -143,10 +155,29 @@ def update_checkers_status(env, warning_text: str):
     """
     if not hasattr(env, "_checker_labels"):
         return
+    warning_label = getattr(env, "_warning_label", None)
+    yellow_warning_label = getattr(env, "_yellow_warning_label", None)
 
     for checker_name, label in env._checker_labels.items():
-        if warning_text and checker_name in warning_text:
-            label.style = {**label.style, "color": 0xFF000080}
+        if not warning_text:
+            label.style = {**label.style, "color": 0xB300FF00}
+            if yellow_warning_label:
+                yellow_warning_label.text = ""
+            if warning_label:
+                warning_label.text = ""
+
+        elif f"{checker_name}_1" in warning_text:
+            label.style = {**label.style, "color": 0xFF00FFFF}
+            yellow_warning_label.text = warning_text
+            if warning_label:
+                warning_label.text = ""
+
+        elif checker_name in warning_text:
+            label.style = {**label.style, "color": 0xFF0000FF}
+            warning_label.text = warning_text
+            if yellow_warning_label:
+                yellow_warning_label.text = ""
+
         else:
             label.style = {**label.style, "color": 0xB300FF00}
 

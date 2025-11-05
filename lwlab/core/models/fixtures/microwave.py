@@ -17,7 +17,10 @@ from .fixture import Fixture
 from functools import cached_property
 from .fixture_types import FixtureType
 from isaaclab.envs import ManagerBasedRLEnvCfg, ManagerBasedRLEnv
-
+from pxr import UsdGeom, Usd, Gf
+import re
+import lwlab.utils.math_utils.transform_utils.numpy_impl as T
+import numpy as np
 from lwlab.utils.usd_utils import OpenUsd as usd
 from lwlab.utils import object_utils as OU
 
@@ -58,12 +61,119 @@ class Microwave(Fixture):
     def door_name(self):
         return f"{self.microwave_name}_door"
 
-    def update_state(self, env: ManagerBasedRLEnv):
-        start_button_pressed = torch.tensor([False], dtype=torch.bool, device=env.device).repeat(env.num_envs)
-        stop_button_pressed = torch.tensor([False], dtype=torch.bool, device=env.device).repeat(env.num_envs)
-        for gripper_name in [name for name in list(self._env.scene.sensors.keys()) if "gripper" in name and "contact" in name]:
-            start_button_pressed |= OU.check_contact(env, gripper_name.replace("_contact", ""), str(self.button_infos["start_button"][0].GetPrimPath()))
-            stop_button_pressed |= OU.check_contact(env, gripper_name.replace("_contact", ""), str(self.button_infos["stop_button"][0].GetPrimPath()))
+    def update_state(self, env: ManagerBasedRLEnv, threshold=0.01):
+        device = env.device
+        num_envs = env.num_envs
+        button_prims = self.button_infos
+        start_button_pressed = torch.tensor([False], dtype=torch.bool, device=device).repeat(num_envs)
+        stop_button_pressed = torch.tensor([False], dtype=torch.bool, device=device).repeat(num_envs)
+        robot_keys = [
+            k for k in env.scene.articulations.keys()
+            if "robot" in k.lower()
+        ]
+        if not robot_keys:
+            return torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
+
+        robot_key = robot_keys[0]
+        robot_articulation = env.scene.articulations[robot_key]
+        body_names = robot_articulation.body_names
+
+        microwave_keys = [k for k in env.scene.articulations.keys() if "microwave" in k.lower()]
+        if not microwave_keys:
+            return torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
+        microwave_key = microwave_keys[0]
+        microwave_articulation = env.scene.articulations[microwave_key]
+        joint_names = microwave_articulation.joint_names
+        body_names_microwave = microwave_articulation.body_names
+        has_physical_button = any("button" in name.lower() for name in body_names_microwave)
+        if has_physical_button:
+            button_press_states = {}
+
+            start_button_prims = button_prims["start_button"]
+            for button_prim in start_button_prims:
+                prim_path = str(button_prim.GetPath())
+
+                match = re.search(r'(Button[0-9]+)', prim_path, re.IGNORECASE)
+                if not match:
+                    continue
+
+                button_name = match.group(1)
+                button_joint_name = f"{button_name}_joint"
+
+                button_joint_name_lower = button_joint_name.lower()
+                joint_lookup = [jn for jn in joint_names if jn.lower() == button_joint_name_lower]
+                if not joint_lookup:
+                    continue
+
+                button_joint_name = joint_lookup[0]
+                button_joint_index = joint_names.index(button_joint_name)
+
+                joint_pos = microwave_articulation.data.joint_pos[:, button_joint_index]
+                press_threshold = torch.tensor([0.0001], device=device).repeat(num_envs)
+                button_pressed = (joint_pos >= press_threshold)
+
+                button_press_states["start_button"] = button_pressed
+                start_button_pressed |= button_pressed
+
+            stop_button_prims = button_prims["stop_button"]
+            for button_prim in stop_button_prims:
+                prim_path = str(button_prim.GetPath())
+
+                match = re.search(r'(Button[0-9]+)', prim_path, re.IGNORECASE)
+                if not match:
+                    continue
+
+                button_name = match.group(1)
+                button_joint_name = f"{button_name}_joint"
+
+                button_joint_name_lower = button_joint_name.lower()
+                joint_lookup = [jn for jn in joint_names if jn.lower() == button_joint_name_lower]
+                if not joint_lookup:
+                    continue
+
+                button_joint_name = joint_lookup[0]
+                button_joint_index = joint_names.index(button_joint_name)
+
+                joint_pos = microwave_articulation.data.joint_pos[:, button_joint_index]
+                press_threshold = torch.tensor([0.0001], device=device).repeat(num_envs)
+                button_pressed = (joint_pos >= press_threshold)
+
+                button_press_states["stop_button"] = button_pressed
+                stop_button_pressed |= button_pressed
+
+        else:
+            for cube_name in [name for name in robot_articulation.body_names if "cube" in name]:
+                cube_name_index = body_names.index(cube_name.replace("_contact", ""))
+                cube_pos = robot_articulation.data.body_com_pos_w[:, cube_name_index, :]  # (env_num, 3)
+
+                # ---- Start button ----
+                start_button_prims = button_prims["start_button"]
+                start_button_pos = []
+                for button_prim in start_button_prims:
+                    xform = UsdGeom.Xformable(button_prim)
+                    world_mat = xform.ComputeLocalToWorldTransform(Usd.TimeCode.Default())
+                    world_pos = world_mat.ExtractTranslation()
+                    start_button_pos.append(torch.tensor(world_pos, dtype=torch.float32, device=device))
+                start_button_pos = torch.stack(start_button_pos, dim=0).unsqueeze(0).repeat(num_envs, 1, 1)
+
+                dist_start = torch.norm(cube_pos.unsqueeze(1) - start_button_pos, dim=-1)
+                pressed_start = torch.any(dist_start < threshold, dim=-1)
+                start_button_pressed |= pressed_start
+
+                # ---- Stop button ----
+                stop_button_prims = button_prims["stop_button"]
+                stop_button_pos = []
+                for button_prim in stop_button_prims:
+                    xform = UsdGeom.Xformable(button_prim)
+                    world_mat = xform.ComputeLocalToWorldTransform(Usd.TimeCode.Default())
+                    world_pos = world_mat.ExtractTranslation()
+                    stop_button_pos.append(torch.tensor(world_pos, dtype=torch.float32, device=device))
+                stop_button_pos = torch.stack(stop_button_pos, dim=0).unsqueeze(0).repeat(num_envs, 1, 1)
+
+                dist_stop = torch.norm(cube_pos.unsqueeze(1) - stop_button_pos, dim=-1)
+                pressed_stop = torch.any(dist_stop < threshold, dim=-1)
+                stop_button_pressed |= pressed_stop
+
         door_open = self.is_open(env)
         self._turned_on = ~door_open & (
             (self._turned_on & ~stop_button_pressed) |
@@ -76,7 +186,11 @@ class Microwave(Fixture):
         button_prims = self.button_infos[button]
         button_pos = []
         for button_prim in button_prims:
-            button_pos.append(torch.tensor(button_prim.GetAttribute("xformOp:translate").Get(), dtype=torch.float32, device=env.device).reshape(-1, 3))
+            xformable = UsdGeom.Xformable(button_prim)
+            transform = xformable.ComputeLocalToWorldTransform(Usd.TimeCode.Default())
+            world_translation = transform.ExtractTranslation()
+            pos = torch.tensor([world_translation[0], world_translation[1], world_translation[2]], dtype=torch.float32, device=env.device).reshape(-1, 3)
+            button_pos.append(pos)
         button_pos = torch.stack(button_pos, dim=0)  # (env_num, 1, 3)
 
         dist = torch.norm(button_pos - ee_pos, dim=-1)  # (env_num, ee_num)
@@ -86,16 +200,22 @@ class Microwave(Fixture):
 
     @cached_property
     def button_infos(self):
-        button_infos = {}
-        for name in ["start_button", "stop_button"]:
-            for prim_path in self.prim_paths:
-                buttons_prim = usd.get_prim_by_prefix(self._env.sim.stage.GetObjectAtPath(prim_path), name, only_xform=False)
-                for button in buttons_prim:
-                    if button is not None and button.IsValid():
-                        if button.GetName() not in button_infos:
-                            button_infos[button.GetName()] = [button]
-                        else:
-                            button_infos[button.GetName()].append(button)
-        for name in ["start_button", "stop_button"]:
-            assert name in button_infos.keys(), f"Button {name} not found!"
+        button_infos = {"start_button": [], "stop_button": []}
+        stage = self._env.sim.stage
+
+        for prim_path in self.prim_paths:
+            root_prim = stage.GetObjectAtPath(prim_path)
+            if not root_prim or not root_prim.IsValid():
+                continue
+
+            for button_name in button_infos.keys():
+                found_prims = usd.get_prim_by_name(root_prim, button_name, only_xform=False)
+                for prim in found_prims:
+                    if prim and prim.IsValid():
+                        button_infos[button_name].append(prim)
+
+        missing = [k for k, v in button_infos.items() if not v]
+        if missing:
+            raise ValueError(f"Missing buttons: {missing} in microwave {self.name}")
+
         return button_infos

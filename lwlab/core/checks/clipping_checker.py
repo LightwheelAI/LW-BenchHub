@@ -6,14 +6,14 @@ from isaaclab.sensors import ContactSensorCfg
 from lwlab.utils.object_utils import calculate_contact_force
 
 
-class KitchenClippingChecker(BaseChecker):
-    type = "kitchen_clipping"
+class ClippingChecker(BaseChecker):
+    type = "clipping"
 
     def __init__(self, warning_on_screen=False):
         super().__init__(warning_on_screen)
         self._init_state()
 
-    def _init_state(self, w=5, spike_th=100, mean_force_th=150, stable_var_th=5.0):
+    def _init_state(self, w=3, spike_th=100, mean_force_th=150, stable_var_th=5.0):
         self._clipping_warning_frame_count = 0
         self._clipping_warning_text = ""
         self._clipping_counts = 0
@@ -26,11 +26,13 @@ class KitchenClippingChecker(BaseChecker):
         self.last_force = 0
         self._frame_count = 0
         self._force_events = []
+        self._objects_initialized = False
+        self._last_result = {"success": True, "metrics": {}, "warning_text": ""}
         self.history_metrics = {
-            "force": [],
-            "mean_force": [],
-            "force_variance": [],
-            "delta_force": [],
+            # "force": [],
+            # "mean_force": [],
+            # "force_variance": [],
+            # "delta_force": [],
             "clipping_times": [],
             "clipping_frames": [],
         }
@@ -39,7 +41,14 @@ class KitchenClippingChecker(BaseChecker):
         self._init_state()
 
     def _check(self, env):
-        return self._check_clipping(env)
+        self._frame_count += 1
+
+        if self._frame_count % 2 != 0:
+            return self._last_result
+
+        result = self._check_clipping(env)
+        self._last_result = result
+        return result
 
     def _check_clipping(self, env):
         """
@@ -57,12 +66,10 @@ class KitchenClippingChecker(BaseChecker):
         else:
             self._clipping_warning_frame_count = 0
             self._clipping_warning_text = ""
-        try:
 
+        try:
             left_gripper = "left_gripper"
             right_gripper = "right_gripper"
-
-            self._frame_count += 1
 
             current_frame = self._frame_count
 
@@ -79,6 +86,8 @@ class KitchenClippingChecker(BaseChecker):
             else:
                 right_force_val = right_force[0].item()
 
+            left_force_val = left_force.item() if left_force.dim() == 0 else left_force[0].item()
+            right_force_val = right_force.item() if right_force.dim() == 0 else right_force[0].item()
             force = max(left_force_val, right_force_val)
 
             self.forces.append(force)
@@ -91,8 +100,6 @@ class KitchenClippingChecker(BaseChecker):
             deltaF = abs(force - getattr(self, "last_force", 0.0))
             self.last_force = force
 
-            # print(f"force: {force}, mean: {mu}, var: {var}, deltaF: {deltaF}")
-
             last_event = self._force_events[-1] if self._force_events else None
             if (last_event is None) or (last_event.get("end") is not None):
                 if force > 2:
@@ -101,9 +108,9 @@ class KitchenClippingChecker(BaseChecker):
                 if force < 2 and last_event.get("end") is None:
                     last_event["end"] = current_frame
                     for f in last_event["candidates"]:
-                        if last_event["start"] + 100 <= f <= last_event["end"] - 70:
+                        if last_event["start"] + 50 <= f <= last_event["end"] - 35:
                             if (self._clipping_warning_frame_count == 0):
-                                self._clipping_warning_text = "kitchen_clipping Warning: Contact forces too high, there may be << Clipping >> happens"
+                                self._clipping_warning_text = "clipping Warning: Contact forces too high, there may be << Clipping >> happens"
                                 self._clipping_counts += 1
                                 self._clipping_frames.append(current_frame)
                                 self._clipping_warning_frame_count += 1
@@ -119,15 +126,13 @@ class KitchenClippingChecker(BaseChecker):
 
                 start = ev["start"]
                 end = ev.get("end")
-                window_start = start + 70
+                window_start = start + 35
 
                 if condition_now and current_frame >= window_start:
                     if end is not None:
-                        if current_frame <= end - 70:
+                        if current_frame <= end - 35:
                             if not ev["candidates"] or ev["candidates"][-1] != current_frame:
                                 ev["candidates"].append(current_frame)
-                        else:
-                            pass
                     else:
                         if not ev["candidates"] or ev["candidates"][-1] != current_frame:
                             ev["candidates"].append(current_frame)
@@ -135,9 +140,9 @@ class KitchenClippingChecker(BaseChecker):
                 if ev["candidates"]:
                     if end is None:
                         f = ev["candidates"][0]
-                        if current_frame >= f + 70:
+                        if current_frame >= f + 35:
                             if self._clipping_warning_frame_count == 0:
-                                self._clipping_warning_text = "kitchen_clipping Warning: Contact forces too high, there may be << Clipping >> happens"
+                                self._clipping_warning_text = "clipping Warning: Contact forces too high, there may be << Clipping >> happens"
                                 self._clipping_counts += 1
                                 self._clipping_frames.append(current_frame)
                                 self._clipping_warning_frame_count += 1
@@ -148,9 +153,9 @@ class KitchenClippingChecker(BaseChecker):
                                 break
                     else:
                         for f in ev["candidates"]:
-                            if start + 70 <= f <= end - 70:
+                            if start + 35 <= f <= end - 35:
                                 if self._clipping_warning_frame_count == 0:
-                                    self._clipping_warning_text = "kitchen_clipping Warning: Contact forces too high, there may be << Clipping >> happens"
+                                    self._clipping_warning_text = "clipping Warning: Contact forces too high, there may be << Clipping >> happens"
                                     self._clipping_counts += 1
                                     self._clipping_frames.append(current_frame)
                                     self._clipping_warning_frame_count += 1
@@ -165,15 +170,12 @@ class KitchenClippingChecker(BaseChecker):
             if len(self._force_events) > 500:
                 self._force_events = self._force_events[-200:]
 
-            if self._clipping_counts > 0:
-                success = False
-            else:
-                success = True
+            success = self._clipping_counts == 0
 
-            self.history_metrics["force"].append(float(force))
-            self.history_metrics["mean_force"].append(float(mu))
-            self.history_metrics["force_variance"].append(float(var))
-            self.history_metrics["delta_force"].append(float(deltaF))
+            # self.history_metrics["force"].append(float(force))
+            # self.history_metrics["mean_force"].append(float(mu))
+            # self.history_metrics["force_variance"].append(float(var))
+            # self.history_metrics["delta_force"].append(float(deltaF))
             self.history_metrics["clipping_times"] = int(self._clipping_counts)
             self.history_metrics["clipping_frames"] = list(self._clipping_frames)
             self.history_metrics["success"] = success

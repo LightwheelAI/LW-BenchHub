@@ -345,7 +345,7 @@ class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
                 "motion": {
                     "warning_on_screen": False
                 },
-                "kitchen_clipping": {
+                "clipping": {
                     "warning_on_screen": False
                 },
                 "velocity_jump": {
@@ -358,7 +358,7 @@ class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
                 "motion": {
                     "warning_on_screen": False
                 },
-                "kitchen_clipping": {
+                "clipping": {
                     "warning_on_screen": False
                 },
                 "velocity_jump": {

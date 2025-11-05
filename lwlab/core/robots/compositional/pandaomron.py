@@ -255,7 +255,6 @@ class PandaOmronCameraCfg:
 from lwlab.core.robots.robot_arena_base import EmbodimentBasePolicyObservationCfg
 from isaaclab.managers import ObservationTermCfg as ObsTerm
 import lwlab.core.mdp as lwlab_mdp
-from isaaclab_tasks.manager_based.manipulation.stack.mdp.observations import ee_frame_pos, ee_frame_quat, gripper_pos
 
 
 @configclass

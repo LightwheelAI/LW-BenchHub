@@ -17,75 +17,74 @@ class VelocityJumpChecker(BaseChecker):
         self._velocity_jump_warning_frame_count = 0
         self._velocity_jump_warning_text = ""
         self._frame_count = 0
+        self._frame_counter = 0
+        self._last_result = {"success": True, "warning_text": "", "metrics": {}}
 
     def reset(self):
         self._init_state()
 
     def _check(self, env):
-        return self._check_velocity_jump(env)
+        self._frame_counter += 1
+        if self._frame_counter % 2 != 0:
+            return self._last_result
+
+        result = self._check_velocity_jump(env)
+        self._last_result = result
+        return result
 
     def _check_velocity_jump(self, env):
         """
-        Check if the velocity jump happens.
-        Calculates the velocity jump status.
-
-        Returns:
-            dict: Dictionary containing total velocity jump times.
+        Check if velocity jump happens for bodies containing 'arm' in their name.
         """
         self.env = env
-        jump_violations = {}
         self._frame_count += 1
+        self._jump_violations = {}
 
-        current_body_poses = self.env.scene.articulations['robot'].data.body_com_pose_w[0]
-        body_names = self.env.scene.articulations['robot'].data.body_names
+        robot = env.scene.articulations['robot']
+        current_body_poses = robot.data.body_com_pose_w[0]
+        body_names = robot.data.body_names
+
+        if not hasattr(self, "_arm_indices") or not self._arm_indices:
+            self._arm_indices = [i for i, name in enumerate(body_names) if "arm" in name.lower()]
+            if not self._arm_indices:
+                return {"success": True, "warning_text": "", "metrics": {}}
+
+        arm_indices = self._arm_indices
 
         if self._prev_body_poses is None:
             self._prev_body_poses = current_body_poses.clone()
             return {"success": True, "warning_text": "", "metrics": {}}
 
-        velocities = []
-        for i in range(len(body_names)):
-            if i < len(current_body_poses) and i < len(self._prev_body_poses):
-                pos_diff = current_body_poses[i][:3] - self._prev_body_poses[i][:3]
-                velocity = torch.norm(pos_diff) / self.env.step_dt
-                velocities.append(velocity)
-            else:
-                velocities.append(torch.tensor(0.0, device=current_body_poses.device))
+        prev_pos = self._prev_body_poses[arm_indices, :3]
+        curr_pos = current_body_poses[arm_indices, :3]
+
+        pos_diff = curr_pos - prev_pos
+        velocities = torch.norm(pos_diff, dim=1) / (2 * self.env.step_dt)
 
         if self._prev_velocities is None:
-            self._prev_velocities = velocities
+            self._prev_velocities = velocities.clone()
             self._prev_body_poses = current_body_poses.clone()
             return {"success": True, "warning_text": "", "metrics": {}}
 
-        fast_bodies = []
+        v_diff = torch.abs(velocities - self._prev_velocities)
+        over_threshold = v_diff > self.jump_threshold
 
-        for i, body_name in enumerate(body_names):
-            curr_v = velocities[i]
-            prev_v = self._prev_velocities[i]
-            v_diff = abs(curr_v - prev_v)
-
-            if v_diff > self.jump_threshold:
-                jump_violations[body_name] = {
-                    "velocity_jump": v_diff.item(),
-                    "prev_velocity": prev_v.item(),
-                    "curr_velocity": curr_v.item()
-                }
-
-                if body_name not in self._velocity_jump_counts:
-                    self._velocity_jump_counts[body_name] = 0
-                self._velocity_jump_counts[body_name] += 1
-
-                if len(fast_bodies) < 3:
-                    fast_bodies.append(body_name)
+        if over_threshold.any():
+            for i, flag in enumerate(over_threshold):
+                if flag:
+                    body_name = body_names[arm_indices[i]]
+                    self._jump_violations[body_name] = {
+                        "velocity_jump": v_diff[i].item(),
+                        "prev_velocity": self._prev_velocities[i].item(),
+                        "curr_velocity": velocities[i].item()
+                    }
+                    self._velocity_jump_counts[body_name] = self._velocity_jump_counts.get(body_name, 0) + 1
 
         if self._frame_count > 60:
+            fast_bodies = list(self._jump_violations.keys())[:3]
             if fast_bodies and self._velocity_jump_warning_frame_count == 0:
-                if len(fast_bodies) == 1:
-                    self._velocity_jump_warning_text = f"velocity_jump Warning: Body <<{fast_bodies[0]}>> velocity jump too large"
-                elif len(fast_bodies) == 2:
-                    self._velocity_jump_warning_text = f"velocity_jump Warning: Bodies <<{fast_bodies[0]}>>, <<{fast_bodies[1]}>> velocity jump too large"
-                else:
-                    self._velocity_jump_warning_text = f"velocity_jump Warning: Bodies <<{fast_bodies[0]}>>, <<{fast_bodies[1]}>>, <<{fast_bodies[2]}>> velocity jump too large"
+                joined = ", ".join(f"<<{b}>>" for b in fast_bodies)
+                self._velocity_jump_warning_text = f"velocity_jump Warning: Bodies {joined} velocity jump too large"
                 self._velocity_jump_warning_frame_count = 1
             elif self._velocity_jump_warning_frame_count > 0:
                 self._velocity_jump_warning_frame_count += 1
@@ -93,10 +92,10 @@ class VelocityJumpChecker(BaseChecker):
                     self._velocity_jump_warning_text = ""
                     self._velocity_jump_warning_frame_count = 0
 
-        self._prev_velocities = velocities
+        self._prev_velocities = velocities.clone()
         self._prev_body_poses = current_body_poses.clone()
 
-        success = len(jump_violations) == 0
+        success = len(self._velocity_jump_counts) == 0
         metrics = self.get_velocity_jump_metrics()
         metrics["success"] = success
 
@@ -107,12 +106,10 @@ class VelocityJumpChecker(BaseChecker):
         }
 
     def get_velocity_jump_metrics(self):
-        """
-        Calculate the metrics for velocity jump.
-        """
+        """Calculate the metrics for velocity jump."""
         metrics = {}
         if self._velocity_jump_counts:
-            robot_metrics = {name: count for name, count in self._velocity_jump_counts.items() if count > 0}
+            robot_metrics = {k: v for k, v in self._velocity_jump_counts.items() if v > 0}
             if robot_metrics:
                 metrics["robot"] = robot_metrics
         return metrics
