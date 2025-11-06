@@ -857,15 +857,6 @@ gym.register(
 )
 
 gym.register(
-    id="Robocasa-Task-L90K1PutTheBlackBowlOnTopOfTheCabinet",
-    entry_point="isaaclab.envs:ManagerBasedRLEnv",
-    kwargs={
-        "env_cfg_entry_point": f"{__name__}.libero_90.libero_90_put_the_black_bowl_on_top_of_the_cabinet:L90K1PutTheBlackBowlOnTopOfTheCabinet",
-    },
-    disable_env_checker=True,
-)
-
-gym.register(
     id="Robocasa-Task-L90S1PickUpTheBookAndPlaceItInTheFrontCompartmentOfTheCaddy",
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
     kwargs={
