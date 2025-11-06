@@ -13,12 +13,15 @@
 # limitations under the License.
 
 import os
+import torch
 from datetime import datetime  # Import datetime module
 import time  # Ensure time module is imported since it's used in main
 import traceback
 import logging
 import logging.handlers
 import queue
+import subprocess
+from pathlib import Path
 
 
 LOG_ROOT_DIR = "lwlab_logs"
@@ -491,6 +494,141 @@ def handle_exception_and_log():
         print(f"Error information logged asynchronously")
     except Exception as log_e:
         print(f"Error in async error logging: {log_e}")
+
+
+def get_code_version():
+    """
+    Returns a dict of repo (relative dir) -> sha for all .git repos under the cwd.
+    Uses git CLI for robustness; falls back to parsing HEAD/ref as last resort.
+    """
+    code_versions = {}
+    root_path = Path.cwd().resolve()
+    for git_dir in root_path.rglob('.git'):
+        repo_path = git_dir.parent
+        sha = None
+        # Try 'git rev-parse HEAD' within this repo
+        try:
+            result = subprocess.run(
+                ['git', '--git-dir', str(git_dir), '--work-tree', str(repo_path), 'rev-parse', 'HEAD'],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8', timeout=3
+            )
+            sha = result.stdout.strip() if result.returncode == 0 else None
+        except Exception:
+            pass
+
+        # fallback to parsing HEAD file
+        if not sha:
+            try:
+                git_head_path = git_dir / 'HEAD'
+                if git_head_path.exists():
+                    with open(git_head_path, 'r') as f:
+                        ref = f.readline().strip()
+                    if ref.startswith('ref:'):
+                        ref_rel = ref.split('ref:')[1].strip()
+                        ref_path = git_dir / ref_rel
+                        if ref_path.exists():
+                            with open(ref_path, 'r') as rf:
+                                sha = rf.readline().strip()
+                    else:
+                        # Detached HEAD, direct SHA
+                        sha = ref
+            except Exception:
+                pass
+
+        try:
+            repo_rel_path = str(repo_path.relative_to(root_path))
+            if repo_rel_path == ".":
+                repo_rel_path = repo_path.name
+        except Exception:
+            repo_rel_path = str(repo_path)
+
+        if sha:
+            code_versions[repo_rel_path] = sha
+        else:
+            code_versions[repo_rel_path] = 'UNKNOWN'
+    return code_versions
+
+
+def get_camera_metadata(obs_cameras):
+    metadata = {}
+    for cam_name in obs_cameras.keys():
+        metadata[cam_name] = {
+            "camera_cfg": obs_cameras[cam_name]["camera_cfg"].to_dict(),
+            "using_tags": obs_cameras[cam_name]["tags"],
+        }
+    return metadata
+
+
+def get_action_space_def(env):
+    from lwlab.utils.usd_utils import OpenUsd as usd
+    import lwlab.core.mdp as mdp
+    action_def = []
+    active_term_names = env.action_manager.active_terms
+    robot_prim = usd.get_prim_by_name(name="robot", prim=env.scene.stage.GetPseudoRoot())[0]
+    root_name = usd.find_articulation_root(robot_prim).GetName()
+    for term_name in active_term_names:
+        term_info = {}
+        term = env.action_manager.get_term(term_name)
+        term_info["action_name"] = term_name
+        term_info["action_dim"] = term.action_dim
+        term_info["applied_joint_names"] = term._joint_names
+        term_info["applied_joint_ids"] = term._joint_ids
+        term_info["action_type"] = term.__class__.__name__
+        term_info["root_name"] = root_name
+        term_info["clip"] = term.cfg.clip
+        if type(term.cfg) is mdp.DifferentialInverseKinematicsActionCfg:
+            term_info["eef_link_name"] = term.cfg.body_name
+            term_info["eef_offset"] = term.cfg.body_offset.to_dict()
+            term_info["command_type"] = term.cfg.controller.command_type
+            term_info["action_content"] = [f"{term_info['eef_link_name']}_{i}" for i in ['x', 'y', 'z', 'qw', 'qx', 'qy', 'qz']]
+            term_info["ik_method"] = term.cfg.controller.ik_method
+            term_info["ik_params"] = term.cfg.controller.ik_params
+            term_info["is_relative"] = term.cfg.controller.use_relative_mode
+            if isinstance(term._scale, torch.Tensor):
+                term_info["scale"] = term._scale.cpu().tolist()
+            else:
+                term_info["scale"] = term._scale
+        elif type(term.cfg) is mdp.BinaryJointPositionActionCfg:
+            term_info["open_command"] = term._open_command.tolist()
+            term_info["close_command"] = term._close_command.tolist()
+        elif type(term.cfg) is mdp.RelativeJointPositionActionCfg:
+            term_info["scale"] = term.cfg.scale
+            term_info["offset"] = term.cfg.offset
+            term_info["use_zero_offset"] = term.cfg.use_zero_offset
+        elif type(term.cfg) is mdp.JointPositionActionCfg:
+            term_info["scale"] = term.cfg.scale
+            term_info["offset"] = term.cfg.offset
+            term_info["use_default_offset"] = term.cfg.use_default_offset
+        elif type(term.cfg) is mdp.G1ActionCfg:
+            term_info["preserve_order"] = term.cfg.preserve_order
+            term_info["applied_joint_names"] = term.cfg.joint_names
+            left_eef_link_name = "left_wrist_yaw_link"
+            right_eef_link_name = "right_wrist_yaw_link"
+            term_info["action_content"] = [f"{left_eef_link_name}_{i}" for i in ['x', 'y', 'z', 'qw', 'qx', 'qy', 'qz']] + \
+                                          [f"{right_eef_link_name}_{i}" for i in ['x', 'y', 'z', 'qw', 'qx', 'qy', 'qz']]
+        elif type(term.cfg) is mdp.DexRetargetingActionCfg:
+            finger_names = term.finger_names
+            term_info["action_content"] = [f"{finger_name}_{i}" for finger_name in finger_names for i in ['x', 'y', 'z']]
+        elif type(term.cfg) is mdp.JointPositionMapActionCfg:
+            term_info["action_content"] = ["open_degree"]
+        elif type(term.cfg) is mdp.G1DecoupledWBCActionCfg:
+            left_eef_link_name = "left_wrist_yaw_link"
+            right_eef_link_name = "right_wrist_yaw_link"
+            term_info["action_content"] = ["left_hand_state", "right_hand_state"] + \
+                                          [f"{left_eef_link_name}_{i}" for i in ['x', 'y', 'z', 'qw', 'qx', 'qy', 'qz']] + \
+                                          [f"{right_eef_link_name}_{i}" for i in ['x', 'y', 'z', 'qw', 'qx', 'qy', 'qz']] + \
+                                          ["navigate_vel_x", "navigate_vel_y", "navigate_vel_z"] + \
+                                          ["base_height_cmd"] + \
+                                          ["torso_ori_roll", "torso_ori_pitch", "torso_ori_yaw"]
+        elif type(term.cfg) is mdp.LegPositionActionCfg:
+            term_info["action_content"] = {
+                "squt_mode": ["height_cmd", "unused", "unused", "mode_switch"],
+                "loco_mode": ["fb_vel", "lr_vel", "turning_vel", "mode_switch"],
+            }
+
+        action_def.append(term_info)
+
+    return action_def
 
 
 def copy_dict_for_json(orig_dict):

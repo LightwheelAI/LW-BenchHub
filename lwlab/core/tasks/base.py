@@ -336,6 +336,8 @@ class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
         return self._success_cache >= self._success_count
 
     def init_fixtures(self, env, env_ids=None):
+        # set env instance in task
+        self.env_instance = env
         # register placed fixture
         for name, articulation in self._articulation_assets.items():
             pos = self.assets[name].initial_pose.position_xyz

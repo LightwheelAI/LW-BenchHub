@@ -139,6 +139,17 @@ class OpenUsd:
         return prim.HasAPI(UsdPhysics.RigidBodyAPI)
 
     @staticmethod
+    def find_articulation_root(prim):
+        """Find articulation root"""
+        if OpenUsd.is_articulation_root(prim):
+            return prim
+        for child in prim.GetAllChildren():
+            articulation_root = OpenUsd.find_articulation_root(child)
+            if articulation_root:
+                return articulation_root
+        return None
+
+    @staticmethod
     def get_all_joints(stage):
         """Get all joints"""
         joints = []
@@ -519,6 +530,11 @@ class OpenUsdWrapper:
         if prim is None:
             prim = self.root_prim
         return self._usd.get_object_extent(prim, obj_name)
+
+    def find_articulation_root(self, prim=None):
+        if prim is None:
+            prim = self.root_prim
+        return self._usd.find_articulation_root(prim)
 
     def scale_size(self, scale_factor=(1.0, 1.0, 1.0)):
         return self._usd.scale_size(self.root_prim, scale_factor)

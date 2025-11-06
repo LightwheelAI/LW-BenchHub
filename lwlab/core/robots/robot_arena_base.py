@@ -37,6 +37,7 @@ import lwlab.core.mdp as lwlab_mdp
 from isaaclab_arena.utils.cameras import make_camera_observation_cfg
 from isaaclab_arena.utils.configclass import combine_configclass_instances
 from isaaclab.managers import ObservationTermCfg as ObsTerm
+from lwlab.utils.log_utils import get_camera_metadata, get_action_space_def
 
 
 @configclass
@@ -270,12 +271,14 @@ class LwLabEmbodimentBase(EmbodimentBase):
         cfg.actions = EmbodimentBaseActionsCfg()
         cfg.actions.joint_targets = JointReplayPositionActionCfg()
 
-    def get_ep_meta(self):
+    def get_ep_meta(self, env=None):
         ep_meta = {}
         ep_meta["robot_name"] = self.name
         ep_meta["init_robot_base_pos_anchor"] = self.init_robot_base_pos_anchor.tolist()
         ep_meta["init_robot_base_ori_anchor"] = self.init_robot_base_ori_anchor.tolist()
- 
+        ep_meta["camera_cfg"] = get_camera_metadata(self.observation_cameras)
+        if self.context.execute_mode != ExecuteMode.REPLAY_JOINT_TARGETS:
+            ep_meta["action_space_definition"] = get_action_space_def(env)
         return ep_meta
 
     def set_default_offset_config(self):

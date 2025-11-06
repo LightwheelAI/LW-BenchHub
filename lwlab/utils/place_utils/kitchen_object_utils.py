@@ -148,24 +148,6 @@ def sample_kitchen_object(
                 total_acquire_time = acquire_end_time - acquire_start_time
                 print(f"Total Acquire Time: {total_acquire_time:.4f}s")
 
-            if cache_key:
-                OBJECT_INFO_CACHE[cache_key] = {
-                    'obj_path': obj_path,
-                    'obj_name': obj_name,
-                    'obj_res': obj_res,
-                    'category': category,
-                }
-                # check and cache lid info if exists
-                lid_name = obj_name + "_Lid"
-                lid_usd_path = os.path.dirname(obj_path) + f"/{lid_name}/{lid_name}.usd"
-                if os.path.exists(lid_usd_path):
-                    OBJECT_INFO_CACHE[f"{cache_key}_lid"] = {
-                        'obj_path': lid_usd_path,
-                        'obj_name': lid_name,
-                        'obj_res': obj_res,
-                        'category': category,
-                    }
-
         sampled_category = find_most_similar_category(obj_res["assetName"])
         if sampled_category is None:
             sampled_category = category
@@ -295,6 +277,7 @@ def recreate_object(orchestrator, failed_obj_name):
         else:
             obj_cfg.pop("info", None)
 
+        # when recreating object, we should forced update runtime_cache, otherwise will recreate forever
         model, info = EnvUtils.create_obj(orchestrator.task, obj_cfg, ignore_cache=True)
         obj_cfg["info"] = info
         orchestrator.task.objects[model.task_name] = model

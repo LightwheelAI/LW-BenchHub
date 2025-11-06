@@ -17,6 +17,7 @@ from lwlab.utils.fixture_utils import fixture_is_type
 from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.managers import EventTermCfg as EventTerm
 from lwlab.utils.isaaclab_utils import NoDeepcopyMixin
+from lwlab.utils.log_utils import get_code_version
 
 
 class LwLabBaseOrchestrator(OrchestratorBase, NoDeepcopyMixin):
@@ -80,9 +81,10 @@ class LwLabBaseOrchestrator(OrchestratorBase, NoDeepcopyMixin):
         Combine the ep_meta of scene, embodiment, task.
         """
         ep_meta = self.scene.get_ep_meta()
-        ep_meta.update(self.embodiment.get_ep_meta())
+        ep_meta.update(self.embodiment.get_ep_meta(self.task.env_instance))
         ep_meta.update(self.task.get_ep_meta())
         ep_meta["cache_usd_version"] = {"floorplan_version": ep_meta["floorplan_version"], "objects_version": ep_meta["objects_version"]}
+        ep_meta["code_version"] = get_code_version()
         return ep_meta
 
     def _extract_cfg(self, cfg, key):

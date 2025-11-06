@@ -82,6 +82,17 @@ class DexRetargetingAction(ActionTerm):
             raise ValueError(f"Unsupported retargeting type: {self.dex_retargeting_cfg.type}")
 
     @property
+    def finger_names(self) -> list[str]:
+        if self.dex_retargeting_cfg.type == "dexpilot":
+            return self.dex_retargeting_cfg.finger_tip_link_names
+        elif self.dex_retargeting_cfg.type == "position":
+            return self.dex_retargeting_cfg.target_link_names
+        elif self.dex_retargeting_cfg.type == "vector":
+            return self.dex_retargeting_cfg.target_origin_link_names
+        else:
+            raise ValueError(f"Unsupported retargeting type: {self.dex_retargeting_cfg.type}")
+
+    @property
     def action_dim(self) -> int:
         num = self.num_fingers
         # if self.dex_retargeting_cfg.type == "dexpilot":
