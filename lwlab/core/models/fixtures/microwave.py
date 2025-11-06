@@ -186,11 +186,8 @@ class Microwave(Fixture):
         button_prims = self.button_infos[button]
         button_pos = []
         for button_prim in button_prims:
-            xformable = UsdGeom.Xformable(button_prim)
-            transform = xformable.ComputeLocalToWorldTransform(Usd.TimeCode.Default())
-            world_translation = transform.ExtractTranslation()
-            pos = torch.tensor([world_translation[0], world_translation[1], world_translation[2]], dtype=torch.float32, device=env.device).reshape(-1, 3)
-            button_pos.append(pos)
+            pos, _ = usd.get_prim_pos_rot_in_world(button_prim)
+            button_pos.append(torch.tensor(pos, dtype=torch.float32, device=env.device))
         button_pos = torch.stack(button_pos, dim=0)  # (env_num, 1, 3)
 
         dist = torch.norm(button_pos - ee_pos, dim=-1)  # (env_num, ee_num)

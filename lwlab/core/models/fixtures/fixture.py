@@ -19,6 +19,7 @@ from copy import deepcopy
 from collections import defaultdict
 from functools import cached_property
 from typing import List
+from scipy.spatial.transform import Rotation as R
 
 from isaaclab.envs import ManagerBasedRLEnvCfg, ManagerBasedRLEnv
 from isaaclab.sensors import ContactSensorCfg
@@ -69,6 +70,7 @@ class Fixture:
             prim,
             num_envs,
             pos=None,
+            rot=None,
             size=None,
             max_size=None,
             placement=None,
@@ -93,10 +95,10 @@ class Fixture:
             prim_name = child_prim['prim'].GetName()
             prim_size = usd.get_prim_size(child_prim['prim'])
             self.body_bbox_map[prim_name] = prim_size
-        self._pos = np.array(list(prim.GetAttribute("xformOp:translate").Get()))
+        self._pos = pos if pos is not None else np.array(list(prim.GetAttribute("xformOp:translate").Get()))
         self._scale = prim.GetAttribute("xformOp:scale").Get()
         self._scale = np.array(self._scale) if self._scale is not None else np.array([1, 1, 1])
-        euler_angles = prim.GetAttribute("xformOp:rotateXYZ").Get()
+        euler_angles = R.from_quat([rot[1], rot[2], rot[3], rot[0]]).as_euler('xyz', degrees=True) if rot is not None else prim.GetAttribute("xformOp:rotateXYZ").Get()
         if euler_angles is not None:
             euler_radians = np.radians(np.array(euler_angles))
             self.set_euler(euler_radians)
@@ -148,7 +150,11 @@ class Fixture:
         else:
             reg_pos = np.array(reg_pos)
             reg_quat = np.array(reg_quat)
-            reg_halfsize = np.fromstring(prim.GetAttribute("size").Get(), sep=',') / 2
+            if prim.GetAttribute("size").Get() is not None:
+                reg_halfsize = np.fromstring(prim.GetAttribute("size").Get(), sep=',') / 2
+            else:
+                reg_halfsize_Vec3d = usd.get_prim_size(prim)
+                reg_halfsize = np.array([reg_halfsize_Vec3d[0], reg_halfsize_Vec3d[1], reg_halfsize_Vec3d[2]]) / 2
             if reg_halfsize.size:
                 reg_rel_pos = T.quat2mat(T.convert_quat(reg_quat, to="xyzw")).T @ (np.array(reg_pos) - self.pos)
                 reg_dict = {}
@@ -184,7 +190,7 @@ class Fixture:
                         np.mean((p0[1], py[1])),
                         np.mean((p0[2], pz[2])),
                     ]
-                ) - np.array(self.prim.GetAttribute("xformOp:translate").Get())
+                ) - self._pos
             except Exception as e:
                 raise RuntimeError(f"The counter self._regions is None.")
         else:
@@ -264,8 +270,6 @@ class Fixture:
                 for env_idx in env_ids:
                     pos = body_pos[env_idx].cpu().numpy()
                     body_quat = body_quat[env_idx].cpu().numpy()  # w,x,y,z - body relative to articulation root
-
-                    from scipy.spatial.transform import Rotation as R
 
                     fixture_rotation = R.from_euler('xyz', self._rot, degrees=False)
 

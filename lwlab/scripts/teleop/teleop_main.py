@@ -834,16 +834,6 @@ def main():
 
                     if command.lower() == "t":
                         flush_recorder_manager()
-                    if command.lower() == "x":
-                        reset_env_keep_placement()
-                        action_idx = 0
-
-                    if command.lower() == "b":
-                        start_teleoperation()
-                        ci_start_flag = True
-
-                    if command.lower() == "t":
-                        flush_recorder_manager()
 
             if flush_recorder_manager_flag:
                 env.recorder_manager.export_episodes()

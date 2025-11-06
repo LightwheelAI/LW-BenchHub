@@ -15,7 +15,7 @@ def postprocess_obj_categories(obj_categories, exclude_fixture=True):
     return updated_categories
 
 
-OBJ_CATEGORIES = postprocess_obj_categories(object_loader.list_registry())
+OBJ_CATEGORIES = postprocess_obj_categories(object_loader.list_registry(), exclude_fixture=False)
 
 
 def get_cats_by_type(types, obj_registries=[]):

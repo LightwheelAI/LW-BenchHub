@@ -6,6 +6,7 @@ import lwlab.utils.place_utils.env_utils as EnvUtils
 from termcolor import colored
 import time
 import os
+import glob
 
 OBJECT_INFO_CACHE = {}
 
@@ -116,7 +117,7 @@ def sample_kitchen_object(
 
                 acquire_start_time = time.time()
                 obj_path, obj_name, obj_res = object_loader.acquire_by_registry(
-                    "objects",
+                    object_cfgs["asset_type"],
                     registry_name=[category],
                     file_name=filename,
                     source=list(source) if source is not None else [],
@@ -135,7 +136,7 @@ def sample_kitchen_object(
 
                 acquire_start_time = time.time()
                 obj_path, obj_name, obj_res = object_loader.acquire_by_registry(
-                    "objects",
+                    object_cfgs["asset_type"],
                     registry_name=registry_name,
                     eqs=None if not object_cfgs["properties"] else object_cfgs["properties"],
                     source=list(source) if source is not None else [],
@@ -208,6 +209,7 @@ def sample_kitchen_object(
             object_scale=obj_scale,
             rotate_upright=rotate_upright,
             rgb_replace=rgb_replace,
+            asset_type=object_cfgs["asset_type"]
         )
         obj_info.size = model.size
         obj_info.set_attrs(obj_res["property"])
@@ -232,6 +234,19 @@ def sample_kitchen_object(
             'obj_res': obj_res,
             'category': category,
         }
+
+        base_obj_dir = os.path.dirname(obj_path)
+        pattern = os.path.join(base_obj_dir, f"{obj_name}*/{obj_name}*.usd")
+        merged_obj_files = glob.glob(pattern)
+        if merged_obj_files:
+            for merged_obj_path in merged_obj_files:
+                merged_obj_name = os.path.basename(os.path.dirname(merged_obj_path))
+                OBJECT_INFO_CACHE[f"{cache_key}_{merged_obj_name.lower().split('_')[1]}"] = {
+                    'obj_path': merged_obj_path,
+                    'obj_name': merged_obj_name,
+                    'obj_res': obj_res,
+                    'category': category,
+                }
 
     print(colored(f"Sampled {object_cfgs['task_name']}: {obj_info.name} from {obj_info.source}", "green"))
 

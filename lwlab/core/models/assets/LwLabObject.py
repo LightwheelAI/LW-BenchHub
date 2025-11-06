@@ -36,6 +36,9 @@ class LwLabObject(Object):
                     sleep_threshold=0.0,
                     stabilization_threshold=0.0,
                 ),
+                articulation_props=sim_utils.ArticulationRootPropertiesCfg(
+                    fix_root_link=False,
+                ),
             ),
             actuators={},
         )

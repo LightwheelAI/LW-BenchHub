@@ -112,10 +112,16 @@ class LwLabBaseOrchestrator(OrchestratorBase, NoDeepcopyMixin):
             obj_quat = Tt.convert_quat(torch.tensor(obj_quat, device=self.context.device, dtype=torch.float32), to="wxyz")
             obj_quat = obj_quat.unsqueeze(0).repeat(obj_pos.shape[0], 1)
             root_pos = torch.concatenate([obj_pos, obj_quat], dim=-1)
-            env.scene.rigid_objects[obj_name].write_root_pose_to_sim(
-                root_pos,
-                env_ids=env_ids
-            )
+            if obj_name in self.fixture_refs:
+                env.scene.articulations[obj_name].write_root_pose_to_sim(
+                    root_pos,
+                    env_ids=env_ids
+                )
+            else:
+                env.scene.rigid_objects[obj_name].write_root_pose_to_sim(
+                    root_pos,
+                    env_ids=env_ids
+                )
         env.sim.forward()
 
         if self.task.resample_robot_placement_on_reset:

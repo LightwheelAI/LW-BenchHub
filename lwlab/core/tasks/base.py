@@ -17,6 +17,7 @@ from typing import Any, Dict, List
 from copy import deepcopy
 import torch
 import os
+import glob
 
 from isaaclab.envs.manager_based_rl_env_cfg import ManagerBasedRLEnvCfg
 from isaaclab.utils import configclass
@@ -54,6 +55,7 @@ from isaaclab_arena.assets.asset import Asset
 from isaaclab_arena.utils.pose import Pose
 from isaaclab_arena.environments.isaaclab_arena_manager_based_env import IsaacLabArenaManagerBasedRLEnvCfg
 from lwlab.utils.usd_utils import OpenUsd as usd
+from lwlab.core.models.scenes.scene_parser import register_fixture_from_obj
 
 
 @configclass
@@ -250,6 +252,7 @@ class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
         self.curriculum_cfg = None
         self.rewards_cfg = None
         self.assets = {}
+        self._articulation_assets = {}
         self.contact_sensors = {}
         self.init_checkers_cfg()
         self.checkers = get_checkers_from_cfg(self.checkers_cfg)
@@ -333,6 +336,19 @@ class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
         return self._success_cache >= self._success_count
 
     def init_fixtures(self, env, env_ids=None):
+        # register placed fixture
+        for name, articulation in self._articulation_assets.items():
+            pos = self.assets[name].initial_pose.position_xyz
+            rot = self.assets[name].initial_pose.rotation_wxyz
+            prim = usd.get_prim_by_name(env.scene.stage.GetPseudoRoot(), name, only_xform=True)
+            register_fixture_from_obj(
+                obj=articulation,
+                prim=prim[0],
+                fixtures_ref=self.fixture_refs,
+                num_envs=env.num_envs,
+                pos=pos,
+                rot=rot,
+            )
         for fixture_controller in self.fixture_refs.values():
             if isinstance(fixture_controller, Fixture):
                 fixture_controller.setup_env(env)
@@ -447,54 +463,53 @@ class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
                 model, info = EnvUtils.create_obj(self, obj_cfg)
                 obj_cfg["info"] = info
                 self.objects[model.task_name] = model
-                # self.model.merge_objects([model])
-                # check and create lid for object if needed
-                orig_obj_group = obj_cfg.get("obj_groups", None)
-                if isinstance(orig_obj_group, str) and orig_obj_group.endswith("_merge"):
-                    lid_name = info["name"] + "_Lid"
-                    lid_usd_path = os.path.dirname(model.obj_path) + f"/{lid_name}/{lid_name}.usd"
-                    if not os.path.exists(lid_usd_path):
-                        raise FileNotFoundError(f"Lid USD file not found: {lid_usd_path}")
 
-                    lid_cfg = deepcopy(obj_cfg)
-                    lid_cfg["name"] = obj_cfg["name"] + "_lid"
-                    lid_cfg["obj_groups"] = lid_usd_path
-                    lid_cfg["type"] = "object"
+                # check and create merged object if needed
+                if obj_cfg.get("merged_obj", None):
+                    base_obj_dir = os.path.dirname(model.obj_path)
+                    pattern = os.path.join(base_obj_dir, f"{model.name}*/{model.name}*.usd")
+                    merged_obj_files = glob.glob(pattern)
+                    if merged_obj_files:
+                        for merged_obj_path in merged_obj_files:
+                            merged_obj_name = os.path.basename(os.path.dirname(merged_obj_path))
 
-                    specified_aux_placement = obj_cfg.get("auxiliary_obj_placement", None)
-                    if specified_aux_placement is not None:
-                        lid_cfg["placement"] = specified_aux_placement
-                        obj_cfg.pop("auxiliary_obj_placement", None)
+                            merged_obj_cfg = deepcopy(obj_cfg)
+                            merged_obj_cfg["name"] = f"{obj_cfg['name']}_{merged_obj_name.lower().split('_')[1]}"
+                            merged_obj_cfg["obj_groups"] = merged_obj_path
+                            merged_obj_cfg["type"] = "object"
+
+                            merged_obj_placement = obj_cfg.get("auxiliary_obj_placement", None)
+                            if merged_obj_placement is not None:
+                                merged_obj_cfg["placement"] = merged_obj_placement
+                                obj_cfg.pop("auxiliary_obj_placement", None)
+                            else:
+                                reset_regions = model.get_reset_regions()
+                                # use reg_anchor site for merged part placement if exists
+                                if "anchor" in reset_regions:
+                                    anchor_region = reset_regions["anchor"]
+                                    merged_obj_cfg["placement"] = dict(
+                                        size=(anchor_region["size"][0], anchor_region["size"][1]),
+                                        pos=anchor_region["offset"],
+                                        ensure_object_boundary_in_range=False,
+                                        sample_args=dict(
+                                            reference=obj_cfg["name"],
+                                            ref_fixture=obj_cfg["placement"]["fixture"],
+                                        ),
+                                    )
+                                else:
+                                    raise FileNotFoundError(f"Base object USD file does not contain the required anchor site.")
+
+                            all_obj_cfgs.append(merged_obj_cfg)
+                            model, info = EnvUtils.create_obj(self, merged_obj_cfg)
+                            merged_obj_cfg["info"] = info
+                            self.objects[model.task_name] = model
                     else:
-                        reset_regions = model.get_reset_regions()
-                        if "anchor_site" in reset_regions:  # use anchor_site for lid placement if exists
-                            int_region = reset_regions["anchor_site"]
-                            lid_cfg["placement"] = dict(
-                                size=(int_region["size"][0], int_region["size"][1]),
-                                pos=int_region["offset"],
-                                ensure_object_boundary_in_range=False,
-                                sample_args=dict(
-                                    reference=obj_cfg["name"],
-                                    ref_fixture=obj_cfg["placement"]["fixture"],
-                                ),
-                            )
-                        else:
-                            lid_cfg["placement"]["sample_args"] = dict(
-                                reference=obj_cfg["name"],
-                                ref_fixture=obj_cfg["placement"]["fixture"],
-                            ),
+                        raise FileNotFoundError(f"Merged object USD file not found.")
 
-                    # add in the new object to the model
-                    all_obj_cfgs.append(lid_cfg)
-                    model, info = EnvUtils.create_obj(self, lid_cfg)
-
-                    lid_cfg["info"] = info
-                    self.objects[model.task_name] = model
-
+                # place object in a container and add container as an object to the scene
                 try_to_place_in = obj_cfg["placement"].get("try_to_place_in", None)
                 object_ref = obj_cfg["placement"].get("object", None)
 
-                # place object in a container and add container as an object to the scene
                 if try_to_place_in and (
                     "in_container" in obj_cfg["info"]["groups_containing_sampled_obj"]
                 ):
@@ -571,13 +586,22 @@ class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
         self.objects_version = objects_version
 
         for obj_cfg in self.object_cfgs:
+            stage = usd.get_stage(obj_cfg["info"]["obj_path"])
+            prims = usd.get_all_prims(stage)
+            is_articulation = any(usd.is_articulation_root(p) for p in prims)
+            if not is_articulation:
+                object_type = ObjectType.RIGID
+            else:
+                object_type = ObjectType.ARTICULATION
+                task_obj_name = obj_cfg["info"]["task_name"]
+                self._articulation_assets[task_obj_name] = obj_cfg
             self.add_asset(
                 LwLabObject(
                     name=obj_cfg["info"]["task_name"],
                     tags=["object"],
                     usd_path=obj_cfg["info"]["obj_path"],
                     prim_path=f"{{ENV_REGEX_NS}}/{self.scene_type}/{obj_cfg['info']['task_name']}",
-                    object_type=ObjectType.RIGID,
+                    object_type=object_type,
                 )
             )
             self.add_contact_sensor_cfg(

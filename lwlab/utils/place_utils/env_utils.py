@@ -1008,6 +1008,7 @@ def create_obj(task: LwLabTaskBase, cfg: Dict[str, Any], version=None, ignore_ca
         exclude_obj_groups = list(exclude_obj_groups)
 
     object_cfgs["task_name"] = cfg.get("name")
+    object_cfgs["asset_type"] = "fixtures" if cfg.get("is_fixture") else "objects"
     object_cfgs["obj_groups"] = obj_groups
     object_cfgs["exclude_obj_groups"] = exclude_obj_groups
     object_cfgs["properties"] = {}

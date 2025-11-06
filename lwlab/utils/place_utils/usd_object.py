@@ -16,7 +16,8 @@ class USDObject():
         obj_path,
         object_scale=(1.0, 1.0, 1.0),
         rotate_upright=False,
-        rgb_replace=None
+        rgb_replace=None,
+        asset_type="objects",
     ):
         # get scale in x, y, z
         if isinstance(object_scale, float):

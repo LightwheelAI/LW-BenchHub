@@ -43,3 +43,37 @@ def parse_fixtures(stage, num_envs, seed, device):
         fixtures[info["name"]] = FIXTURES[fixture_type](info["name"], info["prim"], num_envs, seed=seed, device=device)
 
     return fixtures
+
+
+def register_fixture_from_obj(obj, prim, fixtures_ref, num_envs, pos, rot):
+    """
+    Register a fixture if the given object corresponds to an articulated fixture.
+
+    Args:
+        obj: The object model instance (from self.objects)
+        prim: The prim of placed fixture
+        fixtures_ref (dict): the fixtures dictionary to add into
+        num_envs (int): number of environments (for fixture init)
+
+    Returns:
+        bool: True if fixture successfully registered, False otherwise
+    """
+    fixture_path = os.path.splitext(os.path.basename(obj["info"]["obj_path"]))[0]
+    fixture_name = ''.join([c for c in fixture_path if c.isalpha()])
+    fixture_type = fixture_name if fixture_name in FIXTURES else "Accessory"
+
+    if obj["name"] in fixtures_ref:
+        return False  # already exists
+
+    try:
+        fixtures_ref[obj["name"]] = FIXTURES[fixture_type](
+            name=obj["name"],
+            prim=prim,
+            num_envs=num_envs,
+            pos=pos,
+            rot=rot
+        )
+        print(f"[Fixture Placed] {obj['name']} ({fixture_type})")
+        return True
+    except Exception as e:
+        raise RuntimeError(f"Fixture registration failed for {obj['name']}: {e}")
