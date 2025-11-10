@@ -76,7 +76,6 @@ class L90L1PickUpTheAlphabetSoupAndPutItInTheBasket(LwLabTaskBase):
                 obj_groups=["butter"],
                 graspable=True,
                 washable=True,
-                object_scale=0.6,
                 info=dict(
                     mjcf_path="/objects/lightwheel/butter/Butter001/model.xml"
                 ),
