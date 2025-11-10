@@ -935,8 +935,8 @@ def main():
                     env_cfg = env.cfg
                     should_remake_env = False
                 elif should_remake_env_with_fixed_layout:
-                    if "robocasalibero" in env.cfg.isaaclab_arena_env.scene.usd_path:
-                        scene_name = "robocasalibero"
+                    if "libero" in env.cfg.isaaclab_arena_env.scene.usd_path:
+                        scene_name = "libero"
                     else:
                         scene_name = "robocasakitchen"
                     if env.cfg.isaaclab_arena_env.scene.layout_id and env.cfg.isaaclab_arena_env.scene.style_id:

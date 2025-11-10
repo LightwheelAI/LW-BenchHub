@@ -138,16 +138,20 @@ def main():
             robot_name = "DoublePiper-Abs"
         if robot_name == "double_piper_rel":
             robot_name = "DoublePiper-Rel"
-        if "robocasalibero" in env_args["usd_path"]:
-            scene_name = "robocasalibero"
+        if "scene_type" in env_args:
+            scene_type = env_args["scene_type"]
         else:
-            scene_name = "robocasakitchen"
+            if "libero" in env_args["usd_path"]:
+                scene_type = "libero"
+            else:
+                scene_type = "robocasakitchen"
+        scene_name = f"{scene_type}-{env_args['layout_id']}-{env_args['style_id']}"
         env_cfg = parse_env_cfg(
             scene_backend=scene_backend,
             task_backend=task_backend,
             task_name=task_name,
             robot_name=robot_name,
-            scene_name=f"{scene_name}-{env_args['layout_id']}-{env_args['style_id']}",
+            scene_name=scene_name,
             robot_scale=args_cli.robot_scale,
             device=args_cli.device, num_envs=args_cli.num_envs, use_fabric=True,
             replay_cfgs={"hdf5_path": args_cli.dataset_file, "ep_meta": env_args, "render_resolution": (args_cli.width, args_cli.height), "ep_names": episode_names_to_replay, "add_camera_to_observation": True},
