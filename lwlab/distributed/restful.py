@@ -1,4 +1,3 @@
-# server_rest_env.py
 import os
 import uuid
 import base64
@@ -6,6 +5,7 @@ import threading
 import signal
 import sys
 import traceback
+import torch
 from io import BytesIO
 from typing import Any, Dict, List, Tuple
 
@@ -94,6 +94,18 @@ class RestfulEnvWrapper:
                 self._sessions[sid] = {"env_id": env_id, "env_config": env_config}
                 return jsonify({"session_id": sid})
 
+        @app.route("/task_info", methods=["GET"])
+        def task_info():
+            with self._locked_mainthread():
+                try:
+                    lang = ""
+                    if hasattr(self.env, "cfg") and hasattr(self.env.cfg, "get_ep_meta"):
+                        meta = self.env.cfg.get_ep_meta()
+                        lang = meta.get("lang", "")
+                    return jsonify({"lang": lang})
+                except Exception as e:
+                    return self._error(f"failed to get task info: {e}", 500)
+
         @app.route("/reset", methods=["POST"])
         def reset():
             with self._locked_mainthread():
@@ -109,7 +121,15 @@ class RestfulEnvWrapper:
                     else:
                         obs, info = res, {}
                     images_b64 = self._extract_images(obs)
-                    return jsonify({"obs": images_b64, "info": info if isinstance(info, dict) else {}})
+                    lang = ""
+                    if hasattr(self.env, "cfg") and hasattr(self.env.cfg, "get_ep_meta"):
+                        meta = self.env.cfg.get_ep_meta()
+                        lang = meta.get("lang", "")
+                    return jsonify({
+                        "obs": images_b64,
+                        # "obs_tensor": self._tensor_to_jsonable(obs),
+                        "info": {"task_str": 'Task:' + lang}
+                    })
                 except Exception as e:
                     return self._error(f"reset failed: {e}", 500)
 
@@ -132,7 +152,12 @@ class RestfulEnvWrapper:
 
                 try:
                     # Gymnasium step API: (obs, reward, terminated, truncated, info)
-                    step_out = self.env.step(action)
+                    if isinstance(action, np.ndarray):
+                        action = torch.from_numpy(action).float()
+                    if action.ndim == 1:
+                        action = action.unsqueeze(0)
+                    for _ in range(10):
+                        step_out = self.env.step(action)
                     if not (isinstance(step_out, tuple) and len(step_out) >= 5):
                         return self._error("env.step must return (obs, reward, terminated, truncated, info)", 500)
 
@@ -140,10 +165,12 @@ class RestfulEnvWrapper:
                     images_b64 = self._extract_images(obs)
                     return jsonify({
                         "obs": images_b64,
-                        "reward": float(reward),
-                        "done": bool(terminated),
-                        "truncated": bool(truncated),
-                        "info": info if isinstance(info, dict) else {}
+                        # "obs_tensor": self._tensor_to_jsonable(obs),
+                        "reward": reward.detach().cpu().numpy().tolist() if torch.is_tensor(reward) else reward,
+                        "done": terminated.detach().cpu().numpy().tolist() if torch.is_tensor(terminated) else terminated,
+                        "truncated": truncated.detach().cpu().numpy().tolist() if torch.is_tensor(truncated) else truncated,
+                        "info": self._tensor_to_jsonable(info if isinstance(info, dict) else {})
+
                     })
                 except Exception as e:
                     return self._error(f"step failed: {e}", 500)
@@ -235,8 +262,11 @@ class RestfulEnvWrapper:
     def _collect_rgb_from_any(self, x: Any, found: List[np.ndarray], max_images: int):
         if len(found) >= max_images:
             return
-        if isinstance(x, np.ndarray) and x.ndim == 3 and x.shape[2] == 3:
-            found.append(x)
+        if isinstance(x, torch.Tensor) and x.ndim == 3 and x.shape[2] == 3:
+            found.append(x.cpu().numpy())
+        if isinstance(x, torch.Tensor) and x.ndim == 4 and x.shape[3] == 3:
+            for i in range(x.shape[0]):
+                found.append(x[i].cpu().numpy())
         elif isinstance(x, dict):
             for v in x.values():
                 if len(found) >= max_images:
@@ -248,7 +278,7 @@ class RestfulEnvWrapper:
                     break
                 self._collect_rgb_from_any(v, found, max_images)
 
-    def _extract_images(self, obs: Any, max_images: int = 3) -> List[str]:
+    def _extract_images(self, obs: Any, max_images: int = 30000) -> List[str]:
         """
         Try to extract up to N RGB frames (H,W,3) from obs; fallback to env.render().
         Return base64-encoded PNG strings.
@@ -261,7 +291,7 @@ class RestfulEnvWrapper:
         # Fallback to env.render() if available.
         try:
             arr = self.env.render()
-            if isinstance(arr, np.ndarray) and arr.ndim == 3 and arr.shape[2] == 3:
+            if isinstance(arr, np.ndarray) and arr.ndim == 4 and arr.shape[3] == 3:
                 return [self._np_rgb_to_base64(arr)]
         except Exception:
             pass
@@ -279,3 +309,28 @@ class RestfulEnvWrapper:
         """
         parts = [float(x) for x in action_str.strip().split()]
         return np.asarray(parts, dtype=np.float32)
+
+    # ---- Tensor Translation ----
+
+    def _tensor_to_jsonable(self, obs: Any):
+        import torch
+        import numpy as np
+
+        if isinstance(obs, (torch.Tensor, torch.nn.Parameter)):
+            return obs.detach().cpu().numpy().tolist()
+        elif isinstance(obs, np.ndarray):
+            return obs.tolist()
+        elif isinstance(obs, dict):
+            return {str(k): self._tensor_to_jsonable(v) for k, v in obs.items()}
+        elif isinstance(obs, (list, tuple, set)):
+            return [self._tensor_to_jsonable(v) for v in obs]
+        elif hasattr(obs, "to") and hasattr(obs, "cpu"):  # IsaacLab TensorDict fallback
+            try:
+                return self._tensor_to_jsonable(obs.cpu())
+            except Exception:
+                return str(obs)
+        elif isinstance(obs, (float, int, str, bool)) or obs is None:
+            return obs
+        else:
+            # Fallback: convert to string
+            return str(obs)

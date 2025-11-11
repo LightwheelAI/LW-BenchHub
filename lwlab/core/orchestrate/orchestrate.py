@@ -123,7 +123,7 @@ class LwLabBaseOrchestrator(OrchestratorBase, NoDeepcopyMixin):
             obj_quat = Tt.convert_quat(torch.tensor(obj_quat, device=self.context.device, dtype=torch.float32), to="wxyz")
             obj_quat = obj_quat.unsqueeze(0).repeat(obj_pos.shape[0], 1)
             root_pos = torch.concatenate([obj_pos, obj_quat], dim=-1)
-            if obj_name in self.fixture_refs:
+            if obj_name in self.task._articulation_assets:
                 env.scene.articulations[obj_name].write_root_pose_to_sim(
                     root_pos,
                     env_ids=env_ids

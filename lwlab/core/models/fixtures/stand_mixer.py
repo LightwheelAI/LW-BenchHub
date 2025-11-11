@@ -31,6 +31,7 @@ class StandMixer(Fixture):
         self._button_head_lock = torch.tensor([False], device=self.device).repeat(self.num_envs)
         self._speed_dial_knob_value = torch.tensor([0.0], device=self.device).repeat(self.num_envs)
         self._head_value = torch.tensor([0.0], device=self.device).repeat(self.num_envs)
+        self._lifting = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
 
         self._joint_names = {
             "button_head_lock": "button_head_lock_joint",
@@ -38,6 +39,17 @@ class StandMixer(Fixture):
             "knob_speed": "knob_speed_joint",
             "head": "head_joint",
         }
+
+    def setup_env(self, env: ManagerBasedRLEnv):
+        super().setup_env(env)
+        try:
+            self._button_head_lock = torch.tensor([False], device=self.device).repeat(self.num_envs)
+            self._speed_dial_knob_value = torch.tensor([0.0], device=self.device).repeat(self.num_envs)
+            self._head_value = torch.tensor([0.0], device=self.device).repeat(self.num_envs)
+            self._lifting = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
+        except Exception as e:
+            print("stand mixer setup_env failed")
+            return
 
     def set_speed_dial_knob(self, env: ManagerBasedRLEnv, knob_val):
         """
@@ -105,8 +117,9 @@ class StandMixer(Fixture):
                 )
                 self._head_value = new_head_val
                 lift_finished = torch.allclose(new_head_val, target_val, atol=1e-3)
-                if isinstance(lift_finished, torch.Tensor):
-                    self._lifting[lift_finished] = False
+                if lift_finished:
+                    self._lifting = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
+                    self._button_head_lock = torch.tensor([False], device=self.device).repeat(self.num_envs)
 
         # sync positions back into internal values
         mapping = {

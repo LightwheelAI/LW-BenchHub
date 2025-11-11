@@ -1412,7 +1412,9 @@ class PnPCounterToStandMixer(PnP):  # DONE
 
     def _setup_kitchen_references(self, scene):
         super()._setup_kitchen_references(scene)
-        self.stand_mixer = self.get_fixture(FixtureType.STAND_MIXER)
+        self.stand_mixer = self.register_fixture_ref(
+            "stand_mixer", dict(id=FixtureType.STAND_MIXER)
+        )
         self.counter = self.get_fixture(
             FixtureType.COUNTER_NON_CORNER, ref=self.stand_mixer
         )

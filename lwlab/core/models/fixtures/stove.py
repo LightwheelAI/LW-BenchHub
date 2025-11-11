@@ -70,11 +70,11 @@ class Stove(Fixture):
 
             for env_idx, qpos in enumerate(joint_qpos):
                 # calculate flame intensity ratio (0-1)
-                flame_scale = (qpos - 0.35) / (torch.pi - 0.35)
-                flame_scale = torch.where(qpos >= 0.35, flame_scale, torch.tensor(0.0, device=qpos.device))
+                flame_scale = (qpos - 0.25) / ((torch.pi / 2) - 0.25)
+                flame_scale = torch.where(qpos >= 0.15, flame_scale, torch.tensor(0.0, device=qpos.device))
                 flame_scale = torch.clamp(flame_scale, 0.0, 1.0)
 
-                if 0.35 <= qpos <= 2 * torch.pi - 0.35:
+                if 0.25 <= qpos <= 2 * torch.pi - 0.25:
                     if burner_site[env_idx] is not None:
                         burner_site[env_idx].GetAttribute("visibility").Set("inherited")
                         burner_site[env_idx].GetAttribute("purpose").Set("default")
