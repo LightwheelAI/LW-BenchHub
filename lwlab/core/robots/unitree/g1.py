@@ -263,13 +263,14 @@ class UnitreeG1EnvCfg(LwLabEmbodimentBase):
         self.observation_cameras: dict = {
             "left_hand_camera": {
                 "camera_cfg": TiledCameraCfg(
-                    prim_path="{ENV_REGEX_NS}/Robot/left_wrist_yaw_link/left_hand_palm_link/left_hand_camera",
-                    offset=TiledCameraCfg.OffsetCfg(pos=(0.05, -0.05, 0.0), rot=(-0.2706, -0.2706, 0.65328, 0.65328), convention="opengl"),  # 90, -45, 180
+                    prim_path="{ENV_REGEX_NS}/Robot/torso_link/left_hand_camera",
+                    offset=TiledCameraCfg.OffsetCfg(pos=(0.10209156, 0.02857542, 0.42446595), rot=(0.64367383, 0.26523914, -0.27106013, -0.66472446), convention="opengl"),
                     data_types=["rgb"],
                     spawn=sim_utils.PinholeCameraCfg(
-                        focal_length=14.8,
+                        focal_length=24.0,
                         focus_distance=400.0,
-                        horizontal_aperture=83.0,  # For a 75° FOV (assuming square image)
+                        horizontal_aperture=62,
+                        vertical_aperture=39.8,  # Approx for fovy ~79.5 deg with f=24.0
                         clipping_range=(0.01, 50.0),  # Closer clipping for hand camera
                         lock_camera=True
                     ),
@@ -277,24 +278,24 @@ class UnitreeG1EnvCfg(LwLabEmbodimentBase):
                     height=224,
                     update_period=0.05,
                 ),
-                "tags": [],
-                "execute_mode": [ExecuteMode.TELEOP, ExecuteMode.REPLAY_STATE]
+                "tags": ["product"],
+                "execute_mode": [ExecuteMode.TELEOP, ExecuteMode.REPLAY_STATE],
             },
             "first_person_camera": {
                 "camera_cfg": TiledCameraCfg(
                     prim_path="{ENV_REGEX_NS}/Robot/torso_link/first_person_camera",
-                    offset=TiledCameraCfg.OffsetCfg(pos=(0.06, 0.0, 0.43), rot=(0.65925, 0.25571, -0.25571, -0.65925), convention="opengl"),  # 0.0, -42.4, -90
+                    offset=TiledCameraCfg.OffsetCfg(pos=(0.10209156, -0.00937542, 0.42446595), rot=(0.64367383, 0.26523914, -0.27106013, -0.66472446), convention="opengl"),
                     data_types=["rgb"],
                     spawn=sim_utils.PinholeCameraCfg(
                         focal_length=19.3,
                         focus_distance=400.0,
-                        horizontal_aperture=27.6,  # Adjusted for 69° FOV
-                        vertical_aperture=14.8,  # Adjusted for 42° FOV
+                        horizontal_aperture=27.6,
+                        vertical_aperture=31.9,  # Approx for fovy ~79.5 deg with f=19.3
                         clipping_range=(0.1, 1.0e5),
                         lock_camera=True
                     ),
-                    width=640,
-                    height=480,
+                    width=224,
+                    height=224,
                     update_period=0.05,
                 ),
                 "tags": ["product"],
@@ -302,13 +303,14 @@ class UnitreeG1EnvCfg(LwLabEmbodimentBase):
             },
             "right_hand_camera": {
                 "camera_cfg": TiledCameraCfg(
-                    prim_path="{ENV_REGEX_NS}/Robot/right_wrist_yaw_link/right_hand_palm_link/right_hand_camera",
-                    offset=TiledCameraCfg.OffsetCfg(pos=(0.05, 0.05, 0.0), rot=(0.65328, 0.65328, -0.2706, -0.2706), convention="opengl"),  # 90, -45, 0
+                    prim_path="{ENV_REGEX_NS}/Robot/torso_link/right_hand_camera",
+                    offset=TiledCameraCfg.OffsetCfg(pos=(0.10209156, -0.04657542, 0.42446595), rot=(0.64367383, 0.26523914, -0.27106013, -0.66472446), convention="opengl"),
                     data_types=["rgb"],
                     spawn=sim_utils.PinholeCameraCfg(
-                        focal_length=14.8,
+                        focal_length=24.0,
                         focus_distance=400.0,
-                        horizontal_aperture=83.0,  # For a 75° FOV (assuming square image)
+                        horizontal_aperture=62,
+                        vertical_aperture=39.8,  # Approx for fovy ~79.5 deg with f=24.0
                         clipping_range=(0.01, 50.0),  # Closer clipping for hand camera
                         lock_camera=True
                     ),
@@ -316,8 +318,8 @@ class UnitreeG1EnvCfg(LwLabEmbodimentBase):
                     height=224,
                     update_period=0.05,
                 ),
-                "tags": [],
-                "execute_mode": [ExecuteMode.TELEOP, ExecuteMode.REPLAY_STATE]
+                "tags": ["product"],
+                "execute_mode": [ExecuteMode.TELEOP, ExecuteMode.REPLAY_STATE],
             },
             "left_shoulder_camera": {
                 "camera_cfg": TiledCameraCfg(
@@ -442,66 +444,6 @@ class UnitreeG1EnvCfg(LwLabEmbodimentBase):
                 "tags": [],
                 "execute_mode": [ExecuteMode.TRAIN, ExecuteMode.EVAL],
             },
-            #  "first_person_camera_nv": {
-            #     "camera_cfg": TiledCameraCfg(
-            #         prim_path="{ENV_REGEX_NS}/Robot/torso_link/first_person_camera_new",
-            #         offset=TiledCameraCfg.OffsetCfg(pos=(0.10209156, -0.00937542, 0.42446595), rot=(0.64367383, 0.26523914, -0.27106013, -0.66472446), convention="opengl"),
-            #         data_types=["rgb"],
-            #         spawn=sim_utils.PinholeCameraCfg(
-            #             focal_length=19.3,
-            #             focus_distance=400.0,
-            #             horizontal_aperture=27.6,
-            #             vertical_aperture=31.9,  # Approx for fovy ~79.5 deg with f=19.3
-            #             clipping_range=(0.1, 1.0e5),
-            #             lock_camera=True
-            #         ),
-            #         width=224,
-            #         height=224,
-            #         update_period=0.05,
-            #     ),
-            #     "tags": [],
-            #     "execute_mode": [ExecuteMode.TELEOP, ExecuteMode.REPLAY_STATE],
-            # },
-            # "left_shoulder_camera_nv": {
-            #     "camera_cfg": TiledCameraCfg(
-            #         prim_path="{ENV_REGEX_NS}/Robot/torso_link/left_shoulder_camera_new",
-            #         offset=TiledCameraCfg.OffsetCfg(pos=(0.10209156, 0.02857542, 0.42446595), rot=(0.64367383, 0.26523914, -0.27106013, -0.66472446), convention="opengl"),
-            #         data_types=["rgb"],
-            #         spawn=sim_utils.PinholeCameraCfg(
-            #             focal_length=24.0,
-            #             focus_distance=400.0,
-            #             horizontal_aperture=62,
-            #             vertical_aperture=39.8,  # Approx for fovy ~79.5 deg with f=24.0
-            #             clipping_range=(0.01, 50.0),  # Closer clipping for hand camera
-            #             lock_camera=True
-            #         ),
-            #         width=224,
-            #         height=224,
-            #         update_period=0.05,
-            #     ),
-            #     "tags": [],
-            #     "execute_mode": [ExecuteMode.TELEOP, ExecuteMode.REPLAY_STATE],
-            # },
-            # "right_shouder_camera_nv": {
-            #     "camera_cfg": TiledCameraCfg(
-            #         prim_path="{ENV_REGEX_NS}/Robot/torso_link/right_shoulder_camera_new",
-            #         offset=TiledCameraCfg.OffsetCfg(pos=(0.10209156, -0.04657542, 0.42446595), rot=(0.64367383, 0.26523914, -0.27106013, -0.66472446), convention="opengl"),
-            #         data_types=["rgb"],
-            #         spawn=sim_utils.PinholeCameraCfg(
-            #             focal_length=24.0,
-            #             focus_distance=400.0,
-            #             horizontal_aperture=62,
-            #             vertical_aperture=39.8,  # Approx for fovy ~79.5 deg with f=24.0
-            #             clipping_range=(0.01, 50.0),  # Closer clipping for hand camera
-            #             lock_camera=True
-            #         ),
-            #         width=224,
-            #         height=224,
-            #         update_period=0.05,
-            #     ),
-            #     "tags": [],
-            #     "execute_mode": [ExecuteMode.TELEOP, ExecuteMode.REPLAY_STATE],
-            # }
         }
         self.offset_config = OFFSET_CONFIG_G1
 
@@ -1029,44 +971,6 @@ class UnitreeG1ControllerDecoupledWBCEnvCfg(UnitreeG1ControllerEnvCfg):
         self.action_config = G1DecoupledWBCActionsCfg()
         self.action_config.left_hand_action = self.gripper_cfg.left_hand_action_cfg()[self.hand_action_mode]
         self.action_config.right_hand_action = self.gripper_cfg.right_hand_action_cfg()[self.hand_action_mode]
-        self.observation_cameras["left_hand_camera"] = {
-            "camera_cfg": TiledCameraCfg(
-                prim_path="{ENV_REGEX_NS}/Robot/left_hand_palm_link/left_hand_camera",
-                offset=TiledCameraCfg.OffsetCfg(pos=(0, 0, 0.06), rot=(0.5, 0.5, -0.5, -0.5), convention="opengl"),
-                data_types=["rgb"],
-                spawn=sim_utils.PinholeCameraCfg(
-                    focal_length=24.0,
-                    focus_distance=400.0,
-                    horizontal_aperture=83.0,  # For a 75° FOV (assuming square image)
-                    clipping_range=(0.01, 50.0),  # Closer clipping for hand camera
-                    lock_camera=True
-                ),
-                width=224,
-                height=224,
-                update_period=0.05,
-            ),
-            "tags": [],
-            "execute_mode": [ExecuteMode.TELEOP, ExecuteMode.REPLAY_STATE]
-        }
-        self.observation_cameras["right_hand_camera"] = {
-            "camera_cfg": TiledCameraCfg(
-                prim_path="{ENV_REGEX_NS}/Robot/right_hand_palm_link/right_hand_camera",
-                offset=TiledCameraCfg.OffsetCfg(pos=(0, 0, 0.06), rot=(0.5, 0.5, -0.5, -0.5), convention="opengl"),
-                data_types=["rgb"],
-                spawn=sim_utils.PinholeCameraCfg(
-                    focal_length=24.0,
-                    focus_distance=400.0,
-                    horizontal_aperture=83.0,  # For a 75° FOV (assuming square image)
-                    clipping_range=(0.01, 50.0),  # Closer clipping for hand camera
-                    lock_camera=True
-                ),
-                width=224,
-                height=224,
-                update_period=0.05,
-            ),
-            "tags": [],
-            "execute_mode": [ExecuteMode.TELEOP, ExecuteMode.REPLAY_STATE]
-        }
         self.init_robot_base_height = 0.75
         self.init_waist_yaw = 0.0
         self.init_waist_pitch = 0.0
@@ -1192,8 +1096,8 @@ class UnitreeG1ControllerDecoupledWBCEnvCfg(UnitreeG1ControllerEnvCfg):
                 left_arm_action = arm_action  # Robot frame
             else:
                 right_arm_action = arm_action  # Robot frame
-        left_gripper = torch.tensor([-action["left_gripper"]], device=action['rbase'].device)
-        right_gripper = torch.tensor([-action["right_gripper"]], device=action['rbase'].device)
+        left_gripper = torch.tensor([action["left_gripper"]], device=action['rbase'].device)
+        right_gripper = torch.tensor([action["right_gripper"]], device=action['rbase'].device)
         result = torch.concat([left_gripper, right_gripper, left_arm_action, right_arm_action, base_action]).unsqueeze(0)
         return result
 
