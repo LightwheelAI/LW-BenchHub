@@ -24,6 +24,7 @@ from lwlab.core.tasks.base import LwLabTaskBase
 from lwlab.core.scenes.kitchen.kitchen import LwLabScene
 from lwlab.utils.ui_utils import draw_aabb_from_bbox, clear_debug_drawing
 from lwlab.utils.place_utils.kitchen_objects import OBJECT_INFO_CACHE
+from lwlab.utils.isaaclab_utils import update_sensors
 
 
 # _ROBOT_POS_OFFSETS: dict[str, list[float]] = {
@@ -1485,6 +1486,13 @@ def reset_physx(env):
     for env_id in range(env.num_envs):
         env.cfg.isaaclab_arena_env.task.contact_queues[env_id].clear()
     env.common_step_counter = 0
+
+
+def warmup_rendering(env):
+    # warmup rendering
+    if env.common_step_counter <= 1:
+        for _ in range(env.cfg.warmup_steps):
+            update_sensors(env, env.physics_dt)
 
 
 class ContactQueue:

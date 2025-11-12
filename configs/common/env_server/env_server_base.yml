@@ -37,6 +37,11 @@ device: cuda:0
 restful_port: 8001
 restful_host: 0.0.0.0
 
+# ipc settings
+ipc_port: 50000
+ipc_host: 127.0.0.1
+ipc_authkey: lightwheel
+
 
 # RL setting
 for_rl: false

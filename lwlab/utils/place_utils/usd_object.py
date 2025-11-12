@@ -43,6 +43,7 @@ class USDObject():
         self.rotate_upright = rotate_upright
         self.init_quat = np.array([0, 0, 0, 1])  # xyzw
         self._regions = dict()
+        usd = None
         if prim is None:
             usd = Usd(self.obj_path)
             self._setup_region_dict(usd)
@@ -70,11 +71,11 @@ class USDObject():
             usd = prim
             self._setup_region_dict(usd, fxtr2obj=True)
 
-        try:
-            del usd
-            gc.collect()
-        except Exception as e:
-            print(f"warning: failed to clean usd: {e}")
+        # try:
+        #     del usd
+        #     gc.collect()
+        # except Exception as e:
+        #     print(f"warning: failed to clean usd: {e}")
 
     def _setup_region_dict(self, usd, fxtr2obj=False):
         if self.rotate_upright:

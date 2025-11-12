@@ -47,11 +47,14 @@
             "type": "python",
             "request": "launch",
             "args": [
-                "--task_config=lerobot_liftobj_state",
+                "--remote_protocol=ipc",
             ],
             "program": "${workspaceFolder}/lwlab/scripts/env_server.py",
             "console": "integratedTerminal",
             "justMyCode": false,
+            "env": {
+                "LW_API_ENDPOINT": "https://api-dev.lightwheel.net"
+            },
         },
         {
             "name": "teleop",

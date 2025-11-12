@@ -70,7 +70,6 @@ from isaaclab.app import AppLauncher
 from lwlab.utils.profile_utils import trace_profile, DEBUG_FRAME_ANALYZER, debug_print
 from lwlab.utils.config_loader import config_loader
 from termcolor import colored
-from lwlab.utils.isaaclab_utils import update_sensors
 
 
 def _check_no_task_signal():
@@ -978,11 +977,7 @@ def main():
                             image_shape = (camera_data.shape[0], camera_data.shape[1])  # (height, width)
                             video_recorder.start_recording(camera_name, image_shape)
 
-                # warmup rendering
-                if not args_cli.headless and env.common_step_counter <= 1:
-                    for _ in range(env.cfg.warmup_steps):
-                        update_sensors(env, env.physics_dt)
-
+                warmup_rendering(env)
                 frame_count += 1
                 step_start = time.time()
                 if rollback_to_checkpoint_flag:
@@ -1160,8 +1155,7 @@ def main():
     from multiprocessing import Process, shared_memory
     from lwlab.utils.video_recorder import VideoRecorder, get_camera_images
     from lwlab.utils.teleop_utils import save_checkpoint, load_checkpoint, quick_rewind
-    from lwlab.utils.place_utils.env_utils import set_seed
-    from lwlab.utils.place_utils.env_utils import reset_obj_cache, reset_physx
+    from lwlab.utils.place_utils.env_utils import reset_obj_cache, reset_physx, warmup_rendering, set_seed
     import carb
 
     from omni.log import get_log

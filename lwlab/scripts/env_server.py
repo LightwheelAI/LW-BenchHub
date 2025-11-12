@@ -19,66 +19,71 @@ import random
 import argparse
 from functools import partial
 import gymnasium as gym
-
 from isaaclab.app import AppLauncher
-
-from lwlab.utils.config_loader import config_loader
-
 
 # add argparse arguments
 parser = argparse.ArgumentParser(description="Keyboard teleoperation for Isaac Lab environments.")
-parser.add_argument("--task_config", type=str, default="default", help="task config")
+parser.add_argument("--remote_protocol", type=str, default="ipc", help="Remote protocol, can be ipc or restful")
+parser.add_argument("--ipc_host", type=str, default="127.0.0.1", help="IPC host")
+parser.add_argument("--ipc_port", type=int, default=50000, help="IPC port")
+parser.add_argument("--ipc_authkey", type=str, default="lightwheel", help="IPC authkey")
+parser.add_argument("--restful_host", type=str, default="0.0.0.0", help="Restful host")
+parser.add_argument("--restful_port", type=int, default=8000, help="Restful port")
 
 # append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
 # parse the arguments
 args_cli = parser.parse_args()
-yaml_args = config_loader.load(args_cli.task_config)
-args_cli.__dict__.update(yaml_args.__dict__)
+args_cli.headless = True
 
-if args_cli.remote_protocal == "restful":
+# yaml_args = config_loader.load(args_cli.task_config)
+# args_cli.__dict__.update(yaml_args.__dict__)
+
+if args_cli.remote_protocol == "restful":
     from lwlab.distributed.restful import RestfulEnvWrapper
-    RemoteEnvWrapper = partial(RestfulEnvWrapper, host=args_cli.restful_host, port=args_cli.restful_port)
-else:   # ipc
-    from lwlab.distributed.env import DistributedEnvWrapper as RemoteEnvWrapper
+    RemoteEnvWrapper = partial(RestfulEnvWrapper, address=(args_cli.restful_host, args_cli.restful_port))
+elif args_cli.remote_protocol == "ipc":   # ipc
+    from lwlab.distributed.ipc import IpcDistributedEnvWrapper
+    RemoteEnvWrapper = partial(IpcDistributedEnvWrapper, address=(args_cli.ipc_host, args_cli.ipc_port), authkey=args_cli.ipc_authkey.encode())
+
 
 app_launcher_args = vars(args_cli)
-app_launcher = AppLauncher(app_launcher_args)
-simulation_app = app_launcher.app
-
-from lwlab.utils.isaaclab_utils import update_sensors
+app_launcher = None
+simulation_app = None
 
 
-def make_env_cfg():
+def make_env_cfg(cfg):
     from isaaclab_tasks.utils import parse_env_cfg
 
-    if "-" in args_cli.task:
+    if "-" in cfg.task:
         env_cfg = parse_env_cfg(
-            args_cli.task, device=args_cli.device, num_envs=args_cli.num_envs, use_fabric=not args_cli.disable_fabric
+            cfg.task, device=cfg.device, num_envs=cfg.num_envs, use_fabric=not cfg.disable_fabric
         )
-        task_name = args_cli.task
+        task_name = cfg.task
     else:  # robocasa
         from lwlab.utils.env import parse_env_cfg, ExecuteMode
 
         env_cfg = parse_env_cfg(
-            scene_backend=args_cli.scene_backend,
-            task_backend=args_cli.task_backend,
-            task_name=args_cli.task,
-            robot_name=args_cli.robot,
-            scene_name=args_cli.layout,
-            rl_name=args_cli.rl,
-            robot_scale=args_cli.robot_scale,
-            device=args_cli.device, num_envs=args_cli.num_envs, use_fabric=not args_cli.disable_fabric,
-            first_person_view=args_cli.first_person_view,
+            scene_backend=cfg.scene_backend,
+            task_backend=cfg.task_backend,
+            task_name=cfg.task,
+            robot_name=cfg.robot,
+            scene_name=cfg.layout,
+            rl_name=cfg.rl,
+            robot_scale=cfg.robot_scale,
+            device=cfg.device,
+            num_envs=cfg.num_envs,
+            use_fabric=not cfg.disable_fabric,
+            first_person_view=cfg.first_person_view,
             enable_cameras=app_launcher._enable_cameras,
-            execute_mode=ExecuteMode.EVAL,
-            usd_simplify=args_cli.usd_simplify,
-            seed=args_cli.seed,
-            sources=args_cli.sources,
-            object_projects=args_cli.object_projects,
+            execute_mode=cfg.execute_mode,
             headless_mode=args_cli.headless,
+            usd_simplify=cfg.usd_simplify,
+            seed=cfg.seed,
+            sources=cfg.sources,
+            object_projects=cfg.object_projects,
         )
-        task_name = f"Robocasa-{args_cli.task}-{args_cli.robot}-v0"
+        task_name = f"Robocasa-{cfg.task}-{cfg.robot}-v0"
 
         gym.register(
             id=task_name,
@@ -87,43 +92,50 @@ def make_env_cfg():
             disable_env_checker=True
         )
 
-    env_cfg.observations.policy.concatenate_terms = args_cli.concatenate_terms
+    env_cfg.observations.policy.concatenate_terms = cfg.concatenate_terms
     # modify configuration
     env_cfg.terminations.time_out = None
     # override configurations with non-hydra CLI arguments
-    env_cfg.scene.num_envs = args_cli.num_envs if args_cli.num_envs is not None else env_cfg.scene.num_envs
-    env_cfg.sim.device = args_cli.device if args_cli.device is not None else env_cfg.sim.device
+    env_cfg.scene.num_envs = cfg.num_envs if cfg.num_envs is not None else env_cfg.scene.num_envs
+    env_cfg.sim.device = cfg.device if cfg.device is not None else env_cfg.sim.device
     # multi-gpu training config
-    if args_cli.distributed:
+    if cfg.distributed:
         env_cfg.sim.device = f"cuda:{app_launcher.local_rank}"
 
     # randomly sample a seed if seed = -1
-    if args_cli.seed == -1:
-        args_cli.seed = random.randint(0, 10000)
+    if cfg.seed == -1:
+        cfg.seed = random.randint(0, 10000)
     return task_name, env_cfg
+
+
+def make_env(cfg):
+    global app_launcher
+    global simulation_app
+    if app_launcher is None:
+        app_launcher = AppLauncher(app_launcher_args)
+        simulation_app = app_launcher.app
+    from isaaclab.envs import ManagerBasedEnv
+    from lwlab.utils.place_utils.env_utils import warmup_rendering
+    task_name, env_cfg = make_env_cfg(cfg)
+    gym_env = gym.make(
+        task_name,
+        cfg=env_cfg,
+        render_mode="rgb_array" if cfg.video else None
+    )
+    env: ManagerBasedEnv = gym_env.unwrapped
+    warmup_rendering(env)
+    return env
 
 
 def main():
     """Running keyboard teleoperation with Isaac Lab manipulation environment."""
 
     """Rest everything follows."""
-
-    task_name, env_cfg = make_env_cfg()
-
-    env = gym.make(task_name, cfg=env_cfg, render_mode="rgb_array" if args_cli.video else None).unwrapped
-    # warmup rendering
-    if env.common_step_counter <= 1:
-        for _ in range(env.cfg.warmup_steps):
-            update_sensors(env, env.physics_dt)
-
-    env = RemoteEnvWrapper(env)
-    env.serve()
-    # close environment when server is stopped
-    env.close()
+    with RemoteEnvWrapper(make_env) as env_server:
+        env_server.serve()
 
 
 if __name__ == "__main__":
-    from torch import multiprocessing as mp
-    mp.set_start_method("fork", force=True)
     main()
-    simulation_app.close()
+    if simulation_app is not None:
+        simulation_app.close()

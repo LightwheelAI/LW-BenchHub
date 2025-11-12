@@ -351,14 +351,26 @@ class OpenUsd:
         return [joint for joint in joints if not OpenUsd.is_fixed_joint(joint)]
 
     @staticmethod
-    def get_prim_by_name(prim, name, only_xform=True):
+    def get_prim_by_name(prim, name, only_xform=True, case_sensitive=False, only_first=False):
         """Get prim by name"""
         result = []
-        if prim.GetName().lower() == name.lower():
-            if not only_xform or prim.GetTypeName() == "Xform":
-                result.append(prim)
-        for child in prim.GetAllChildren():
-            result.extend(OpenUsd.get_prim_by_name(child, name, only_xform))
+        if not case_sensitive:
+            lower_name = name.lower()
+            for child in Usd.PrimRange(prim):
+                if child.GetName().lower() == lower_name:
+                    if not only_xform or child.GetTypeName() == "Xform":
+                        result.append(child)
+                        if only_first:
+                            break
+                # result.extend(OpenUsd.get_prim_by_name(child, name, only_xform))
+        else:
+            for child in Usd.PrimRange(prim):
+                if child.GetName() == name:
+                    if not only_xform or child.GetTypeName() == "Xform":
+                        result.append(child)
+                        if only_first:
+                            break
+
         return result
 
     @staticmethod

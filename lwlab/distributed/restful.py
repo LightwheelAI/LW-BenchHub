@@ -5,16 +5,47 @@ import threading
 import signal
 import sys
 import traceback
-import torch
 from io import BytesIO
-from typing import Any, Dict, List, Tuple
-
-from PIL import Image
+import torch
 import numpy as np
+from PIL import Image
+from typing import Any, Dict, List, Tuple, Callable, TYPE_CHECKING
+if TYPE_CHECKING:
+    from isaaclab.envs import ManagerBasedEnv
+from .base import BaseDistributedEnv
 from flask import Flask, request, jsonify
 
 
-class RestfulEnvWrapper:
+class DotDict(dict):
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+
+class APIError(Exception):
+    """Custom exception for API errors."""
+
+    def __init__(self, msg, code):
+        self.code = code
+        super().__init__(msg)
+
+
+def flask_handle_error(self: "RestfulEnvWrapper"):
+    def outer_wrapper(func):
+        def wrapper(*args, **kwargs):
+            try:
+                with self._locked_mainthread():
+                    res = func(self, *args, **kwargs)
+                    return jsonify(res)
+            except APIError as e:
+                return self._error(str(e), e.code)
+            except Exception as e:
+                return self._error(f"Internal server error: {e}", 500)
+        return wrapper
+    return outer_wrapper
+
+
+class RestfulEnvWrapper(BaseDistributedEnv):
     """
     Wrap an existing Gymnasium/IsaacLab environment as a blocking, single-threaded REST server.
 
@@ -37,12 +68,9 @@ class RestfulEnvWrapper:
     - Server can be stopped with Ctrl+C or by calling the /shutdown endpoint
     """
 
-    def __init__(self, env: Any, host: str = "0.0.0.0", port: int = 8000):
-        self.env = env
-        self.host = host
-        self.port = int(port)
+    def __init__(self, env, address=('0.0.0.0', 8000)):
+        super().__init__(env, address=address)
         self._shutdown_requested = False
-
         # In-memory session store; we support multiple session IDs but share one env instance.
         # Since processing is strictly serialized, concurrent sessions are still safe.
         self._sessions: Dict[str, Dict[str, Any]] = {}
@@ -51,9 +79,6 @@ class RestfulEnvWrapper:
         # Flask app is instance-local to avoid globals.
         self.app = Flask(__name__)
         self._register_routes()
-
-        # Set up signal handlers for graceful shutdown
-        self._setup_signal_handlers()
 
     # -------------------------- Public API --------------------------
 
@@ -83,140 +108,134 @@ class RestfulEnvWrapper:
         app = self.app
 
         @app.route("/attach", methods=["POST"])
+        @flask_handle_error(self)
         def attach():
-            with self._locked_mainthread():
-                data = request.get_json(force=True, silent=True) or {}
-                # env_id/env_config are accepted for compatibility but not used to create env here.
-                env_id = data.get("env_id")
-                env_config = data.get("env_config") or {}
+            data = request.get_json(force=True, silent=True) or {}
+            # env_id/env_config are accepted for compatibility but not used to create env here.
+            env_id = data.get("env_id")
+            env_config = DotDict(data.get("env_config") or {})
 
-                sid = str(uuid.uuid4())
-                self._sessions[sid] = {"env_id": env_id, "env_config": env_config}
-                return jsonify({"session_id": sid})
+            sid = str(uuid.uuid4())
+            self._sessions[sid] = {"env_id": env_id, "env_config": env_config}
+            self.attach(env_config)
+            return {"session_id": sid}
 
         @app.route("/task_info", methods=["GET"])
+        @flask_handle_error(self)
         def task_info():
-            with self._locked_mainthread():
-                try:
-                    lang = ""
-                    if hasattr(self.env, "cfg") and hasattr(self.env.cfg, "get_ep_meta"):
-                        meta = self.env.cfg.get_ep_meta()
-                        lang = meta.get("lang", "")
-                    return jsonify({"lang": lang})
-                except Exception as e:
-                    return self._error(f"failed to get task info: {e}", 500)
+            if self._env is None:
+                raise APIError("environment is not attached", 500)
+            lang = ""
+            if hasattr(self._env, "cfg") and hasattr(self._env.cfg, "get_ep_meta"):
+                meta = self._env.cfg.get_ep_meta()
+                lang = meta.get("lang", "")
+            return {"lang": lang}
 
         @app.route("/reset", methods=["POST"])
+        @flask_handle_error(self)
         def reset():
-            with self._locked_mainthread():
-                data = request.get_json(force=True, silent=True) or {}
-                sid = data.get("session_id")
-                if not self._valid_session(sid):
-                    return self._error("invalid session_id", 404)
-
-                try:
-                    res = self.env.reset()
-                    if isinstance(res, tuple) and len(res) == 2:
-                        obs, info = res
-                    else:
-                        obs, info = res, {}
-                    images_b64 = self._extract_images(obs)
-                    lang = ""
-                    if hasattr(self.env, "cfg") and hasattr(self.env.cfg, "get_ep_meta"):
-                        meta = self.env.cfg.get_ep_meta()
-                        lang = meta.get("lang", "")
-                    return jsonify({
-                        "obs": images_b64,
-                        # "obs_tensor": self._tensor_to_jsonable(obs),
-                        "info": {"task_str": 'Task:' + lang}
-                    })
-                except Exception as e:
-                    return self._error(f"reset failed: {e}", 500)
+            data = request.get_json(force=True, silent=True) or {}
+            sid = data.get("session_id")
+            if not self._valid_session(sid):
+                raise APIError(f"invalid session_id {sid}", 404)
+            if self._env is None:
+                raise APIError("environment is not attached", 500)
+            res = self.reset()
+            if isinstance(res, tuple) and len(res) == 2:
+                obs, info = res
+            else:
+                obs, info = res, {}
+            images_b64 = self._extract_images(obs)
+            lang = ""
+            if hasattr(self._env, "cfg") and hasattr(self._env.cfg, "get_ep_meta"):
+                meta = self._env.cfg.get_ep_meta()
+                lang = meta.get("lang", "")
+            return {
+                "obs": images_b64,
+                # "obs_tensor": self._tensor_to_jsonable(obs),
+                "info": {"task_str": 'Task:' + lang}
+            }
 
         @app.route("/step", methods=["POST"])
+        @flask_handle_error(self)
         def step():
-            with self._locked_mainthread():
-                data = request.get_json(force=True, silent=True) or {}
-                sid = data.get("session_id")
-                action_str = data.get("action")
+            data = request.get_json(force=True, silent=True) or {}
+            sid = data.get("session_id")
+            action_str = data.get("action")
+            step_count = data.get("step_count", 1)
+            if step_count < 1:
+                raise APIError(f"step_count must be >= 1, got {step_count}", 400)
+            step_out = None
 
-                if not self._valid_session(sid):
-                    return self._error("invalid session_id", 404)
-                if not isinstance(action_str, str):
-                    return self._error("action must be a space-separated string", 400)
+            if not self._valid_session(sid):
+                raise APIError(f"invalid session_id {sid}", 404)
+            if not isinstance(action_str, str):
+                raise APIError(f"action must be a space-separated string: {action_str}", 400)
 
-                try:
-                    action = self._parse_action_string(action_str)
-                except Exception:
-                    return self._error("failed to parse action string into float list", 400)
+            try:
+                action = self._parse_action_string(action_str)
+            except Exception as e:
+                raise APIError(f"failed to parse action string into float list: {e}", 400)
 
-                try:
-                    # Gymnasium step API: (obs, reward, terminated, truncated, info)
-                    if isinstance(action, np.ndarray):
-                        action = torch.from_numpy(action).float()
-                    if action.ndim == 1:
-                        action = action.unsqueeze(0)
-                    for _ in range(10):
-                        step_out = self.env.step(action)
-                    if not (isinstance(step_out, tuple) and len(step_out) >= 5):
-                        return self._error("env.step must return (obs, reward, terminated, truncated, info)", 500)
+            # Gymnasium step API: (obs, reward, terminated, truncated, info)
+            if isinstance(action, np.ndarray):
+                action = torch.from_numpy(action).float()
+            if action.ndim == 1:
+                action = action.unsqueeze(0)
+            for _ in range(step_count):
+                step_out = self.step(action)
+            if not (isinstance(step_out, tuple) and len(step_out) >= 5):
+                raise APIError("env.step must return (obs, reward, terminated, truncated, info)", 500)
 
-                    obs, reward, terminated, truncated, info = step_out[:5]
-                    images_b64 = self._extract_images(obs)
-                    return jsonify({
-                        "obs": images_b64,
-                        # "obs_tensor": self._tensor_to_jsonable(obs),
-                        "reward": reward.detach().cpu().numpy().tolist() if torch.is_tensor(reward) else reward,
-                        "done": terminated.detach().cpu().numpy().tolist() if torch.is_tensor(terminated) else terminated,
-                        "truncated": truncated.detach().cpu().numpy().tolist() if torch.is_tensor(truncated) else truncated,
-                        "info": self._tensor_to_jsonable(info if isinstance(info, dict) else {})
-
-                    })
-                except Exception as e:
-                    return self._error(f"step failed: {e}", 500)
+            obs, reward, terminated, truncated, info = step_out[:5]
+            images_b64 = self._extract_images(obs)
+            return {
+                "obs": images_b64,
+                # "obs_tensor": self._tensor_to_jsonable(obs),
+                "reward": reward.detach().cpu().numpy().tolist() if torch.is_tensor(reward) else reward,
+                "done": terminated.detach().cpu().numpy().tolist() if torch.is_tensor(terminated) else terminated,
+                "truncated": truncated.detach().cpu().numpy().tolist() if torch.is_tensor(truncated) else truncated,
+                "info": self._tensor_to_jsonable(info if isinstance(info, dict) else {})
+            }
 
         @app.route("/detach", methods=["POST"])
+        @flask_handle_error(self)
         def detach():
-            with self._locked_mainthread():
-                data = request.get_json(force=True, silent=True) or {}
-                sid = data.get("session_id")
-                if not self._valid_session(sid):
-                    return self._error("invalid session_id", 404)
+            data = request.get_json(force=True, silent=True) or {}
+            sid = data.get("session_id")
+            if not self._valid_session(sid):
+                raise APIError(f"invalid session_id {sid}", 404)
 
-                # We do NOT close the shared env here; only drop the session.
-                self._sessions.pop(sid, None)
-                return jsonify({"ok": True})
+            self.detach()
+            self._sessions.pop(sid, None)
+            return {"ok": True}
 
         @app.route("/shutdown", methods=["POST"])
+        @flask_handle_error(self)
         def shutdown():
-            with self._locked_mainthread():
-                print("Shutdown requested via API")
-                self._shutdown_requested = True
-                # Use a separate thread to shutdown Flask after response is sent
+            print("Shutdown requested via API")
+            self._shutdown_requested = True
+            # Use a separate thread to shutdown Flask after response is sent
 
-                def shutdown_flask():
-                    import time
-                    time.sleep(0.1)  # Give time for response to be sent
-                    func = request.environ.get('werkzeug.server.shutdown')
-                    if func is None:
-                        raise RuntimeError('Not running with the Werkzeug Server')
-                    func()
-                threading.Thread(target=shutdown_flask, daemon=True).start()
-                return jsonify({"ok": True, "message": "Server shutting down..."})
+            return {"ok": True, "message": "Server shutting down..."}
 
     # -------------------------- Helpers --------------------------
+    def signal_handler(self, signum: int, frame):
+        self._shutdown_requested = True
+        super().signal_handler(signum, frame)
 
-    def _setup_signal_handlers(self):
-        """Set up signal handlers for graceful shutdown on Ctrl+C."""
-        def signal_handler(signum, frame):
-            print(f"\nReceived signal {signum}, initiating graceful shutdown...")
-            self._shutdown_requested = True
-            # Force exit if graceful shutdown doesn't work
-            sys.exit(0)
+    def close(self):
+        self._shutdown_requested = True
 
-        # Handle SIGINT (Ctrl+C) and SIGTERM
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
+        def shutdown_flask():
+            import time
+            time.sleep(0.1)  # Give time for response to be sent
+            func = request.environ.get('werkzeug.server.shutdown')
+            if func is None:
+                raise RuntimeError('Not running with the Werkzeug Server')
+            func()
+        threading.Thread(target=shutdown_flask, daemon=True).start()
+        return super().close()
 
     def _valid_session(self, sid: str) -> bool:
         return isinstance(sid, str) and sid in self._sessions
@@ -290,7 +309,7 @@ class RestfulEnvWrapper:
 
         # Fallback to env.render() if available.
         try:
-            arr = self.env.render()
+            arr = self.render()
             if isinstance(arr, np.ndarray) and arr.ndim == 4 and arr.shape[3] == 3:
                 return [self._np_rgb_to_base64(arr)]
         except Exception:

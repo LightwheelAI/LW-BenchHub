@@ -94,6 +94,7 @@ class _PathView:
     - Ordinary attributes: return by value
     - Special: 'unwrapped' returns another PathView (still reuses the same proxy / connection)
     """
+    _svc: EnvService
 
     def __init__(self, svc_proxy, path: str):
         object.__setattr__(self, "_svc", svc_proxy)
@@ -166,9 +167,19 @@ class RemoteEnv(_PathView):
         mgr.register_for_client()
         svc = mgr.EnvService()  # Only one BaseProxy (single connection/process)
         env = cls(svc, "")
+        # reset the connection when new env created.
+        # to fix issue when server is restarted.
+        try:
+            del svc._tls.connection
+        except AttributeError:
+            pass
+        env.start_connection()
 
         def on_exit():
             # print("at exit close connection")
-            env.close_connection()
+            try:
+                env.close_connection()
+            except Exception as e:
+                print(f"[warning] error closing connection: {e}")
         atexit.register(on_exit)
         return env
