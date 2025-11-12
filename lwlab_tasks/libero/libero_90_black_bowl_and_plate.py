@@ -35,27 +35,26 @@ class LiberoBlackBowlAndPlateBase(LwLabTaskBase):
         super()._reset_internal(env_ids)
 
     def _load_model(self):
-
         super()._load_model()
 
     def _get_obj_cfgs(self):
         cfgs = []
 
-        base_x = self.rng.uniform(-0.5, -0.15)
-        middle_y = self.rng.uniform(0, 0.3)
+        base_x = self.rng.uniform(-0.3, -0.15)
+        middle_y = self.rng.uniform(-0.6, -0.4)
         spacing = self.rng.uniform(0.6, 1.0)
 
         front_pos = (base_x, middle_y + spacing)
         middle_pos = (base_x, middle_y)
         back_pos = (base_x, middle_y - spacing)
 
-        def get_placement(pos=(0.0, -1), size=(0.5, 0.5), ensure_valid=False):
+        def get_placement(pos=(0.0, -1), size=(0.5, 0.5), ensure_valid_placement=False):
             return dict(
                 fixture=self.counter,
                 size=size,
                 pos=pos,
                 margin=0.02,
-                ensure_valid_placement=ensure_valid,
+                ensure_valid_placement=ensure_valid_placement,
             )
 
         plate_placement = get_placement(pos=(0.15, -0.2), size=(0.28, 0.28))

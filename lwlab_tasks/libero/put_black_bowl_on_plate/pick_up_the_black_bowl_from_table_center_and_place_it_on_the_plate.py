@@ -36,7 +36,7 @@ class LSPickUpTheBlackBowlFromTableCenterAndPlaceItOnThePlate(PutBlackBowlOnPlat
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.4, 0.4),
-                    pos=(-0.5, -1.5),
+                    pos=(-0.5, -1),
                     ensure_valid_placement=False,
                 ),
             )

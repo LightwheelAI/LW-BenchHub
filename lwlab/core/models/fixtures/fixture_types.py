@@ -80,7 +80,7 @@ class FixtureType(IntEnum):
 # Mapping from FixtureType to layout registry names (strings used by floorplan_loader)
 FIXTURE_TYPE_TO_REGISTRY_NAME = {
     FixtureType.MICROWAVE: "microwave",
-    FixtureType.STOVE: "stovetop",
+    FixtureType.STOVE: "stove",
     FixtureType.OVEN: "oven",
     FixtureType.SINK: "sink",
     FixtureType.COFFEE_MACHINE: "coffee_machine",
