@@ -47,6 +47,8 @@ class USDObject():
         if prim is None:
             usd = Usd(self.obj_path)
             self._setup_region_dict(usd)
+            # remove fixed joints
+            self.remove_fixed_joint(usd)
             usd.scale_size(scale_factor=self.object_scale)
             usd.set_contact_force_threshold(name=self.name, contact_force_threshold=0.0)
             # get rgb_replace
@@ -111,6 +113,25 @@ class USDObject():
             reg_dict["reg_offset"] = reg_offset
             prefix = reg_bbox.GetName().replace("reg_", "")
             self._regions[prefix] = reg_dict
+
+    def remove_fixed_joint(self, usd):
+        """
+        Remove fixed joints that are bound to the world (body0 is empty).
+        """
+        # Get all PhysicsFixedJoint prims in the scene
+        fixed_joints = usd.get_prim_by_types(["PhysicsFixedJoint"])
+
+        from pxr import UsdPhysics
+
+        for fix_joint_prim in fixed_joints:
+            if fix_joint_prim and fix_joint_prim.IsValid():
+                # Check if body0 is connected to world (empty targets)
+                joint = UsdPhysics.FixedJoint(fix_joint_prim)
+                if joint:
+                    body0_rel = joint.GetBody0Rel()
+                    if body0_rel and len(body0_rel.GetTargets()) == 0:
+                        # This joint is bound to world, remove it
+                        usd.stage.RemovePrim(str(fix_joint_prim.GetPrimPath()))
 
     @property
     def bounded_region_name(self):
