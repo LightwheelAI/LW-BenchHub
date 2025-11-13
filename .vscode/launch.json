@@ -53,7 +53,8 @@
             "console": "integratedTerminal",
             "justMyCode": false,
             "env": {
-                "LW_API_ENDPOINT": "https://api-dev.lightwheel.net"
+                "LW_API_ENDPOINT": "https://api-dev.lightwheel.net",
+                "LD_PRELOAD": "/usr/lib/x86_64-linux-gnu/libjemalloc.so.2",
             },
         },
         {
