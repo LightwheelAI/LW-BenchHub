@@ -464,14 +464,12 @@ def check_obj_in_receptacle_no_contact(env: ManagerBasedEnv, obj_name: str, rece
         obj_pos = torch.mean(env.scene.articulations[obj_name].data.body_com_pos_w, dim=1)
     elif obj_name in env.scene.rigid_objects:
         obj_pos = torch.mean(env.scene.rigid_objects[obj_name].data.body_com_pos_w, dim=1)  # (env_num, 3)
-    recep = env.cfg.objects[receptacle_name]
     if receptacle_name in env.scene.articulations:
         recep_pos = torch.mean(env.scene.articulations[receptacle_name].data.body_com_pos_w, dim=1)
     elif receptacle_name in env.scene.rigid_objects:
         recep_pos = torch.mean(env.scene.rigid_objects[receptacle_name].data.body_com_pos_w, dim=1)  # (env_num, 3)
-
     if th is None:
-        th = recep.horizontal_radius * 0.7
+        th = env.cfg.isaaclab_arena_env.task.objects[receptacle_name].horizontal_radius * 0.7
     is_closed = torch.norm(obj_pos[:, :2] - recep_pos[:, :2], dim=-1) < th  # (env_num, )
     return is_closed
 

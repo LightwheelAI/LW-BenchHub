@@ -182,6 +182,8 @@ def sample_kitchen_object(
                     metadata[key] = obj_res["metadata"][obj_info.source][key]
         obj_info.scale = metadata["scale"]
         obj_info.exclude = metadata["exclude"]
+        if object_cfgs.get("mjcf_path", None):
+            obj_info.mjcf_path = object_cfgs["mjcf_path"]
 
         # TODO: exclude issue
         # obj_source_exclude = []

@@ -1003,6 +1003,7 @@ def create_obj(task: LwLabTaskBase, cfg: Dict[str, Any], version=None, ignore_ca
             # TODO: old version, need remove later
             obj_path = Path(cfg["info"]["mjcf_path"]).parent.with_suffix(".usd")
             obj_path = f"{obj_path.parent.name}/{obj_path.name}"
+            object_cfgs["mjcf_path"] = cfg["info"]["mjcf_path"]
         asset_name = obj_path
         exclude_obj_groups = None
     else:

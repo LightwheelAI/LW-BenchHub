@@ -21,6 +21,7 @@ from lightwheel_sdk.loader import floorplan_loader
 from lwlab.utils.usd_utils import OpenUsd as usd
 from lwlab.core.models.scenes.scene_parser import parse_fixtures
 from lwlab.core.models.fixtures.fixture_types import FixtureType, FIXTURE_TYPE_TO_REGISTRY_NAME
+from lwlab.utils.common_utils import retry
 
 
 class KitchenArena:

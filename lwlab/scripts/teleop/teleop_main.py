@@ -66,6 +66,8 @@ from collections.abc import Callable
 from lwlab.utils.log_utils import log_scene_rigid_objects, handle_exception_and_log, get_default_logger
 from lwlab.utils.env import ExecuteMode
 from isaaclab.app import AppLauncher
+from isaaclab.utils.datasets import EpisodeData, HDF5DatasetFileHandler
+
 
 from lwlab.utils.profile_utils import trace_profile, DEBUG_FRAME_ANALYZER, debug_print
 from lwlab.utils.config_loader import config_loader
@@ -611,13 +613,43 @@ def main():
         """Create environment configuration based on task type."""
         import omni.usd
         omni.usd.get_context().new_stage()
-        if "-" in args_cli.task:
-            env_cfg = parse_env_cfg(
-                args_cli.task, device=args_cli.device, num_envs=args_cli.num_envs, use_fabric=not args_cli.disable_fabric
-            )
-            env_name = args_cli.task
-        else:  # isaac-robocasa
-            with trace_profile("parse_env_cfg"):
+        with trace_profile("parse_env_cfg"):
+            # Load replay dataset
+            if hasattr(args_cli, "input_dataset_file") and os.path.exists(args_cli.input_dataset_file):
+                dataset_file_handler = HDF5DatasetFileHandler()
+                dataset_file_handler.open(args_cli.input_dataset_file)
+                env_args = json.loads(dataset_file_handler._hdf5_data_group.attrs["env_args"])
+                scene_backend = env_args["scene_backend"] if "scene_backend" in env_args else "robocasa"
+                task_backend = env_args["task_backend"] if "task_backend" in env_args else "robocasa"
+                task_name = env_args["task_name"].strip() if args_cli.task is None else args_cli.task.strip()
+                robot_name = env_args["robot_name"]
+                if robot_name == "double_piper_abs":
+                    robot_name = "DoublePiper-Abs"
+                if robot_name == "double_piper_rel":
+                    robot_name = "DoublePiper-Rel"
+                scene_name = f"{env_args['scene_type']}-{env_args['layout_id']}-{env_args['style_id']}"
+                usd_simplify = env_args["usd_simplify"] if 'usd_simplify' in env_args else False
+                env_cfg = parse_env_cfg(
+                    scene_backend=scene_backend,
+                    task_backend=task_backend,
+                    task_name=task_name,
+                    robot_name=robot_name,
+                    scene_name=scene_name,
+                    robot_scale=args_cli.robot_scale,
+                    device=args_cli.device,
+                    num_envs=args_cli.num_envs,
+                    use_fabric=not args_cli.disable_fabric,
+                    replay_cfgs={"hdf5_path": args_cli.input_dataset_file, "ep_meta": env_args},
+                    first_person_view=args_cli.first_person_view,
+                    enable_cameras=app_launcher._enable_cameras,
+                    execute_mode=ExecuteMode.TELEOP,
+                    usd_simplify=usd_simplify,
+                    seed=env_args["seed"] if "seed" in env_args else None,
+                    sources=env_args["sources"] if "sources" in env_args else None,
+                    object_projects=env_args["object_projects"] if "object_projects" in env_args else None,
+                    headless_mode=args_cli.headless,
+                )
+            else:
                 # Build replay_cfgs from YAML if initial pose is provided
                 ep_meta = {}
                 if hasattr(args_cli, "init_robot_base_pos") and args_cli.init_robot_base_pos is not None:
@@ -694,17 +726,17 @@ def main():
                 env_cfg.recorders.dataset_export_dir_path = output_dir
                 env_cfg.recorders.dataset_filename = output_file_name
 
-            # Unregister existing environment if it exists
-            if env_name in gym.envs.registry:
-                gym.envs.registry.pop(env_name)
+        # Unregister existing environment if it exists
+        if env_name in gym.envs.registry:
+            gym.envs.registry.pop(env_name)
 
-            # Register the environment
-            gym.register(
-                id=env_name,
-                entry_point="isaaclab.envs:ManagerBasedRLEnv",
-                kwargs={},
-                disable_env_checker=True,
-            )
+        # Register the environment
+        gym.register(
+            id=env_name,
+            entry_point="isaaclab.envs:ManagerBasedRLEnv",
+            kwargs={},
+            disable_env_checker=True,
+        )
         # Apply configuration modifications
         # Create new stage and environment
         new_env: ManagerBasedRLEnv = gym.make(env_name, cfg=env_cfg).unwrapped
@@ -934,12 +966,8 @@ def main():
                     env_cfg = env.cfg
                     should_remake_env = False
                 elif should_remake_env_with_fixed_layout:
-                    if "libero" in env.cfg.isaaclab_arena_env.scene.usd_path:
-                        scene_name = "libero"
-                    else:
-                        scene_name = "robocasakitchen"
-                    if env.cfg.isaaclab_arena_env.scene.layout_id and env.cfg.isaaclab_arena_env.scene.style_id:
-                        scene_name = f"{scene_name}-{env.cfg.isaaclab_arena_env.scene.layout_id}-{env.cfg.isaaclab_arena_env.scene.style_id}"
+                    if env.cfg.layout_id and env.cfg.style_id and env.cfg.scene_type:
+                        scene_name = f"{env.cfg.scene_type}-{env.cfg.layout_id}-{env.cfg.style_id}"
                     else:
                         scene_name = args_cli.layout
                     env, teleop_interface, viewports, overlay_window = remake_env(env, teleop_interface, viewports, scene_name)
