@@ -58,9 +58,13 @@ def randomize_scene_lighting(
     env_ids: torch.Tensor,
     intensity_range: tuple[float, float] = (400.0, 1200.0),
     color_range: tuple[float, float] = (0.0, 2.0),
+    padding_ratio: float = 0.3,
     asset_name: str = "light",
 ):
-    scene_range_x, scene_range_y = env.cfg.scene_range[0], env.cfg.scene_range[1]
+    scene_range_x = env.cfg.isaaclab_arena_env.scene.scene_range[:, 0]
+    scene_range_y = env.cfg.isaaclab_arena_env.scene.scene_range[:, 1]
+    x_padding_inside = padding_ratio * (scene_range_x[1] - scene_range_x[0])
+    y_padding_inside = padding_ratio * (scene_range_y[1] - scene_range_y[0])
     for env_id in env_ids:
         scene_env_prefix = env.scene.env_prim_paths[env_id]
         prim_path = scene_env_prefix + "/" + asset_name
@@ -68,9 +72,10 @@ def randomize_scene_lighting(
         position_attr = prim.GetAttribute("xformOp:translate")
         intensity_attr = prim.GetAttribute("inputs:intensity")
         color_attr = prim.GetAttribute("inputs:color")
-        new_position_x = _sample_random_value(0.3 * scene_range_x, 0.7 * scene_range_x, 1)[0]
-        new_position_y = _sample_random_value(0.3 * scene_range_y, 0.7 * scene_range_y, 1)[0]
-        new_position = (new_position_x, new_position_y, 3.0)
+        original_z = position_attr.Get()[2]
+        new_position_x = _sample_random_value(scene_range_x[0] + x_padding_inside, scene_range_x[1] - x_padding_inside, 1)[0]
+        new_position_y = _sample_random_value(scene_range_y[0] + y_padding_inside, scene_range_y[1] - y_padding_inside, 1)[0]
+        new_position = (new_position_x, new_position_y, original_z)
         position_attr.Set(new_position)
 
         new_intensity = _sample_random_value(intensity_range[0], intensity_range[1], 1)[0]

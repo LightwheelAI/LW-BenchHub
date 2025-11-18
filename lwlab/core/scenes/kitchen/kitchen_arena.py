@@ -16,6 +16,7 @@
 
 import os
 import time
+import numpy as np
 
 from lightwheel_sdk.loader import floorplan_loader
 from lwlab.utils.usd_utils import OpenUsd as usd
@@ -53,6 +54,9 @@ class KitchenArena:
         # download floorplan usd
         self.load_floorplan(layout_id, style_id, floorplan_version, exclude_layouts, exclude_styles, scene_type, local_scene_path)
         self.stage = usd.get_stage(self.usd_path)
+
+        scene_aabb = usd.get_prim_aabb_bounding_box(self.stage.GetPseudoRoot())
+        self.scene_range = np.array([scene_aabb.min, scene_aabb.max])
 
         # enable fixtures in usd
         if self._is_updated_usd(enable_fixtures, movable_fixtures):

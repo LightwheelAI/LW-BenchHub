@@ -124,6 +124,7 @@ class LwLabScene(Scene, NoDeepcopyMixin):
     # second stage (init from ArenaEnvironment)
     def setup_env_config(self, orchestrator):
         self._setup_kitchen_arena(orchestrator)
+        self.scene_range = self.lwlab_arena.scene_range
         self.layout_id = self.lwlab_arena.layout_id
         self.style_id = self.lwlab_arena.style_id
         self.scene_type = self.lwlab_arena.scene_type
@@ -187,10 +188,7 @@ class LwLabScene(Scene, NoDeepcopyMixin):
         env_cfg.sim.physx.friction_correlation_distance = 0.00625
         env_cfg.sim.render.enable_translucency = True
 
-        if env_cfg.scene_backend == "robocasa":
-            env_cfg.scene_range = env_cfg.isaaclab_arena_env.scene.fixtures["floor_room"].pos[:2] * 2
-        elif env_cfg.scene_backend == "local":
-            env_cfg.scene_range = [0.0, 0.0]
+        scene_origin = np.mean(self.scene_range, axis=0)
 
         # add room light in scene(if never added)
         if not hasattr(env_cfg.scene, "room_light"):
@@ -201,7 +199,7 @@ class LwLabScene(Scene, NoDeepcopyMixin):
                     color=(0.75, 0.75, 0.75),
                     intensity=50000.0,
                 ),
-                init_state=AssetBaseCfg.InitialStateCfg(pos=(env_cfg.scene_range[0] / 2, env_cfg.scene_range[1] / 2, 3.0)),
+                init_state=AssetBaseCfg.InitialStateCfg(pos=(scene_origin[0], scene_origin[1], scene_origin[2] * 2)),
             )
             setattr(env_cfg.scene, "room_light", room_light)
 
