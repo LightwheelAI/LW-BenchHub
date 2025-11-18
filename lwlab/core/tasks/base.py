@@ -734,21 +734,27 @@ class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
             ep_name = ep_names[-1]
         with h5py.File(self.context.replay_cfgs["hdf5_path"], 'r') as f:
             rigid_objects_path = f"data/{ep_name}/initial_state/rigid_object"
+            articulation_objects_path = f"data/{ep_name}/initial_state/articulation"
+            deformable_objects_path = f"data/{ep_name}/initial_state/deformable_object"
 
-            # Check if rigid_objects_path exists in the file
-            if rigid_objects_path not in f:
-                return objects_placement
+            object_paths = [rigid_objects_path, articulation_objects_path]
+            if deformable_objects_path in f:
+                object_paths.append(deformable_objects_path)
 
-            rigid_objects_group = f[rigid_objects_path]
-
-            for obj_name in rigid_objects_group.keys():
-                if obj_name not in self.objects.keys():
+            for objects_path in object_paths:
+                if objects_path not in f:
                     continue
-                pose_path = f"{rigid_objects_path}/{obj_name}"
-                obj_group = f[pose_path]
-                objects_placement[obj_name] = (
-                    tuple(obj_group["root_pose"][0][0:3].tolist()), np.array([obj_group["root_pose"][0][4], obj_group["root_pose"][0][5], obj_group["root_pose"][0][6], obj_group["root_pose"][0][3]], dtype=np.float32), self.objects[obj_name]
-                )
+
+                objects_group = f[objects_path]
+
+                for obj_name in objects_group.keys():
+                    if obj_name not in self.objects.keys():
+                        continue
+                    pose_path = f"{rigid_objects_path}/{obj_name}"
+                    obj_group = f[pose_path]
+                    objects_placement[obj_name] = (
+                        tuple(obj_group["root_pose"][0][0:3].tolist()), np.array([obj_group["root_pose"][0][4], obj_group["root_pose"][0][5], obj_group["root_pose"][0][6], obj_group["root_pose"][0][3]], dtype=np.float32), self.objects[obj_name]
+                    )
         return objects_placement
 
     def _setup_kitchen_references(self, scene):
