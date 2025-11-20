@@ -190,9 +190,9 @@ class LwLabScene(Scene, NoDeepcopyMixin):
 
         scene_origin = np.mean(self.scene_range, axis=0)
 
-        # add room light in scene(if never added)
-        if not hasattr(env_cfg.scene, "room_light"):
-            room_light = AssetBaseCfg(
+        # sphere light is only work on RL
+        if self.context.execute_mode in [ExecuteMode.TRAIN, ExecuteMode.EVAL]:
+            env_cfg.scene.room_light = AssetBaseCfg(
                 prim_path="{ENV_REGEX_NS}/room_light",
                 spawn=sim_utils.SphereLightCfg(
                     radius=0.4,
@@ -201,19 +201,24 @@ class LwLabScene(Scene, NoDeepcopyMixin):
                 ),
                 init_state=AssetBaseCfg.InitialStateCfg(pos=(scene_origin[0], scene_origin[1], scene_origin[2] * 2)),
             )
-            setattr(env_cfg.scene, "room_light", room_light)
 
-        # add global light in scene(if never added)
-        if not hasattr(env_cfg.scene, "global_light"):
-            global_light = AssetBaseCfg(
+            env_cfg.scene.global_light = AssetBaseCfg(
                 prim_path="/World/global_light",
                 spawn=sim_utils.DomeLightCfg(
                     color=(0.75, 0.75, 0.75),
                     intensity=500.0,
-                    visible_in_primary_ray=False,
+                    visible_in_primary_ray=True,
                 ),
             )
-            setattr(env_cfg.scene, "global_light", global_light)
+        else:
+            env_cfg.scene.global_light = AssetBaseCfg(
+                prim_path="/World/global_light",
+                spawn=sim_utils.DomeLightCfg(
+                    color=(0.75, 0.75, 0.75),
+                    intensity=9000.0,
+                    visible_in_primary_ray=True,
+                ),
+            )
 
         if self.context.execute_mode == ExecuteMode.TELEOP:
             env_cfg.ui_window_class_type = None
