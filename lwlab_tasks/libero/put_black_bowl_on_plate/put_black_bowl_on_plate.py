@@ -70,7 +70,7 @@ class PutBlackBowlOnPlate(LwLabTaskBase):
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.5, 0.5),
-                    pos=(0.6, -0.6),
+                    pos=(1, 1),
                     ensure_valid_placement=True,
                 ),
                 info=dict(
@@ -87,7 +87,7 @@ class PutBlackBowlOnPlate(LwLabTaskBase):
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.4, 0.4),
-                    pos=(0.5, -0.15),
+                    pos=(1, -0.1),
                     ensure_object_boundary_in_range=False,
                 ),
                 info=dict(
@@ -105,7 +105,7 @@ class PutBlackBowlOnPlate(LwLabTaskBase):
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.4, 0.4),
-                    pos=(0.35, -0.6),
+                    pos=(1, 0),
                     ensure_valid_placement=True,
                 ),
                 info=dict(
