@@ -124,7 +124,7 @@ class L90L6PutTheChocolatePuddingToTheLeftOfThePlate(RelativePlacementBase):
         mug_l_placement = get_placement((0.55, -0.55), (0.25, 0.25))
         mug_r_placement = get_placement((0.20, -1.00), (0.25, 0.25))
 
-        add_cfg(self.ref_name, self.ref_groups, False, plate_placement, None, init_robot_here=True)
+        add_cfg(self.ref_name, self.ref_groups, False, plate_placement, init_robot_here=True, mjcf_path="/objects/lightwheel/plate/Plate039/model.xml")
         add_cfg(self.obj_name, self.obj_groups, False, pudding_placement, scale=0.7, mjcf_path="/objects/lightwheel/chocolate_pudding/ChocolatePudding001/model.xml")
         # 杯子按 CSV 归属到 cup 类别，通过路径指定具体型号
         add_cfg(self.porcelain_mug, "cup", True, mug_l_placement, mjcf_path="/objects/lightwheel/cup/Cup012/model.xml")
