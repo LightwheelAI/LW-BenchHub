@@ -77,13 +77,23 @@ class Fridge(Fixture):
             except (ValueError, KeyError) as e:
                 pass
 
-    def is_open(self, env, entity="fridge", th=0.9):
-        joint_names = None
-        if entity == "fridge":
-            joint_names = self._fridge_door_joint_names
-        elif entity == "freezer":
-            joint_names = self._freezer_door_joint_names
-        return super().is_open(env, joint_names, th)
+    def is_open(self, env, entity="fridge", th=0.9, reg_type="door", drawer_rack_index=None):
+        if reg_type == "door":
+            joint_names = None
+            if entity == "fridge":
+                joint_names = self._fridge_door_joint_names
+            elif entity == "freezer":
+                joint_names = self._freezer_door_joint_names
+            return super().is_open(env, joint_names, th)
+        elif reg_type == "drawer":
+            draw_joints = self._get_drawer_joints(
+                compartment=entity, drawer_rack_index=drawer_rack_index
+            )
+            if not draw_joints:
+                return torch.tensor([True], dtype=torch.bool, device=env.device).repeat(env.num_envs)
+            return super().is_open(env, joint_names=draw_joints, th=th)
+        else:
+            raise ValueError(f"Invalid reg_type: {reg_type}")
 
     def is_closed(self, env, entity="fridge", th=0.005, reg_type="door", drawer_rack_index=None):
         if reg_type == "door":
