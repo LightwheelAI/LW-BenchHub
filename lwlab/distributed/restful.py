@@ -14,12 +14,28 @@ if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedEnv
 from .base import BaseDistributedEnv
 from flask import Flask, request, jsonify
+import sys
 
 
 class DotDict(dict):
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
+
+    # workaround for python3.10
+    if sys.version_info < (3, 11):
+        def __reduce_ex__(self, protocal):
+            base_reduce = dict(self).__reduce_ex__(protocal)
+
+            if (isinstance(base_reduce, tuple) and len(base_reduce) >= 2 and
+                isinstance(base_reduce[1], tuple) and len(base_reduce[1]) > 0 and
+                base_reduce[1][0] is dict):
+                
+                new_args = (DotDict,) + base_reduce[1][1:]
+                new_reduce = (base_reduce[0], new_args) + base_reduce[2:]
+                return new_reduce
+            
+            return base_reduce
 
 
 class APIError(Exception):

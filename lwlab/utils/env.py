@@ -53,6 +53,14 @@ class ExecuteMode(enum.Enum):
     TEST_OBJECT = 6
     TEST_FIXTURE = 7
 
+def str_to_execute_mode(mode_str: str) -> ExecuteMode:
+    normalized = mode_str.upper().replace(' ', '').replace('_', '')
+    for mode in ExecuteMode:
+        mode_name_normalized = mode.name.upper().replace(' ', '').replace('_', '')
+        if mode_name_normalized == normalized:
+            return mode
+    print(f"INvalid excute mode: '{mode_str}'. Use default mode TELEOP")
+    return ExecuteMode.TELEOP
 
 def load_cfg_cls_from_registry(cfg_type: str, cfg_name: str, entry_point_key: str, backend: str = "robocasa") -> dict | object:
     """Load default configuration given its entry point from the gym registry.

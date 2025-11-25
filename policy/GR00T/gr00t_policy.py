@@ -68,7 +68,8 @@ class GR00TPolicy(BasePolicy):
                     obs_window[key] = obs_window[key][None, ...]  # N, env, ...
                     obs_window[key] = obs_window[key][None, ...]  # N, env, ...
             else:
-                obs_window[key] = obs[mapping][None, ...]  # N, env, H,W,C
+                mapping_key = next(iter([key for key in obs.keys() if key.startswith(mapping)]), None)
+                obs_window[key] = obs[mapping_key][None, ...]  # N, env, H,W,C
 
         return obs_window
 
@@ -101,7 +102,7 @@ class GR00TPolicy(BasePolicy):
              usr_args: Dict[str, Any], video_writer: Any) -> bool:
         for _ in range(usr_args['time_out_limit']):
             observation = self.encode_obs(observation)
-            observation = self.x7s_obs_mapping(observation)
+            # observation = self.x7s_obs_mapping(observation)
             actions = self.get_action(observation)  # env, horizon, action_dim
             actions = self.x7s_action_mapping(actions)
             for i in range(self.usr_args["num_feedback_actions"]):

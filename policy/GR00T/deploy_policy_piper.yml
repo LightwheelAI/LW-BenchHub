@@ -1,6 +1,8 @@
 # Basic experiment configuration (keep unchanged)
 policy_name: 'GR00TPolicy'
-ckpt_setting: '/home/zsy/workspace/output/gr00t_result_piper_lift_cube/checkpoint-6000' # 'nvidia/GR00T-N1.5-3B' # To be provided by the user
+# ckpt_setting: '/home/zsy/workspace/output/gr00t_result_piper_lift_cube/checkpoint-6000' # 'nvidia/GR00T-N1.5-3B' # To be provided by the user
+ckpt_setting: '/home/yu.zhuang/Workspace/lwlab-private/evaluation/groot/from_zhenju/checkpoint-5000' # 'nvidia/GR00T-N1.5-3B' # To be provided by the user
+# ckpt_setting: '/workspace/checkpoint-5000' # 'nvidia/GR00T-N1.5-3B' # To be provided by the user
 seed: 0
 
 height: 480
@@ -26,23 +28,74 @@ record_camera: ["eye_in_hand_camera"]
 time_out_limit: 60
 
 env_cfg:
+  # =========================
+  # Basic Settings
+  # =========================
+  disable_fabric: false
+  num_envs: 1
+  device: cuda:0 #cpu
+  sensitivity: 1.0
+  step_hz: 50
+
+  # =========================
+  # Robot Settings
+  # =========================
+  robot: Piper-Abs-deploy
+  robot_scale: 1.0
+
+  # =========================
+  # Task & Scene Settings
+  # =========================
   task: LiftObj
-  robot: Piper-Abs-Deploy
-  layout: robocasakitchen-9-8
   scene_backend: robocasa
   task_backend: robocasa
-  device: cuda:0
-  num_envs: 1
+  debug_assets: null
+  layout: robocasakitchen-9-8
+  sources:
+    - objaverse
+    - lightwheel
+    - aigen_objs
+  object_projects: []
   usd_simplify: false
-  enable_cameras: true
-  video: false
-  disable_fabric: false
-  robot_scale: 1.0
-  seed: 42
-  sources: null
-  object_projects: null
-  for_rl: false
-  variant: Visual 
+  seed: 42 #0
 
-  concatenate_terms: false
-  distributed: false
+  # =========================
+  # Data Collection Settings
+  # =========================
+  record: false
+  dataset_file: ./datasets/dataset.hdf5
+  num_demos: 1
+  enable_debug_log: false
+  continue_teleop_after_success: false
+
+  # =========================
+  # Teleoperation Device Settings
+  # =========================
+  enable_pinocchio: false
+  teleop_device: keyboard
+  relative_control: false
+  first_person_view: false
+  enable_rendering_optimization: true
+  enable_multiple_viewports: false
+  action_delay_async: false
+  action_delay_time_s: 0
+  action_delay_type: fixed
+  action_buffer_size: 100
+
+
+  # =========================
+  # Video Saving Settings
+  # =========================
+  enable_cameras: true
+  save_video: false
+  video_save_dir: ./videos
+  video_fps: 30
+
+  # =========================
+  # Object Placement Retry Settings
+  # =========================
+  max_scene_retry: 4
+  max_object_placement_retry: 3
+
+  resample_objects_placement_on_reset: true
+  resample_robot_placement_on_reset: true

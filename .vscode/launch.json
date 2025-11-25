@@ -69,6 +69,17 @@
             },
         },
         {
+            "name": "eval_policy",
+            "type": "debugpy",
+            "request": "launch",
+            "args": [
+                "--config=policy/GR00T/deploy_policy_piper.yml",
+            ],
+            "program": "${workspaceFolder}/lwlab/scripts/policy/eval_policy.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+        },
+        {
             "name": "teleop",
             "type": "debugpy",
             "request": "launch",

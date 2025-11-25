@@ -174,6 +174,7 @@ class LwLabEmbodimentBase(EmbodimentBase):
     def __init__(self, enable_cameras: bool = False, initial_pose: Optional[Pose] = None):
         self.context = get_context()
         super().__init__(enable_cameras, initial_pose)
+        self.enable_cameras = self.context.enable_cameras
         self.scene_config = EmbodimentBaseSceneCfg()
         self.action_config = EmbodimentBaseActionsCfg()
         self.observation_config = EmbodimentBaseObservationCfg()

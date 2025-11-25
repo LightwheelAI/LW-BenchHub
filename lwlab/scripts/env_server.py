@@ -61,7 +61,7 @@ def make_env_cfg(cfg):
         )
         task_name = cfg.task
     else:  # robocasa
-        from lwlab.utils.env import parse_env_cfg, ExecuteMode
+        from lwlab.utils.env import parse_env_cfg, ExecuteMode, str_to_execute_mode
 
         env_cfg = parse_env_cfg(
             scene_backend=cfg.scene_backend,
@@ -76,12 +76,13 @@ def make_env_cfg(cfg):
             use_fabric=not cfg.disable_fabric,
             first_person_view=cfg.first_person_view,
             enable_cameras=app_launcher._enable_cameras,
-            execute_mode=cfg.execute_mode,
+            execute_mode=str_to_execute_mode(cfg.execute_mode),
             headless_mode=args_cli.headless,
             usd_simplify=cfg.usd_simplify,
             seed=cfg.seed,
             sources=cfg.sources,
             object_projects=cfg.object_projects,
+            replay_cfgs=cfg.replay_cfgs
         )
         task_name = f"Robocasa-{cfg.task}-{cfg.robot}-v0"
 

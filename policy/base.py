@@ -47,7 +47,10 @@ class BasePolicy(ABC):
                         camera_key: str) -> None:
         """Add video frame"""
         if video_writer is not None:
-            camera_images = [obs['policy'][cam].cpu().numpy()[0] for cam in camera_key]
+            camera_images = [
+                obs['policy'][[key for key in obs['policy'].keys() if key.startswith(cam)][0]].cpu().numpy()[0] 
+                for cam in camera_key if any(key.startswith(cam) for key in obs['policy'].keys())
+            ]
             combined_image = np.concatenate(camera_images, axis=1)
             video_writer.add_image(combined_image)
 
@@ -76,7 +79,9 @@ class BasePolicy(ABC):
         Returns:
             Processed observation data
         """
-        observation = observation['policy']
+        merged_dict = observation['policy'].copy() 
+        merged_dict.update(observation['embodiment_general_obs'])
+        observation = merged_dict
         for name, obs in observation.items():
             # Process tensor observation data
             if torch.is_tensor(obs):

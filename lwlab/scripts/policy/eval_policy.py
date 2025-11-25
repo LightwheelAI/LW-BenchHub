@@ -89,6 +89,8 @@ def main(usr_args):
             "seed": 42,
             "sources": None,
             "object_projects": None,
+            "execute_mode": "eval",
+            "replay_cfgs": {"add_camera_to_observation": True},
         }
         for key, value in defaults.items():
             if key not in env_cfg:
