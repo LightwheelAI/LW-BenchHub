@@ -38,7 +38,7 @@ class LSPickUpBlackBowlInTopDrawerOfWoodenCabinetAndPlaceItOnPlate(PutBlackBowlO
                 placement=dict(
                     fixture=self.storage_furniture,
                     size=(0.15, 0.25),
-                    pos=(-2, 4),
+                    pos=(-0.9, 0.9),
                     ensure_valid_placement=True,
                 )
             )
