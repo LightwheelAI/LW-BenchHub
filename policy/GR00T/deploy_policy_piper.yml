@@ -26,6 +26,7 @@ observation_config:
 
 record_camera: ["eye_in_hand_camera"]
 time_out_limit: 60
+test_num: 10
 
 env_cfg:
   # =========================
