@@ -1150,7 +1150,7 @@ class PnPStoveToCounter(PnP):  # DONE
                     sample_region_kwargs=dict(
                         ref=self.stove,
                     ),
-                    size=(0.30, 0.30),
+                    size=(0.40, 0.40),
                     pos=("ref", -1.0),
                 ),
             )

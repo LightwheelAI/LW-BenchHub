@@ -1126,16 +1126,16 @@ def set_obj_rgb(env, obj_name, rgb_value):
     """
     Set the RGB color of an object in the USD stage.
     """
-    obj = env.cfg.objects[obj_name]
+    obj = env.cfg.isaaclab_arena_env.task.objects[obj_name]
     obj_usd = usd(obj.obj_path)
-    obj_usd.set_rgb(usd.stage.GetPseudoRoot(), rgb=rgb_value)
+    obj_usd.set_rgb(obj_usd.stage.GetPseudoRoot(), rgb=rgb_value)
 
 
 def add_obj_liquid_site(env, obj_name, liquid_rgba):
     """
     Set the liquid site rgb for an object in the USD stage.
     """
-    obj = env.cfg.objects[obj_name]
+    obj = env.cfg.isaaclab_arena_env.task.objects[obj_name]
     obj_usd = usd(obj.obj_path)
     site_prims = obj_usd.get_all_prims(obj_usd.stage)
     liquid_sites = [site for site in site_prims if site is not None and site.IsValid() and "liquid" in site.GetName()]
