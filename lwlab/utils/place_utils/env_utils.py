@@ -709,7 +709,7 @@ def _get_placement_initializer(orchestrator, cfg_list, seed, z_offset=0.01) -> S
                         init_quat = np.array([0.5, 0.5, 0.5, 0.5])
                         r = R.from_quat(init_quat)
                         min_size = r.apply(mj_obj.size)
-                        sample_region_kwargs["min_size"] = min_size
+                        sample_region_kwargs["min_size"] = min_size.tolist()
                     else:
                         sample_region_kwargs["min_size"] = mj_obj.size
                 if reuse_region_from is None:
