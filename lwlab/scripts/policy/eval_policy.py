@@ -55,9 +55,9 @@ def parse_args_and_config():
 
             try:
                 value = eval(value)
-            except:
+            except Exception:
                 pass
-            
+
             # use ':' to split config
             if ':' in key:
                 keys = key.split(':')
@@ -74,9 +74,9 @@ def parse_args_and_config():
 
     def deep_merge(original, update):
         for key, value in update.items():
-            if (key in original and 
-                isinstance(original[key], dict) and 
-                isinstance(value, dict)):
+            if (key in original and
+                isinstance(original[key], dict) and
+                    isinstance(value, dict)):
                 deep_merge(original[key], value)
             else:
                 original[key] = value
@@ -131,7 +131,7 @@ def main(usr_args):
 
     has_success = False
 
-    test_num = usr_args.get('test_num', 10) #default 10
+    test_num = usr_args.get('test_num', 10)  # default 10
     suc_num = 0
     with (
         contextlib.suppress(KeyboardInterrupt),  # and torch.inference_mode(),
@@ -152,10 +152,10 @@ def main(usr_args):
         "test_count": test_num,
         "success_count": suc_num,
         "success_rate": suc_num / test_num
-    }   
+    }
     with open("./eval_result/eval_results.json", "w", encoding="utf-8") as f:
         json.dump(results, f, indent=4, ensure_ascii=False)
-    
+
     env.close()
     # env.detach()
     env.close_connection()

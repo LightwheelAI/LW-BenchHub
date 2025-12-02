@@ -83,6 +83,7 @@ class PnPCounterToCabinet(PnP):  # DONE
                 obj_groups=self.obj_groups,
                 exclude_obj_groups=self.exclude_obj_groups,
                 graspable=True,
+                init_robot_here=True,
                 placement=dict(
                     fixture=self.counter,
                     sample_region_kwargs=dict(
@@ -958,6 +959,9 @@ class PnPOvenToCounter(PnP):  # DONE
                     pos=(0, -1.0),
                     offset=(0, -0.325),
                     try_to_place_in="oven_tray",
+                    try_to_place_in_kwargs=dict(
+                        object_scale=0.85,
+                    ),
                 ),
             )
         )
