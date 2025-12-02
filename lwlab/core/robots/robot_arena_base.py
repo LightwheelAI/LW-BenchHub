@@ -232,6 +232,9 @@ class LwLabEmbodimentBase(EmbodimentBase):
     def preprocess_device_action(self, action: dict[str, torch.Tensor]) -> torch.Tensor:
         pass
 
+    def get_default_action(self, device: torch.device, num_envs: int) -> torch.Tensor:
+        return None
+
     def filter_action(self, action: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         # Apply simple EMA smoothing on absolute-mode arm actions only.
         # This function does not modify gripper commands.

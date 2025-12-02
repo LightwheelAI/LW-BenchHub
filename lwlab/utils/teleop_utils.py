@@ -25,6 +25,79 @@ This module provides utility functions for teleoperation operations including:
 import torch
 import os
 import copy
+from urllib.parse import urlparse, unquote
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+from tqdm import tqdm
+from termcolor import colored
+from pathlib import Path
+import traceback
+
+
+def download_file(url, output_dir, file_name="input_dataset.hdf5"):
+    """
+    Download a file from a URL to the specified output directory.
+
+    Args:
+        url (str): The URL of the file to download
+        output_dir (str or Path): The directory where the file should be saved
+
+    Returns:
+        Path: Path to the downloaded file, or None if download failed
+    """
+    if requests is None or HTTPAdapter is None or Retry is None or tqdm is None:
+        print(colored("Error: Required packages (requests, tqdm) not installed", "red"))
+        return None
+
+    try:
+        # Parse filename from URL
+        path = urlparse(url).path
+        fname = file_name
+
+        # Ensure output_dir is a Path object and exists
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        outfile = output_dir / fname
+
+        # If file exists, it will be overwritten
+        if outfile.exists():
+            print(colored(f"File already exists at {outfile}, will be overwritten...", "yellow"))
+
+        # Configure automatic retry (useful for temporary network/5xx errors)
+        retry = Retry(
+            total=5,
+            backoff_factor=0.5,
+            status_forcelist=(500, 502, 503, 504),
+            allowed_methods=["GET"]
+        )
+        sess = requests.Session()
+        sess.mount("https://", HTTPAdapter(max_retries=retry))
+        sess.mount("http://", HTTPAdapter(max_retries=retry))
+
+        # Get file size for progress bar (some services may not return this)
+        print(colored(f"Downloading {fname}...", "cyan"))
+        with sess.get(url, stream=True, timeout=(5, 60)) as r:
+            r.raise_for_status()
+            total = int(r.headers.get("Content-Length", 0))
+            pbar = tqdm(total=total, unit="B", unit_scale=True, desc=fname)
+
+            with open(outfile, "wb") as f:
+                for chunk in r.iter_content(chunk_size=1024 * 1024):  # 1MB chunks
+                    if chunk:
+                        f.write(chunk)
+                        pbar.update(len(chunk))
+            pbar.close()
+
+        file_size = outfile.stat().st_size
+        print(colored(f"✅ Download completed task hdf5 file: {outfile}  Size: {file_size} bytes", "green"))
+        return outfile
+
+    except Exception as e:
+        print(colored(f"Download failed: {e}", "red"))
+        print(traceback.format_exc())
+        return None
 
 
 def convert_list_to_2d_tensor(data_node):

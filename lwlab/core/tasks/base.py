@@ -165,6 +165,7 @@ class TerminationsCfg:
 class LwLabTaskBase(TaskBase, NoDeepcopyMixin):
     task_name: str = None
     task_type: str = "teleop"
+    force_reset_env_enabled: bool = False
     resample_objects_placement_on_reset: bool = True
     resample_robot_placement_on_reset: bool = True
     EXCLUDE_LAYOUTS: list = []

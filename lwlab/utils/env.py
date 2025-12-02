@@ -52,6 +52,7 @@ class ExecuteMode(enum.Enum):
     REPLAY_STATE = 5
     TEST_OBJECT = 6
     TEST_FIXTURE = 7
+    REPLAY_TELEOP = 8
 
 
 def str_to_execute_mode(mode_str: str) -> ExecuteMode:

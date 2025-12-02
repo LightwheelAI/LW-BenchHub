@@ -1087,7 +1087,7 @@ def sample_object_placements(orchestrator, need_retry=True) -> dict:
         if not hasattr(orchestrator.task, "placement_initializer"):
             orchestrator.task.placement_initializer = _get_placement_initializer(orchestrator, orchestrator.task.object_cfgs, context.seed)
 
-        if orchestrator.scene.is_replay_mode:
+        if orchestrator.scene.is_replay_mode or (context.execute_mode == ExecuteMode.REPLAY_TELEOP and not orchestrator.task.force_reset_env_enabled):
             return orchestrator.task._load_placement()
 
         if not need_retry:
@@ -1205,7 +1205,7 @@ def sample_robot_base_helper(
 
     found_valid = False
 
-    if execute_mode in (ExecuteMode.REPLAY_ACTION, ExecuteMode.REPLAY_JOINT_TARGETS, ExecuteMode.REPLAY_STATE, ExecuteMode.EVAL):
+    if execute_mode in (ExecuteMode.REPLAY_ACTION, ExecuteMode.REPLAY_TELEOP, ExecuteMode.REPLAY_JOINT_TARGETS, ExecuteMode.REPLAY_STATE, ExecuteMode.EVAL):
         return anchor_pos
 
     cur_dev_pos_x = pos_dev_x

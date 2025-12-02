@@ -614,6 +614,9 @@ class UnitreeG1ControllerEnvCfg(UnitreeG1EnvCfg):
                   f"base_y: {self.base_y_joint_index}, "
                   f"base_yaw: {self.base_yaw_joint_index}")
 
+    def get_default_action(self, device, num_envs) -> torch.Tensor:
+        return torch.tensor([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], device=device).repeat(num_envs, 1)
+
     def reset_robot_cfg_state(self):
         self.base_lock_state = False
         self.base_lock_value_x = 0.0
@@ -1103,6 +1106,9 @@ class UnitreeG1ControllerDecoupledWBCEnvCfg(UnitreeG1ControllerEnvCfg):
         right_gripper = torch.tensor([action["right_gripper"]], device=action['rbase'].device)
         result = torch.concat([left_gripper, right_gripper, left_arm_action, right_arm_action, base_action]).unsqueeze(0)
         return result
+
+    def get_default_action(self, device, num_envs) -> torch.Tensor:
+        return torch.tensor([0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0], device=device).repeat(num_envs, 1)
 
     def _apply_dead_zone_control(self, joystick_input, current_angle, dead_zone_state, dead_zone_threshold=0.1, activation_threshold=0.5, scale_factor=0.02):
         """

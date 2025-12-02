@@ -72,6 +72,8 @@ from lwlab.utils.profile_utils import trace_profile, DEBUG_FRAME_ANALYZER, debug
 from lwlab.utils.config_loader import config_loader
 from termcolor import colored
 from lwlab.utils.render_utils import optimize_rendering
+from robocasa_upload.joylo_uploader import JoyLoUploader
+from lwlab.utils.teleop_utils import download_file
 
 
 def _check_no_task_signal():
@@ -550,20 +552,39 @@ def main():
         omni.usd.get_context().new_stage()
         with trace_profile("parse_env_cfg"):
             # Load replay dataset
+            if hasattr(args_cli, "project_name") and hasattr(args_cli, "batch_name"):
+                uploader = JoyLoUploader(project_name=args_cli.project_name)
+                task_info = uploader.pull_task(batch_name=args_cli.batch_name)
+                if task_info is None:
+                    raise ValueError(f"Unable to obtain task information: batch_name='{args_cli.batch_name}' May not exist or may have been completed")
+                if task_info.get("hdf5_url", None) is not None:
+                    tmp_dir = str(Path(__file__).parent.parent.parent.parent / 'tmp')
+                    download_file(task_info["hdf5_url"], tmp_dir, "input_dataset.hdf5")
+                    args_cli.input_dataset_file = str(Path(tmp_dir) / "input_dataset.hdf5")
+                else:
+                    if hasattr(args_cli, "input_dataset_file"):
+                        delattr(args_cli, 'input_dataset_file')
             if hasattr(args_cli, "input_dataset_file") and os.path.exists(args_cli.input_dataset_file):
                 dataset_file_handler = HDF5DatasetFileHandler()
                 dataset_file_handler.open(args_cli.input_dataset_file)
                 env_args = json.loads(dataset_file_handler._hdf5_data_group.attrs["env_args"])
                 scene_backend = env_args["scene_backend"] if "scene_backend" in env_args else "robocasa"
                 task_backend = env_args["task_backend"] if "task_backend" in env_args else "robocasa"
-                task_name = env_args["task_name"].strip() if args_cli.task is None else args_cli.task.strip()
+                task_name = env_args["task_name"].strip()
                 robot_name = env_args["robot_name"]
-                if robot_name == "double_piper_abs":
-                    robot_name = "DoublePiper-Abs"
-                if robot_name == "double_piper_rel":
-                    robot_name = "DoublePiper-Rel"
+                args_cli.robot = robot_name
                 scene_name = f"{env_args['scene_type']}-{env_args['layout_id']}-{env_args['style_id']}"
                 usd_simplify = env_args["usd_simplify"] if 'usd_simplify' in env_args else False
+                episode_count = dataset_file_handler.get_num_episodes()
+                episode_indices_to_replay = list(range(episode_count))
+                # prepare video writer
+                episode_names = list(dataset_file_handler.get_episode_names())
+                episode_names.sort(key=lambda x: int(x.split("_")[-1]))
+
+                episode_names_to_replay = []
+                for idx in episode_indices_to_replay:
+                    episode_names_to_replay.append(episode_names[idx])
+                dataset_file_handler.close()
                 env_cfg = parse_env_cfg(
                     scene_backend=scene_backend,
                     task_backend=task_backend,
@@ -574,10 +595,10 @@ def main():
                     device=args_cli.device,
                     num_envs=args_cli.num_envs,
                     use_fabric=not args_cli.disable_fabric,
-                    replay_cfgs={"hdf5_path": args_cli.input_dataset_file, "ep_meta": env_args},
+                    replay_cfgs={"hdf5_path": args_cli.input_dataset_file, "ep_meta": env_args, "ep_names": episode_names_to_replay},
                     first_person_view=args_cli.first_person_view,
                     enable_cameras=app_launcher._enable_cameras,
-                    execute_mode=ExecuteMode.TELEOP,
+                    execute_mode=ExecuteMode.REPLAY_TELEOP,
                     usd_simplify=usd_simplify,
                     seed=env_args["seed"] if "seed" in env_args else None,
                     sources=env_args["sources"] if "sources" in env_args else None,
@@ -742,6 +763,7 @@ def main():
         initial_state = None
         reset_physx(env)
         env.reset(seed=env.cfg.seed)
+        print(colored("Reset env successfully", "green"))
         initial_state = copy.deepcopy(env.recorder_manager.get_episode(0).data.get("initial_state", None))
 
         if teleop_interface is not None:
@@ -765,10 +787,8 @@ def main():
         video_recorder = None
         if args_cli.save_video:
             video_recorder = VideoRecorder(args_cli.video_save_dir, args_cli.video_fps, args_cli.task, args_cli.robot, args_cli.layout)
-
         if args_cli.enable_debug_log:
             log_path = log_scene_rigid_objects(env)
-
         # add frame rate analyzer (only in debug mode)
         frame_analyzer = DEBUG_FRAME_ANALYZER
         debug_print("Frame rate analyzer initialized in debug mode")
@@ -836,7 +856,10 @@ def main():
                     actions = None
 
             elif teleop_interface is None:
-                actions = torch.zeros(env.action_space.shape)
+                if env.cfg.isaaclab_arena_env.embodiment.get_default_action(env.device, env.num_envs) is not None:
+                    actions = env.cfg.isaaclab_arena_env.embodiment.get_default_action(env.device, env.num_envs)
+                else:
+                    actions = torch.zeros(env.action_space.shape)
             else:
                 actions = teleop_interface.advance()
                 # safety coding
@@ -880,6 +903,7 @@ def main():
             ):
                 destroy_robot_vis_helper(vis_helper_prims, env)
                 if should_reset_env_keep_placement:
+                    env.cfg.isaaclab_arena_env.force_reset_env_enabled = True
                     reset_physx(env)
                     from lwlab.utils.teleop_utils import convert_list_to_2d_tensor
                     initial_state_converted = convert_list_to_2d_tensor(initial_state)
@@ -890,17 +914,23 @@ def main():
                     should_reset_env_keep_placement = False
                     action_idx = 0
                     ci_start_flag = None
+                    env.cfg.isaaclab_arena_env.force_reset_env_enabled = False
                 elif should_reset_env:
+                    env.cfg.isaaclab_arena_env.force_reset_env_enabled = True
                     reset_physx(env)
                     env.reset(seed=env.cfg.seed)
                     if teleop_interface is not None:
                         teleop_interface.reset()
                     should_reset_env = False
+                    env.cfg.isaaclab_arena_env.force_reset_env_enabled = False
                 elif should_remake_env:
+                    env.cfg.isaaclab_arena_env.force_reset_env_enabled = True
                     env, teleop_interface, viewports, overlay_window = remake_env(env, teleop_interface, viewports)
                     env_cfg = env.cfg
                     should_remake_env = False
+                    env.cfg.isaaclab_arena_env.force_reset_env_enabled = False
                 elif should_remake_env_with_fixed_layout:
+                    env.cfg.isaaclab_arena_env.force_reset_env_enabled = True
                     if env.cfg.layout_id and env.cfg.style_id and env.cfg.scene_type:
                         scene_name = f"{env.cfg.scene_type}-{env.cfg.layout_id}-{env.cfg.style_id}"
                     else:
@@ -908,6 +938,7 @@ def main():
                     env, teleop_interface, viewports, overlay_window = remake_env(env, teleop_interface, viewports, scene_name)
                     env_cfg = env.cfg
                     should_remake_env_with_fixed_layout = False
+                    env.cfg.isaaclab_arena_env.force_reset_env_enabled = False
                 initial_state = copy.deepcopy(env.recorder_manager.get_episode(0).data.get("initial_state", None))
 
                 if not args_cli.headless:
@@ -1185,7 +1216,6 @@ def main():
         # Setup batch name GUI
         # TODO disable batch name GUI for now, since it's not used in teleop
         # batch_name_gui = setup_batch_name_gui(getattr(args_cli, 'batch_name', 'default-batch'))
-
     print("Starting teleoperation - will check for task signals during execution")
 
     try:

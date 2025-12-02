@@ -213,7 +213,7 @@ class L90K2StackTheMiddleBlackBowlOnTheBackBlackBowl(LiberoBlackBowlAndPlateBase
 
     Steps:
         pick up the black bowl
-        put the black bowl in the middle on the front bowl
+        put the black bowl in the middle on the back bowl
 
     """
 
@@ -223,7 +223,7 @@ class L90K2StackTheMiddleBlackBowlOnTheBackBlackBowl(LiberoBlackBowlAndPlateBase
         ep_meta = super().get_ep_meta()
         ep_meta[
             "lang"
-        ] = f"Stack the black bowl in the middle on the black bowl at the front."
+        ] = f"Stack the black bowl in the middle on the black bowl at the back."
         return ep_meta
 
     def _check_success(self, env):
@@ -231,7 +231,7 @@ class L90K2StackTheMiddleBlackBowlOnTheBackBlackBowl(LiberoBlackBowlAndPlateBase
         return OU.check_place_obj1_on_obj2(
             env,
             self.akita_black_bowl_middle,
-            self.akita_black_bowl_front,
+            self.akita_black_bowl_back,
             th_z_axis_cos=0.5,   # verticality - allows up to 60 degree tilt
             th_xy_dist=1.0,      # xy distance threshold - very relaxed, within bowl diameter
             th_xyz_vel=0.5,      # velocity threshold - relaxed
