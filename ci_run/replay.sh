@@ -1,7 +1,6 @@
 #!/bin/bash
 DATASET_FILE=$1
 REPLAY_MODE=$2
-export LW_API_ENDPOINT="https://api-dev.lightwheel.net"
 HDF5_FILENAME=$(basename "${DATASET_FILE}")
 DATASET_DIR=/output
 

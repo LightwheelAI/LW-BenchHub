@@ -1,5 +1,4 @@
 #!/bin/bash
-export LW_API_ENDPOINT="https://api-dev.lightwheel.net"
 
 task_config=$1
 

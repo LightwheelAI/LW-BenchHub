@@ -64,7 +64,6 @@
             "console": "integratedTerminal",
             "justMyCode": false,
             "env": {
-                "LW_API_ENDPOINT": "https://api-dev.lightwheel.net",
                 "LD_PRELOAD": "/usr/lib/x86_64-linux-gnu/libjemalloc.so.2",
             },
         },
@@ -90,15 +89,11 @@
             "type": "debugpy",
             "request": "launch",
             "args": [
-                "--task_config=pandaomron" , // data_collection/teleop/task_config/default.yml
-                // "--headless"
+                "--task_config=pandaomron",
             ],
             "program": "${workspaceFolder}/lwlab/scripts/teleop/teleop_main.py",
             "console": "integratedTerminal",
             "justMyCode": false,
-            "env": {
-                "LW_API_ENDPOINT": "https://api-dev.lightwheel.net"
-            },
         },
         {
             "name": "replay",
@@ -166,9 +161,6 @@
             "program": "${workspaceFolder}/lwlab/scripts/teleop/replay_main.py",
             "console": "integratedTerminal",
             "justMyCode": false,
-            "env": {
-                "LW_API_ENDPOINT": "https://api-dev.lightwheel.net"
-            },
         },
         {
             "name": "replay_action_raw_input",
@@ -186,9 +178,6 @@
             "program": "${workspaceFolder}/lwlab/scripts/teleop/replay_main.py",
             "console": "integratedTerminal",
             "justMyCode": false,
-            "env": {
-                "LW_API_ENDPOINT": "https://api-dev.lightwheel.net"
-            }
         },
         {
             "name": "test_objects",

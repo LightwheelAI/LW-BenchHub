@@ -13,7 +13,6 @@ import shutil
 import h5py
 import numpy as np
 
-os.environ["LW_API_ENDPOINT"] = "https://api-dev.lightwheel.net"
 LWLAB_ROOT = Path(__file__).parent.parent.absolute()
 DATASET_PATH = f"{LWLAB_ROOT}/datasets"
 

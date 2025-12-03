@@ -5,6 +5,8 @@
 
 set -e  # Exit on any error
 
+unset LW_SDK_HEADERS_X_FROM_LIGHTWHEEL_CLOUD
+
 # Check if both arguments are provided
 if [ $# -lt 2 ]; then
     echo "Usage: $0 <commit_id> <command>"

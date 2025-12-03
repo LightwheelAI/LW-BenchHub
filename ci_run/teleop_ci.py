@@ -11,7 +11,6 @@ import yaml
 from pathlib import Path
 
 LWLAB_ROOT = Path(__file__).parent.parent.absolute()
-os.environ["LW_API_ENDPOINT"] = "https://api-dev.lightwheel.net"
 
 
 def cleanup_process(process):
