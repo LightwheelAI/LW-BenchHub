@@ -1,0 +1,10 @@
+
+_base_:
+  - teleop_base
+step_hz: 60
+first_person_view: True
+task: SizeSorting
+layout: robocasakitchen-2-2
+robot: X7S-Abs
+teleop_device: vr-controller
+object_init_offset: [0.0, -0.2] # x, y offset for object initialization

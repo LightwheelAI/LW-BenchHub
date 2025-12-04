@@ -1,0 +1,15 @@
+
+_base_:
+  - teleop_base
+# ==============================
+task: L90K3PutTheFryingPanOnTheStove
+layout: libero-1-1
+robot: DoublePiper-Abs
+teleop_device: vr-controller
+# ==============================
+record: True
+num_demos: 10
+# ==============================
+first_person_view: False
+# ==============================
+enable_cameras: True
