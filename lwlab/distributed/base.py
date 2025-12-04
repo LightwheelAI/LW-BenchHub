@@ -53,6 +53,7 @@ class BaseDistributedEnv(abc.ABC):
     _env: Optional["ManagerBasedEnv"] = None
     _should_stop: bool = False
     _connected: bool = False
+    _passthrough_attach: bool = False
 
     def __init__(
         self,
@@ -107,15 +108,20 @@ class BaseDistributedEnv(abc.ABC):
 
     def attach(self, *args, **kwargs):
         if self._env is not None:
+            if self._env._passthrough_attach:
+                return self._env.attach(*args, **kwargs)
             raise RuntimeError("Environment is already attached.")
         elif self._env_initializer is None:
             raise RuntimeError("No environment initializer provided.")
         else:
             self._env = self._env_initializer(*args, **kwargs)
+        print(f"[INFO-{self.port}]: Attached environment to {self._env}")
 
     def detach(self):
         if self._env is None:
             raise RuntimeError("Environment is not attached.")
+        elif hasattr(self._env, "_passthrough_attach") and self._env._passthrough_attach:
+            return self._env.detach()
         elif self._env_initializer is None:
             raise RuntimeError("No environment initializer provided, cannot re-attach.")
         else:
