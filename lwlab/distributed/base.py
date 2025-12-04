@@ -47,23 +47,30 @@ def generate_env_attrs_meta_info(env):
 
 class BaseDistributedEnv(abc.ABC):
     """Abstract base class for distributed environment wrappers."""
-    host: str
-    port: int
-    _env_initializer: Optional[Callable]
-    _env: Optional["ManagerBasedEnv"]
+    host: str = None
+    port: int = None
+    _env_initializer: Optional[Callable] = None
+    _env: Optional["ManagerBasedEnv"] = None
     _should_stop: bool = False
     _connected: bool = False
 
-    def __init__(self, env: Union["ManagerBasedEnv", Callable[..., "ManagerBasedEnv"]], address: Tuple[str, int] = ('0.0.0.0', 8000)):
+    def __init__(
+        self,
+        env: Optional["ManagerBasedEnv"],
+        env_initializer: Optional[Callable[..., "ManagerBasedEnv"]] = None,
+        address: Tuple[str, int] = ('0.0.0.0', 8000)
+    ):
         self.host, self.port = address
         self.port = int(self.port)
 
-        if callable(env):
-            self._env_initializer = env
-            self._env = None
-        else:
+        if env is not None:
             self._env_initializer = None
             self._env = env
+        elif env_initializer is not None:
+            self._env_initializer = env_initializer
+            self._env = None
+        else:
+            raise ValueError("Either env or env_initializer must be provided.")
         self._setup_signal_handlers()
 
     def __getattr__(self, key):
@@ -89,7 +96,7 @@ class BaseDistributedEnv(abc.ABC):
         print("Closing environment")
         if self._env is not None:
             self._env.close()
-            print("_env closed")
+            print(f"{type(self)}._env closed")
             self._env = None
 
     def start_connection(self):
@@ -125,7 +132,10 @@ class BaseDistributedEnv(abc.ABC):
 
     @abc.abstractmethod
     def signal_handler(self, signum: int, frame):
-        print(f"\nReceived signal {signum}, shutting down gracefully...")
+        # get pid
+        import os
+        pid = os.getpid()
+        print(f"\n{pid}:Received signal {signum}, shutting down gracefully...")
         self._should_stop = True
 
     def _setup_signal_handlers(self):

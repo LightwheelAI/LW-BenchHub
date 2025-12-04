@@ -68,6 +68,20 @@
             },
         },
         {
+            "name": "env_router",
+            "type": "python",
+            "request": "launch",
+            "args": [
+                "--worker_count=1",
+            ],
+            "program": "${workspaceFolder}/lwlab/scripts/env_router.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "LD_PRELOAD": "/usr/lib/x86_64-linux-gnu/libjemalloc.so.2",
+            },
+        },
+        {
             "name": "eval_policy",
             "type": "debugpy",
             "request": "launch",
