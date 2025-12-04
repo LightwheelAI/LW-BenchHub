@@ -6,6 +6,7 @@ import signal
 import sys
 import traceback
 from io import BytesIO
+import requests
 import torch
 import numpy as np
 from PIL import Image
@@ -43,6 +44,11 @@ class APIError(Exception):
     def __init__(self, msg, code):
         self.code = code
         super().__init__(msg)
+
+
+class ShutdownRequested(BaseException):
+    # it is a base exception to intentionally avoid being caught by other exceptions
+    pass
 
 
 def flask_handle_error(self: "RestfulEnvWrapper"):
@@ -84,8 +90,8 @@ class RestfulEnvWrapper(BaseDistributedEnv):
     - Server can be stopped with Ctrl+C or by calling the /shutdown endpoint
     """
 
-    def __init__(self, env, address=('0.0.0.0', 8000)):
-        super().__init__(env, address=address)
+    def __init__(self, env=None, env_initializer=None, address=('0.0.0.0', 8000)):
+        super().__init__(env=env, env_initializer=env_initializer, address=address)
         self._shutdown_requested = False
         # In-memory session store; we support multiple session IDs but share one env instance.
         # Since processing is strictly serialized, concurrent sessions are still safe.
@@ -115,6 +121,9 @@ class RestfulEnvWrapper(BaseDistributedEnv):
         except Exception as e:
             print(f"Server error: {e}")
             raise
+        except ShutdownRequested:
+            # close() being called
+            self._shutdown_requested = True
         finally:
             print("Server stopped.")
 
@@ -135,6 +144,12 @@ class RestfulEnvWrapper(BaseDistributedEnv):
             self._sessions[sid] = {"env_id": env_id, "env_config": env_config}
             self.attach(env_config)
             return {"session_id": sid}
+
+        @app.route("/asd", methods=["GET"])
+        @flask_handle_error(self)
+        def asd():
+            print(f"asd {self.asd()}")
+            return {"asd": 1}
 
         @app.route("/task_info", methods=["GET"])
         @flask_handle_error(self)
@@ -231,25 +246,24 @@ class RestfulEnvWrapper(BaseDistributedEnv):
         def shutdown():
             print("Shutdown requested via API")
             self._shutdown_requested = True
-            # Use a separate thread to shutdown Flask after response is sent
-
-            return {"ok": True, "message": "Server shutting down..."}
+            raise ShutdownRequested()
 
     # -------------------------- Helpers --------------------------
     def signal_handler(self, signum: int, frame):
         self._shutdown_requested = True
+        self.close()
         super().signal_handler(signum, frame)
 
     def close(self):
         self._shutdown_requested = True
 
         def shutdown_flask():
-            import time
-            time.sleep(0.1)  # Give time for response to be sent
-            func = request.environ.get('werkzeug.server.shutdown')
-            if func is None:
-                raise RuntimeError('Not running with the Werkzeug Server')
-            func()
+            try:
+                requests.post(f"http://127.0.0.1:{self.port}/shutdown")
+            except requests.ConnectionError as e:
+                return
+            except Exception as e:
+                print(f"Error shutting down Flask: {e}")
         threading.Thread(target=shutdown_flask, daemon=True).start()
         return super().close()
 

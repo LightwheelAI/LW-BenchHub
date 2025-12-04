@@ -14,11 +14,14 @@ from .base import BaseDistributedEnv
 
 class IpcDistributedEnvWrapper(BaseDistributedEnv):
 
-    def __init__(self, env, address=('', 8000), authkey=b'lightwheel'):
-        super().__init__(env, address=address)
+    def __init__(self, env=None, env_initializer=None, address=('', 8000), authkey=b'lightwheel', device="cuda:0"):
+        super().__init__(env=env, env_initializer=env_initializer, address=address)
+        print(f"IpcDistributedEnvWrapper initialized with address {address} and authkey {authkey}")
         self._manager = self._create_manager(address=address, authkey=authkey)
         self._server = self._manager.get_server()
         self._shutdown_event = threading.Event()
+        self._sock = None
+        self._device = device
 
     def serve(self):
         print(f"Waiting for connection on {self._server.listener.address}...")
@@ -31,7 +34,7 @@ class IpcDistributedEnvWrapper(BaseDistributedEnv):
                 self._server.listener._listener._socket.settimeout(1.0)  # 1 second timeout
                 c = self._server.listener.accept()
                 self._sock = socket.fromfd(c._handle, socket.AF_INET, socket.SOCK_STREAM)
-                print(f"Accepted connection from {self._sock.getpeername()}")
+                # print(f"Accepted connection from {self._sock.getpeername()}")
                 self._server.listener._listener._socket.settimeout(None)  # 1 second timeout
                 self._server.handle_request(c)
                 self._sock = None
@@ -45,7 +48,7 @@ class IpcDistributedEnvWrapper(BaseDistributedEnv):
                 else:
                     raise e
 
-        print("Server stopped.")
+        print(f"IPC Server on {self._server.listener.address} stopped.")
 
     def _get_connection_sock(self, c):
         import socket
@@ -70,7 +73,8 @@ class IpcDistributedEnvWrapper(BaseDistributedEnv):
 
     def close_connection(self):
         self._server.stop_event.set()
-        print(f"Closing connection to {self._sock.getpeername()}")
+        if self._sock is not None:
+            print(f"Closing connection to {self._sock.getpeername()}")
         super().close_connection()
 
     def close(self):

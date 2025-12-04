@@ -161,7 +161,7 @@ class _PathView:
 
 class RemoteEnv(_PathView):
     @classmethod
-    def make(cls, address, authkey) -> "RemoteEnv":
+    def make(cls, address, authkey=b'lightwheel') -> "RemoteEnv":
         mgr = EnvManager(address=address, authkey=authkey)
         mgr.connect()
         mgr.register_for_client()
@@ -179,6 +179,8 @@ class RemoteEnv(_PathView):
             # print("at exit close connection")
             try:
                 env.close_connection()
+            except ConnectionRefusedError as e:
+                pass
             except Exception as e:
                 print(f"[warning] error closing connection: {e}")
         atexit.register(on_exit)
