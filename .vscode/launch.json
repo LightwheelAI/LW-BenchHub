@@ -72,31 +72,15 @@
             "type": "python",
             "request": "launch",
             "args": [
-                "--worker_count=1",
+                "--worker_count=2",
             ],
             "program": "${workspaceFolder}/lwlab/scripts/env_router.py",
             "console": "integratedTerminal",
             "justMyCode": false,
             "env": {
                 "LD_PRELOAD": "/usr/lib/x86_64-linux-gnu/libjemalloc.so.2",
+                // "CUDA_LAUNCH_BLOCKING": "1",
             },
-        },
-        {
-            "name": "eval_policy",
-            "type": "debugpy",
-            "request": "launch",
-            "args": [
-                "--config=policy/GR00T/deploy_policy_piper.yml",
-                // "--overrides",
-                // "--env_cfg:task", "SizeSorting",
-                // "--env_cfg:layout", "robocasakitchen",
-                // "--instruction", "Stack objects on counter from large to small", 
-                // "--time_out_limit", "60",
-                // "--test_num", "5"
-            ],
-            "program": "${workspaceFolder}/lwlab/scripts/policy/eval_policy.py",
-            "console": "integratedTerminal",
-            "justMyCode": false,
         },
         {
             "name": "teleop",

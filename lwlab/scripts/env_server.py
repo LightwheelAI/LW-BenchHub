@@ -109,12 +109,12 @@ def make_env_cfg(cfg):
     return task_name, env_cfg
 
 
-def make_env(cfg, args_override: dict = None):
+def make_env(cfg, launcher_args, args_override: dict = None):
     global app_launcher
     global simulation_app
     if app_launcher is None:
         args_override = args_override or {}
-        app_launcher_args_ = {**app_launcher_args, **args_override}
+        app_launcher_args_ = {**launcher_args, **args_override}
         app_launcher = AppLauncher(app_launcher_args_)
         simulation_app = app_launcher.app
     from isaaclab.envs import ManagerBasedEnv
@@ -134,7 +134,7 @@ def main():
     """Running keyboard teleoperation with Isaac Lab manipulation environment."""
 
     """Rest everything follows."""
-    with RemoteEnvWrapper(env_initializer=make_env) as env_server:
+    with RemoteEnvWrapper(env_initializer=partial(make_env, launcher_args=app_launcher_args)) as env_server:
         env_server.serve()
 
 

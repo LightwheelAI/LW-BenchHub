@@ -6,7 +6,6 @@ import torch
 
 from torch import multiprocessing as tmp
 import typing
-from .base import BaseDistributedEnv
 from .proxy import RemoteEnv
 
 
@@ -76,12 +75,19 @@ class EnvWorker(tmp.Process):
         from lwlab.scripts.env_server import make_env
         from functools import partial
 
-        # def asd(t):
-        #     print("asd", t.device)
-        #     import torch
-        #     return torch.rand_like(t)
-        with IpcDistributedEnvWrapper(env_initializer=partial(make_env, device=self.device), address=self.address, device=self.device) as env:
-            # env.asd = asd
+        def asd(t):
+            print("asd", t.device)
+            import torch
+            return torch.rand_like(t)
+        with IpcDistributedEnvWrapper(
+            env_initializer=partial(
+                make_env,
+                args_override=dict(device=self.device)
+            ),
+            address=self.address,
+            device=self.device
+        ) as env:
+            env.asd = asd
             env.serve()
 
     def _get_client(self):
@@ -105,13 +111,15 @@ class EnvWorker(tmp.Process):
         return self._thread_pool.submit(getattr_func).result()
 
 
-class EnvRouter(BaseDistributedEnv):
+class EnvRouter:
+    _passthrough_attach: bool = True
     _result_idx_not_merge: set = {}
     _method_kwargs_to_split: typing.Dict[str, typing.List[str]] = {
         "step": ["action"],
         "asd": ["t"],
         "reset_to": ["state"],
     }
+    workers = ()
 
     def __init__(
         self,
@@ -127,16 +135,15 @@ class EnvRouter(BaseDistributedEnv):
         self.app_launcher_args = app_launcher_args
 
         self._start_workers()
-        # by default, use the first client as the environment
-        # any other value need to be merged will be overwriten here
-        super().__init__(env=self.workers[0], address=address)
 
     def __getattr__(self, key):  # DONE
         """
         If the attribute is callable, return a lambda function that calls the attribute and merges the result from all workers.
         Otherwise, return the attribute from the first client.
         """
-        obj = super().__getattr__(key)
+        if len(self.workers) == 0:
+            raise AttributeError("No workers started")
+        obj = getattr(self.workers[0], key)
         if callable(obj):
             obj = lambda *args, **kwargs: self._merge_result_from_workers(self._call_in_parallel(key, args, kwargs), key)  # noqa
             setattr(self, key, obj)
@@ -154,7 +161,7 @@ class EnvRouter(BaseDistributedEnv):
             worker.wait_ready()
         print("All workers ready")
 
-    def _call_in_parallel(self, func_name: str, args=[], kwargs={}, split_kwargs: typing.List[dict] = None):  # done
+    def _call_in_parallel(self, func_name: str, args=[], kwargs={}, split_kwargs: typing.List[dict] = None, sequential: bool = False):  # done
         # for simplicity, only split args from kwargs
         split_kwargs = split_kwargs or [{} for _ in range(self.worker_count)]
         if func_name in self._method_kwargs_to_split:
@@ -165,12 +172,18 @@ class EnvRouter(BaseDistributedEnv):
                 split_v = self._split_tensor_to_workers(v)
                 for i, v_ in enumerate(split_v):
                     split_kwargs[i][k] = v_
-        futures = [
-            worker.submit(func_name, args, {**kwargs, **split_kwargs[i]})
-            for i, worker in enumerate(self.workers)
-        ]
-        # Preserve worker order: iterate through futures in submission order, not completion order
-        return [future.result() for future in futures]
+        if sequential:
+            return [
+                worker.submit(func_name, args, {**kwargs, **split_kwargs[i]}).result()
+                for i, worker in enumerate(self.workers)
+            ]
+        else:
+            futures = [
+                worker.submit(func_name, args, {**kwargs, **split_kwargs[i]})
+                for i, worker in enumerate(self.workers)
+            ]
+            # Preserve worker order: iterate through futures in submission order, not completion order
+            return [future.result() for future in futures]
 
     def _split_tensor_to_workers(self, tensor: torch.Tensor):  # done
         return [
@@ -181,6 +194,12 @@ class EnvRouter(BaseDistributedEnv):
 
     def _merge_tensors_from_workers(self, tensors: typing.List[torch.Tensor]):  # done
         return torch.cat([tensor.to(self.device) for tensor in tensors], dim=0)
+
+    def _merge_scalars_from_workers(self, scalars: typing.List[float]):  # done
+        if isinstance(scalars[0], torch.Tensor):
+            return torch.mean(torch.stack([scalar.to(self.device) for scalar in scalars]))
+        else:
+            return sum(scalars) / len(scalars)
 
     def _merge_result_from_workers(self, results: list, idx: str):  # done
         """Merge the results from all workers into a single result.
@@ -209,6 +228,8 @@ class EnvRouter(BaseDistributedEnv):
                 k: self._merge_result_from_workers([result[k] for result in results], f"{idx}.{k}")
                 for k in result0.keys()
             }
+        elif (isinstance(result0, torch.Tensor) and len(result0.shape) == 0) or isinstance(result0, float):
+            return self._merge_scalars_from_workers(results)
         elif isinstance(result0, torch.Tensor):
             return self._merge_tensors_from_workers(results)
         else:
@@ -218,20 +239,10 @@ class EnvRouter(BaseDistributedEnv):
     def num_envs(self):
         return self.workers[0].num_envs * self.worker_count
 
-    def serve(self):
-        # should not arrive here
-        raise NotImplementedError("EnvRouter does not support serve")
-
     def close(self):
         # self._call_in_parallel("close")
         for worker in self.workers:
             worker.shutdown()
-
-    def _setup_signal_handlers(self):
-        pass
-
-    def signal_handler(self, signum: int, frame):
-        return super().signal_handler(signum, frame)
 
     def step(self, action: torch.Tensor):
         return self._merge_result_from_workers(self._call_in_parallel("step", kwargs=dict(action=action)), "step")
@@ -247,9 +258,22 @@ class EnvRouter(BaseDistributedEnv):
     def attach(self, cfg):
         if cfg.num_envs % self.worker_count != 0:
             raise ValueError(f"Number of environments must be divisible by the number of workers. Got {cfg.num_envs} environments and {self.worker_count} workers.")
-        cfg = deepcopy(cfg)
-        cfg.num_envs = cfg.num_envs // self.worker_count
-        self._call_in_parallel("attach", kwargs=dict(cfg=cfg, args_override=self.app_launcher_args))
+        each_kwargs = []
+        for worker in self.workers:
+            each_cfg = deepcopy(cfg)
+            each_cfg.num_envs = cfg.num_envs // self.worker_count
+            each_cfg.device = worker.device
+            each_launcher_args = dict(
+                self.app_launcher_args,
+                device=worker.device
+            )
+            each_kwargs.append(dict(cfg=each_cfg, launcher_args=each_launcher_args))
+
+        self._call_in_parallel(
+            "attach",
+            split_kwargs=each_kwargs,
+            sequential=True
+        )
 
     def detach(self):
         self._call_in_parallel("detach")
