@@ -568,8 +568,6 @@ def compute_robot_base_placement_pose(scene: LwLabScene, task: LwLabTaskBase, re
     #                 robot_class_name
     #             ][dimension]
 
-    fixture_to_robot_offset[1] -= 0.3
-
     # step 3: transform offset to global coordinates
     robot_base_pos = np.zeros(3)
     robot_base_pos[0:2] = OU.get_pos_after_rel_offset(
