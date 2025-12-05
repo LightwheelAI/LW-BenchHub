@@ -832,12 +832,15 @@ def check_place_obj1_on_obj2(env: ManagerBasedEnv, obj1: str, obj2: str, th_z_ax
     return gripper_far & obj1_is_standing & obj1_in_obj2 & obj1_stable
 
 
-def get_object_pos(env, name):
-    return env.scene.rigid_objects[name].data.body_com_pos_w[:, 0, :]
+def get_object_pos(env, obj_name):
+    if obj_name in env.scene.articulations:
+        return env.scene.articulations[obj_name].data.body_com_pos_w[:, 0, :]
+    elif obj_name in env.scene.rigid_objects:
+        return env.scene.rigid_objects[obj_name].data.body_com_pos_w[:, 0, :]
 
 
-def check_near(pos1: torch.Tensor, pos2: torch.Tensor, th: float = 0.2) -> bool:
-    dis = torch.sqrt(torch.sum((pos1 - pos2) ** 2))
+def check_near(obj1_pos, obj2_pos, th=0.2):
+    dis = torch.norm(obj1_pos - obj2_pos, dim=-1)
     return dis < th
 
 
@@ -1045,10 +1048,18 @@ def obj_fixture_bbox_min_dist(env: ManagerBasedEnv, obj_name: str, fixture: Fixt
     all_sep_distances = []
 
     for i in range(env.cfg.scene.num_envs):
-        obj_pos = env.scene.rigid_objects[obj_name].data.body_com_pos_w[i, 0, :].cpu().numpy()
-        obj_quat = T.convert_quat(
-            env.scene.rigid_objects[obj_name].data.body_com_quat_w[i, 0, :].cpu().numpy(), to="xyzw"
-        )
+        fix_min_i = fix_min + env.scene.env_origins[i].cpu().numpy()
+        fix_max_i = fix_max + env.scene.env_origins[i].cpu().numpy()
+        if obj_name in env.scene.rigid_objects:
+            obj_pos = env.scene.rigid_objects[obj_name].data.body_com_pos_w[i, 0, :].cpu().numpy()
+            obj_quat = T.convert_quat(
+                env.scene.rigid_objects[obj_name].data.body_com_quat_w[i, 0, :].cpu().numpy(), to="xyzw"
+            )
+        elif obj_name in env.scene.articulations:
+            obj_pos = env.scene.articulations[obj_name].data.body_com_pos_w[i, 0, :].cpu().numpy()
+            obj_quat = T.convert_quat(
+                env.scene.articulations[obj_name].data.body_com_quat_w[i, 0, :].cpu().numpy(), to="xyzw"
+            )
 
         obj = env.cfg.isaaclab_arena_env.task.objects[obj_name]
         obj_pts = obj.get_bbox_points(trans=obj_pos, rot=obj_quat)
@@ -1058,10 +1069,10 @@ def obj_fixture_bbox_min_dist(env: ManagerBasedEnv, obj_name: str, fixture: Fixt
 
         sep = np.zeros(3)
         for j, axis in enumerate(["x", "y", "z"]):
-            if fix_max[j] < obj_min[j]:
-                sep[j] = obj_min[j] - fix_max[j]
-            elif obj_max[j] < fix_min[j]:
-                sep[j] = fix_min[j] - obj_max[j]
+            if fix_max_i[j] < obj_min[j]:
+                sep[j] = obj_min[j] - fix_max_i[j]
+            elif obj_max[j] < fix_min_i[j]:
+                sep[j] = fix_min_i[j] - obj_max[j]
             else:
                 sep[j] = 0.0
 
