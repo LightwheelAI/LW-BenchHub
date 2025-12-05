@@ -731,7 +731,7 @@ class UnitreeG1ControllerEnvCfg(UnitreeG1EnvCfg):
             self.reset_pid_state('base_yaw')
             print("Auto-unlocked base due to large input")
 
-        base_action = torch.zeros(3,)
+        base_action = torch.zeros(3,).to(device=action['rbase'].device)
 
         if self.base_lock_state:
             if (self.base_x_joint_index != -1 and
