@@ -259,6 +259,48 @@ class Sink(Fixture):
         assert len(sites) == len(self.prim_paths), f"Water site not found!"
         return sites
 
+    def get_obj_basin_loc(self, env, obj_name, partial_check=False):
+        """
+        Determine whether an object is in the left basin, right basin, or neither
+        of a double-basin sink, taking into account the sink's rotation.
+        Args:
+            env (MujocoEnv): The environment instance.
+            obj_name (str): Name of the object.
+            partial_check (bool): If True, checks only the center of the object
+                rather than full bounding box.
+        Returns:
+            str: "left" if in left basin, "right" if in right basin, or "none" otherwise.
+        """
+        if partial_check:
+            threshold = 0.0
+        else:
+            threshold = 0.05
+        locs = [[]for _ in range(env.num_envs)]
+        orig_get_int = self.get_int_sites
+
+        def get_int_sites_left(relative=False):
+            sites = orig_get_int(relative=relative)
+            return {rn: sites[rn] for rn in sites if "basin_left" in rn}
+
+        def get_int_sites_right(relative=False):
+            sites = orig_get_int(relative=relative)
+            return {rn: sites[rn] for rn in sites if "basin_right" in rn}
+        # Check if the object is inside the left basin
+        self.get_int_sites = get_int_sites_left
+        loc_left = OU.obj_inside_of(env, obj_name, self.name, partial_check=partial_check, th=threshold)
+        for env_id in range(env.num_envs):
+            if loc_left[env_id]:
+                locs[env_id].append("left")
+        # Check if the object is inside the right basin
+        self.get_int_sites = get_int_sites_right
+        loc_right = OU.obj_inside_of(env, obj_name, self.name, partial_check=partial_check, th=threshold)
+        for env_id in range(env.num_envs):
+            if loc_right[env_id]:
+                locs[env_id].append("right")
+        self.get_int_sites = orig_get_int
+
+        return locs
+
     @property
     def nat_lang(self):
         return "sink"
