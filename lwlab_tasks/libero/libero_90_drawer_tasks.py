@@ -434,10 +434,10 @@ class L90K4CloseTheBottomDrawerOfTheCabinetAndOpenTheTopDrawer(L90K4CloseTheBott
         ep_meta["lang"] = "Close the bottom drawer of the cabinet and open the top drawer."
         return ep_meta
 
-    def _check_success(self):
-        cabinet_closed = self.drawer.is_closed(self.env, [self.bottom_drawer_joint_name])
-        top_open = self.drawer.is_open(self.env, [self.top_drawer_joint_name], th=0.95)
-        return cabinet_closed & top_open & OU.gripper_obj_far(self.env, self.drawer.name, th=0.35)
+    def _check_success(self, env):
+        cabinet_closed = self.drawer.is_closed(env, [self.bottom_drawer_joint_name])
+        top_open = self.drawer.is_open(env, [self.top_drawer_joint_name], th=0.95)
+        return cabinet_closed & top_open & OU.gripper_obj_far(env, self.drawer.name, th=0.35)
 
 
 class L90K4PutTheBlackBowlInTheBottomDrawerOfTheCabinet(L90K4CloseTheBottomDrawerOfTheCabinet):
