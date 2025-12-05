@@ -134,7 +134,7 @@ class Fridge(Fixture):
             for name in self.get_reset_regions(env, reg_type=reg_type, compartment=compartment, rack_index=rack_index)]
         inside = torch.tensor([False], dtype=torch.bool, device=env.device).repeat(env.num_envs)
         for i in range(env.num_envs):
-            obj_pos = torch.mean(env.scene.rigid_objects[object_name].data.body_com_pos_w, dim=1)[i]
+            obj_pos = env.scene.rigid_objects[object_name].data.body_com_pos_w[i, 0, :]
             obj_z = obj_pos[2]
             filtered_region_names = []
             for region_name in region_names:
