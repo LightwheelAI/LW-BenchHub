@@ -210,6 +210,7 @@ def sample_kitchen_object(
         )
         obj_info.size = model.size
         obj_info.set_attrs(obj_res["property"])
+        obj_info.obj_path = model.obj_path
 
         valid_object_sampled = True
         for i in range(3):

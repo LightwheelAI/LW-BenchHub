@@ -49,7 +49,6 @@ class USDObject():
             self._setup_region_dict(usd)
             # remove fixed joints
             self.remove_fixed_joint(usd)
-            usd.scale_size(scale_factor=self.object_scale)
             usd.set_contact_force_threshold(name=self.name, contact_force_threshold=0.0)
             # get rgb_replace
             if rgb_replace is not None:
@@ -64,10 +63,6 @@ class USDObject():
                 usd.set_rgb(rgb=rgb_replace)
                 rgb_str = "_".join([f"{scale:.2f}" for scale in rgb_replace])
                 self.obj_path = self.obj_path.replace(".usd", f"_rgb_{rgb_str}.usd")
-            # save to a new file if scaled
-            if not np.allclose(object_scale, [1, 1, 1], atol=1e-6):
-                scale_str = "_".join([f"{scale:.1f}" for scale in object_scale])
-                self.obj_path = self.obj_path.replace(".usd", f"_scaled_{scale_str}.usd")
             usd.export(self.obj_path)
         else:
             usd = prim
