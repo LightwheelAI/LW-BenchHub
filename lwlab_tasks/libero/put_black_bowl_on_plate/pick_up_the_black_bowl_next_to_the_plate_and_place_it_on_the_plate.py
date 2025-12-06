@@ -29,9 +29,7 @@ class LSPickUpTheBlackBowlNextToThePlateAndPlaceItOnThePlate(PutBlackBowlOnPlate
             dict(
                 name=self.bowl_target,
                 obj_groups="bowl",
-                info=dict(
-                    mjcf_path=self.bowl_mjcf_path
-                ),
+                asset_name=self.bowl_asset_name,
                 graspable=True,
                 object_scale=0.6,
                 placement=dict(
@@ -46,9 +44,7 @@ class LSPickUpTheBlackBowlNextToThePlateAndPlaceItOnThePlate(PutBlackBowlOnPlate
             dict(
                 name=self.bowl,
                 obj_groups="bowl",
-                info=dict(
-                    mjcf_path=self.bowl_mjcf_path
-                ),
+                asset_name=self.bowl_asset_name,
                 graspable=True,
                 object_scale=0.6,
                 placement=dict(

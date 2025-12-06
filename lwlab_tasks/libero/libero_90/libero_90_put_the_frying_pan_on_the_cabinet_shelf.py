@@ -48,9 +48,7 @@ class L90K9PutTheFryingPanOnTheCabinetShelf(LwLabTaskBase):
                     ensure_object_boundary_in_range=False,
                     rotation=np.pi / 2,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/shelf/Shelf073/model.xml",
-                ),
+                asset_name="Shelf073.usd",
             )
         )
 
@@ -65,9 +63,7 @@ class L90K9PutTheFryingPanOnTheCabinetShelf(LwLabTaskBase):
                     pos=(0.75, -0.0),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bowl/Bowl009/model.xml",
-                ),
+                asset_name="Bowl009.usd",
             )
         )
 
@@ -84,9 +80,7 @@ class L90K9PutTheFryingPanOnTheCabinetShelf(LwLabTaskBase):
                     rotation=0.0,
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/pot/Pot086/model.xml",
-                ),
+                asset_name="Pot086.usd",
             )
         )
 

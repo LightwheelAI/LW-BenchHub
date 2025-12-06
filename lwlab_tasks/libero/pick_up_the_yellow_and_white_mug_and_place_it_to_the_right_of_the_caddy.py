@@ -38,9 +38,7 @@ class L90S1PickUpTheYellowAndWhiteMugAndPlaceItToTheRightOfTheCaddy(LwLabTaskBas
                 graspable=True,
                 object_scale=2.0,
                 init_robot_here=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/desk_caddy/DeskCaddy001/model.xml",
-                ),
+                asset_name="DeskCaddy001.usd",
                 placement=dict(
                     fixture=self.table,
                     rotation=0.0,
@@ -55,9 +53,7 @@ class L90S1PickUpTheYellowAndWhiteMugAndPlaceItToTheRightOfTheCaddy(LwLabTaskBas
                 obj_groups="book",
                 object_scale=0.4,
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/book/Book042/model.xml",
-                ),
+                asset_name="Book042.usd",
                 placement=dict(
                     fixture=self.table,
                     size=(0.25, 0.25),
@@ -71,9 +67,7 @@ class L90S1PickUpTheYellowAndWhiteMugAndPlaceItToTheRightOfTheCaddy(LwLabTaskBas
                 name="white_yellow_mug",
                 obj_groups="cup",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup014/model.xml",
-                ),
+                asset_name="Cup014.usd",
                 placement=dict(
                     fixture=self.table,
                     rotation=-np.pi / 4.0,

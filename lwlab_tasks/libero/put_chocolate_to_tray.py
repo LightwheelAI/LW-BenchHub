@@ -38,9 +38,7 @@ class L90L4PickUpTheChocolatePuddingAndPutItInTheTray(LwLabTaskBase):
                 name="chocolate_pudding",
                 obj_groups="chocolate_pudding",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/chocolate_pudding/ChocolatePudding001/model.xml",
-                ),
+                asset_name="ChocolatePudding001.usd",
                 placement=dict(
                     fixture=self.counter,
                     size=(0.50, 0.50),
@@ -53,9 +51,7 @@ class L90L4PickUpTheChocolatePuddingAndPutItInTheTray(LwLabTaskBase):
                 name="akita_black_bowl",
                 obj_groups="bowl",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml",
-                ),
+                asset_name="Bowl008.usd",
                 placement=dict(
                     fixture=self.counter,
                     size=(0.50, 0.50),
@@ -70,9 +66,7 @@ class L90L4PickUpTheChocolatePuddingAndPutItInTheTray(LwLabTaskBase):
                 graspable=True,
                 washable=True,
                 object_scale=0.6,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/tray/Tray016/model.xml"
-                ),
+                asset_name="Tray016.usd",
                 placement=dict(
                     fixture=self.counter,
                     size=(0.5, 0.55),

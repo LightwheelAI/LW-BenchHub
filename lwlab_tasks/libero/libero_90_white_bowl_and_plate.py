@@ -46,39 +46,39 @@ class L90K7PutTheWhiteBowlOnThePlate(LwLabTaskBase):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos=(0.0, -1), size=(0.5, 0.5)):
-            return dict(
-                fixture=self.counter,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
-            )
-        plate_placement = get_placement(pos=(0.0, -0.8), size=(0.5, 0.5))
-        white_bowl_placement = get_placement(pos=(-0.3, -0.8), size=(0.5, 0.5))
+        plate_placement = dict(
+            fixture=self.counter,
+            size=(0.5, 0.5),
+            pos=(0.0, -0.8),
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+        white_bowl_placement = dict(
+            fixture=self.counter,
+            size=(0.5, 0.5),
+            pos=(-0.3, -0.8),
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
 
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        placement=placement,
-                    )
-                )
-        add_cfg(self.plate, self.plate, True, plate_placement, mjcf_path='/objects/lightwheel/plate/Plate012/model.xml')
-        add_cfg(self.white_bowl, self.white_bowl, True, white_bowl_placement, mjcf_path='/objects/lightwheel/bowl/Bowl011/model.xml')
+        cfgs.append(
+            dict(
+                name=self.plate,
+                obj_groups=self.plate,
+                graspable=True,
+                placement=plate_placement,
+                asset_name="Plate012.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.white_bowl,
+                obj_groups=self.white_bowl,
+                graspable=True,
+                placement=white_bowl_placement,
+                asset_name="Bowl011.usd",
+            )
+        )
         return cfgs
 
     def get_ep_meta(self):

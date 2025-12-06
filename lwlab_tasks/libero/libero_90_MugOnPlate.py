@@ -103,7 +103,7 @@ class L90L5PutTheRedMugOnTheRightPlate(L10L6PutWhiteMugOnPlateAndPutChocolatePud
         while cfg_index < len(cfgs):
             if cfgs[cfg_index]['name'] == self.chocolate_pudding:
                 cfgs[cfg_index]['name'] = self.white_yellow_mug
-                cfgs[cfg_index]['info']['mjcf_path'] = "/objects/lightwheel/cup/Cup014/model.xml"
+                cfgs[cfg_index]['asset_name'] = "Cup014.usd"
                 break
             cfg_index += 1
         return cfgs

@@ -43,15 +43,13 @@ class L10L6PutWhiteMugOnPlateAndPutChocolatePuddingToRightPlate(LwLabTaskBase):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos=(0.0, -1), size=(0.8, 0.6)):
-            return dict(
-                fixture=self.counter,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
-            )
-        plate_placement = get_placement()
+        plate_placement = dict(
+            fixture=self.counter,
+            size=(0.8, 0.6),
+            pos=(0.0, -1),
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
         chocolate_pudding_placement = dict(
             fixture=self.counter,
             size=(0.5, 0.5),
@@ -60,35 +58,58 @@ class L10L6PutWhiteMugOnPlateAndPutChocolatePuddingToRightPlate(LwLabTaskBase):
             rotation=np.pi / 2.0,
             ensure_valid_placement=True,
         )
-        porcelain_mug_placement = get_placement()
-        red_coffee_mug_placement = get_placement()
+        porcelain_mug_placement = dict(
+            fixture=self.counter,
+            size=(0.8, 0.6),
+            pos=(0.0, -1),
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+        red_coffee_mug_placement = dict(
+            fixture=self.counter,
+            size=(0.8, 0.6),
+            pos=(0.0, -1),
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
 
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None, init_robot_here=False):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        init_robot_here=init_robot_here,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        init_robot_here=init_robot_here,
-                        placement=placement,
-                    )
-                )
-        add_cfg(self.chocolate_pudding, self.chocolate_pudding, True, chocolate_pudding_placement, mjcf_path="/objects/lightwheel/chocolate_pudding/ChocolatePudding001/model.xml")
-        add_cfg(self.plate, self.plate, True, plate_placement, mjcf_path="/objects/lightwheel/plate/Plate012/model.xml", init_robot_here=True)
-        add_cfg(self.porcelain_mug, self.porcelain_mug, True, porcelain_mug_placement, mjcf_path="/objects/lightwheel/cup/Cup012/model.xml")
-        add_cfg(self.red_coffee_mug, self.red_coffee_mug, True, red_coffee_mug_placement, mjcf_path="/objects/lightwheel/cup/Cup030/model.xml")
+        cfgs.append(
+            dict(
+                name=self.chocolate_pudding,
+                obj_groups=self.chocolate_pudding,
+                graspable=True,
+                placement=chocolate_pudding_placement,
+                asset_name="ChocolatePudding001.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.plate,
+                obj_groups=self.plate,
+                graspable=True,
+                placement=plate_placement,
+                asset_name="Plate012.usd",
+                init_robot_here=True,
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.porcelain_mug,
+                obj_groups=self.porcelain_mug,
+                graspable=True,
+                placement=porcelain_mug_placement,
+                asset_name="Cup012.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.red_coffee_mug,
+                obj_groups=self.red_coffee_mug,
+                graspable=True,
+                placement=red_coffee_mug_placement,
+                asset_name="Cup030.usd",
+            )
+        )
 
         return cfgs
 

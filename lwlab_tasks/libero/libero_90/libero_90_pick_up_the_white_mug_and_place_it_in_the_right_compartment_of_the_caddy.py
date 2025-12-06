@@ -46,9 +46,7 @@ class L90S3PickUpTheWhiteMugAndPlaceItToTheRightOfTheCaddy(LwLabTaskBase):
                     pos=(0.0, -0.3),
                     rotation=0.0,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/desk_caddy/DeskCaddy001/model.xml",
-                ),
+                asset_name="DeskCaddy001.usd",
             )
         )
 
@@ -64,9 +62,7 @@ class L90S3PickUpTheWhiteMugAndPlaceItToTheRightOfTheCaddy(LwLabTaskBase):
                     pos=(-0.5, -0.5),
                     ensure_valid_placement=True,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/book/Book042/model.xml",
-                )
+                asset_name="Book042.usd",
             )
         )
 
@@ -82,9 +78,7 @@ class L90S3PickUpTheWhiteMugAndPlaceItToTheRightOfTheCaddy(LwLabTaskBase):
                     rotation=np.pi / 4,
                     ensure_valid_placement=True,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup012/model.xml",
-                )
+                asset_name="Cup012.usd",
             )
         )
 
@@ -99,9 +93,7 @@ class L90S3PickUpTheWhiteMugAndPlaceItToTheRightOfTheCaddy(LwLabTaskBase):
                     pos=(0.0, -0.5),
                     ensure_valid_placement=True,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup030/model.xml",
-                )
+                asset_name="Cup030.usd",
             )
         )
         return cfgs

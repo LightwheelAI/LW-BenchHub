@@ -366,9 +366,9 @@ gym.register(
 )
 
 gym.register(
-    id="Robocasa-Task-LiberoGoalOpenTopDrawerOfCabinet",
+    id="Robocasa-Task-LGOpenTopDrawerOfCabinet",
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
-    kwargs={"env_cfg_entry_point": f"{__name__}.libero_goal_tasks:LiberoGoalOpenTopDrawerOfCabinet"},
+    kwargs={"env_cfg_entry_point": f"{__name__}.libero_goal_tasks:LGOpenTopDrawerOfCabinet"},
 )
 
 gym.register(

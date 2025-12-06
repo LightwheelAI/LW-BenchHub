@@ -1482,7 +1482,7 @@ def set_camera_follow_pose(env: ManagerBasedRLEnv, offset, lookat):
 
 
 def reset_physx(env):
-    env.sim.reset(soft=True)
+    env.sim.reset(soft=False)
     for env_id in range(env.num_envs):
         env.cfg.isaaclab_arena_env.task.contact_queues[env_id].clear()
     env.common_step_counter = 0

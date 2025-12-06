@@ -18,14 +18,7 @@ class L90K1OpenTheBottomDrawerOfTheCabinet(LwLabTaskBase):
             dict(id=FixtureType.TABLE, size=(1.0, 0.35)),
         )
         self.drawer = self.register_fixture_ref("storage_furniture", dict(id=FixtureType.STORAGE_FURNITURE, ref=self.dining_table))
-        self.obj_name = []
-
         self.init_robot_base_ref = self.dining_table
-
-    def _load_model(self):
-        super()._load_model()
-        for cfg in self.object_cfgs:
-            self.obj_name.append(cfg["name"])
 
     def _setup_scene(self, env, env_ids=None):
         """
@@ -50,9 +43,7 @@ class L90K1OpenTheBottomDrawerOfTheCabinet(LwLabTaskBase):
                 obj_groups="bowl",
                 graspable=True,
                 washable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml"
-                ),
+                asset_name="Bowl008.usd",
                 init_robot_here=True,
                 placement=dict(
                     fixture=self.dining_table,
@@ -69,9 +60,7 @@ class L90K1OpenTheBottomDrawerOfTheCabinet(LwLabTaskBase):
                 obj_groups="plate",
                 graspable=True,
                 washable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/plate/Plate012/model.xml"
-                ),
+                asset_name="Plate012.usd",
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.5, 0.55),

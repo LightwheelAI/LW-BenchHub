@@ -51,67 +51,114 @@ class Libero10PutInBasket(LwLabTaskBase):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos=(0.0, -0.7), size=(0.5, 0.5)):
-            return dict(
-                fixture=self.counter,
-                size=size,
-                pos=pos,
-                ensure_valid_placement=True,
+        basket_placement = dict(
+            fixture=self.counter,
+            size=(0.6, 0.6),
+            pos=(0.7, -0.6),
+            ensure_valid_placement=True,
+        )
+        alphabet_soup_placement = dict(
+            fixture=self.counter,
+            size=(0.2, 0.2),
+            pos=(0.5, -0.8),
+            ensure_valid_placement=True,
+        )
+        butter_placement = dict(
+            fixture=self.counter,
+            size=(0.5, 0.5),
+            pos=(0.0, -0.7),
+            ensure_valid_placement=True,
+        )
+        cream_cheese_placement = dict(
+            fixture=self.counter,
+            size=(0.5, 0.5),
+            pos=(0.0, -0.7),
+            ensure_valid_placement=True,
+        )
+        milk_placement = dict(
+            fixture=self.counter,
+            size=(0.5, 0.5),
+            pos=(0.0, -0.7),
+            ensure_valid_placement=True,
+        )
+        orange_juice_placement = dict(
+            fixture=self.counter,
+            size=(0.5, 0.5),
+            pos=(0.0, -0.7),
+            ensure_valid_placement=True,
+        )
+        tomato_sauce_placement = dict(
+            fixture=self.counter,
+            size=(0.4, 0.4),
+            pos=(0.3, -0.8),
+            ensure_valid_placement=True,
+        )
+        cfgs.append(
+            dict(
+                name=self.alphabet_soup,
+                obj_groups=self.alphabet_soup,
+                graspable=True,
+                placement=alphabet_soup_placement,
+                asset_name="AlphabetSoup001.usd",
+                object_scale=0.8,
             )
-        basket_placement = get_placement(pos=(0.7, -0.6), size=(0.6, 0.6))
-        alphabet_soup_placement = get_placement(pos=(0.5, -0.8), size=(0.2, 0.2))
-        butter_placement = get_placement()
-        cream_cheese_placement = get_placement()
-        # ketchup_placement = get_placement()
-        milk_placement = get_placement()
-        orange_juice_placement = get_placement()
-        tomato_sauce_placement = get_placement(pos=(0.3, -0.8), size=(0.2, 0.2))
-
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None, object_scale=1.0):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=object_scale,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        object_scale=object_scale,
-                        graspable=graspable,
-                        placement=placement,
-                    )
-                )
-        add_cfg(self.alphabet_soup, self.alphabet_soup, True, alphabet_soup_placement, mjcf_path="/objects/lightwheel/alphabet_soup/AlphabetSoup001/model.xml", object_scale=0.8)
-        add_cfg(self.basket, self.basket, True, basket_placement, mjcf_path="/objects/lightwheel/basket/Basket058/model.xml")
-        add_cfg(self.butter, self.butter, True, butter_placement, mjcf_path="/objects/lightwheel/butter/Butter001/model.xml")
-        add_cfg(self.cream_cheese, self.cream_cheese, True, cream_cheese_placement, mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
-        add_cfg(self.milk, self.milk, True, milk_placement, mjcf_path="/objects/lightwheel/milk_drink/MilkDrink009/model.xml")
-        add_cfg(self.orange_juice, self.orange_juice, True, orange_juice_placement, mjcf_path="/objects/lightwheel/orange_juice/OrangeJuice001/model.xml")
-        add_cfg(self.tomato_sauce, self.tomato_sauce, True, tomato_sauce_placement, mjcf_path="/objects/lightwheel/ketchup/Ketchup003/model.xml", object_scale=0.8)
+        )
+        cfgs.append(
+            dict(
+                name=self.basket,
+                obj_groups=self.basket,
+                graspable=True,
+                placement=basket_placement,
+                asset_name="Basket058.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.butter,
+                obj_groups=self.butter,
+                graspable=True,
+                placement=butter_placement,
+                asset_name="Butter001.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.cream_cheese,
+                obj_groups=self.cream_cheese,
+                graspable=True,
+                placement=cream_cheese_placement,
+                asset_name="CreamCheeseStick013.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.milk,
+                obj_groups=self.milk,
+                graspable=True,
+                placement=milk_placement,
+                asset_name="MilkDrink009.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.orange_juice,
+                obj_groups=self.orange_juice,
+                graspable=True,
+                placement=orange_juice_placement,
+                asset_name="OrangeJuice001.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.tomato_sauce,
+                obj_groups=self.tomato_sauce,
+                graspable=True,
+                placement=tomato_sauce_placement,
+                asset_name="Ketchup003.usd",
+                object_scale=0.8,
+            )
+        )
         return cfgs
-
-    # def _load_model(self):
-    #     super()._load_model()
-    #     placement_obj = self.plate
-    #     obj_obj = self.akita_black_bowl
-    #     # place obj on the placement
-    #     z_offset = 0.1
-    #     placement_placement = self.object_placements[placement_obj]
-    #     obj_placement = list(self.object_placements[obj_obj])
-
-    #     placement_pos = list(placement_placement[0])
-    #     obj_pos = copy.deepcopy(placement_pos)
-    #     obj_pos[2] += z_offset
-    #     obj_placement[0] = tuple(obj_pos)
-    #     self.object_placements[obj_obj] = tuple(obj_placement)
 
 
 class L10L2PutBothTheCreamCheeseBoxAndTheButterInTheBasket(Libero10PutInBasket):

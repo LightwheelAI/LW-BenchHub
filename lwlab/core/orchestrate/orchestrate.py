@@ -106,7 +106,7 @@ class LwLabBaseOrchestrator(OrchestratorBase, NoDeepcopyMixin):
         if env_ids is None:
             env_ids = torch.arange(env.num_envs, device=self.context.device, dtype=torch.int64)
         object_placements = EnvUtils.sample_object_placements(self, need_retry=False)
-        object_placements, updated_obj_names = self._update_fxtr_obj_placement(object_placements)
+        object_placements, updated_obj_names = self._update_fxtr_obj_placement(object_placements, env_ids=env_ids)
         if self.task.resample_objects_placement_on_reset and self.task.fix_object_pose_cfg is None:
             reset_objs = object_placements.keys()
             # test asset part
@@ -142,7 +142,7 @@ class LwLabBaseOrchestrator(OrchestratorBase, NoDeepcopyMixin):
             self.sample_robot_base(env, env_ids)
             set_robot_to_position(env, self.init_robot_base_pos, self.init_robot_base_ori, env_ids=env_ids)
 
-    def _update_fxtr_obj_placement(self, object_placements):
+    def _update_fxtr_obj_placement(self, object_placements, env_ids=None):
         updated_obj_names = []
         for obj_name, obj_placement in object_placements.items():
             updated_placement = list(obj_placement)
@@ -155,10 +155,10 @@ class LwLabBaseOrchestrator(OrchestratorBase, NoDeepcopyMixin):
             # TODO: add other sliding fxtr types
             if fixture_is_type(ref_fixture, FixtureType.DRAWER):
                 ref_rot_mat = Tn.euler2mat(np.array([0, 0, ref_fixture.rot]))
-                updated_placement[0] = np.array(updated_placement[0]) + ref_fixture._regions["int"]["per_env_offset"] @ ref_rot_mat.T
+                updated_placement[0] = np.array(updated_placement[0]) + ref_fixture._regions["int"]["per_env_offset"][env_ids] @ ref_rot_mat.T
                 updated_obj_names.append(obj_name)
             else:
-                updated_placement[0] = np.array(updated_placement[0])[None, :].repeat(self.context.num_envs, axis=0)
+                updated_placement[0] = np.array(updated_placement[0])[None, :].repeat(env_ids.shape[0], axis=0)
             object_placements[obj_name] = updated_placement
         return object_placements, updated_obj_names
 

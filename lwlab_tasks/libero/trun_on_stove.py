@@ -48,9 +48,7 @@ class L90K3TurnOnTheStove(LwLabTaskBase):
                 name="chefmate_8_frypan",
                 obj_groups="pot",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/pot/Pot086/model.xml",
-                ),
+                asset_name="Pot086.usd",
                 placement=placement,
             )
         )
@@ -111,9 +109,7 @@ class L90K9TurnOnTheStove(LwLabTaskBase):
                 obj_groups="shelf",
                 graspable=True,
                 object_scale=0.8,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/shelf/Shelf073/model.xml",
-                ),
+                asset_name="Shelf073.usd",
                 placement=dict(
                     fixture=self.counter,
                     rotation=-np.pi / 2,
@@ -127,9 +123,7 @@ class L90K9TurnOnTheStove(LwLabTaskBase):
                 name="chefmate_8_frypan",
                 obj_groups="pot",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/pot/Pot086/model.xml",
-                ),
+                asset_name="Pot086.usd",
                 placement=dict(
                     fixture=self.counter,
                     size=(0.6, 0.5),
@@ -143,9 +137,7 @@ class L90K9TurnOnTheStove(LwLabTaskBase):
                 name="white_bowl",
                 obj_groups="bowl",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bowl/Bowl011/model.xml",
-                ),
+                asset_name="Bowl011.usd",
                 placement=placement,
             )
         )
@@ -185,9 +177,7 @@ class L90K3TurnOnTheStoveAndPutTheFryingPanOnIt(L90K3TurnOnTheStove):
                 name="chefmate_8_frypan",
                 obj_groups="pot",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/pot/Pot086/model.xml",
-                ),
+                asset_name="Pot086.usd",
                 placement=placement,
             )
         )
@@ -278,9 +268,7 @@ class L90K9TurnOnTheStoveAndPutTheFryingPanOnIt(LwLabTaskBase):
                     rotation=np.pi / 2,
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/shelf/Shelf073/model.xml",
-                ),
+                asset_name="Shelf073.usd",
             )
         )
 
@@ -295,9 +283,7 @@ class L90K9TurnOnTheStoveAndPutTheFryingPanOnIt(LwLabTaskBase):
                     pos=(1.0, -0.0),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bowl/Bowl009/model.xml",
-                ),
+                asset_name="Bowl009.usd",
             )
         )
 
@@ -313,9 +299,7 @@ class L90K9TurnOnTheStoveAndPutTheFryingPanOnIt(LwLabTaskBase):
                     pos=(0.5, -0.25),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/pot/Pot086/model.xml",
-                ),
+                asset_name="Pot086.usd",
             )
         )
 

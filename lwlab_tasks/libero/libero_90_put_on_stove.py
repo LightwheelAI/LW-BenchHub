@@ -30,32 +30,24 @@ class _BasePutRightMokaPotOnStove(LwLabTaskBase):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos=(0.55, -1.0), size=(0.5, 0.5), rotation=None):
-            return dict(
-                fixture=self.counter,
-                size=size,
-                pos=pos,
-                rotation=rotation,
-                margin=0.02,
-                ensure_valid_placement=True,
+        pan_pl = dict(
+            fixture=self.counter,
+            size=(0.5, 0.5),
+            pos=(1.0, -0.75),
+            rotation=-np.pi / 2,
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+
+        cfgs.append(
+            dict(
+                name=self.frying_pan,
+                obj_groups="pot",
+                graspable=True,
+                placement=pan_pl,
+                asset_name="Pot086.usd",
             )
-
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None, init_robot_here=False, object_scale=None):
-            cfg = dict(name=name, obj_groups=obj_groups, graspable=graspable, placement=placement)
-            if mjcf_path is not None:
-                cfg["info"] = dict(mjcf_path=mjcf_path)
-            if init_robot_here:
-                cfg["init_robot_here"] = True
-            if object_scale is not None:
-                cfg["object_scale"] = object_scale
-            cfgs.append(cfg)
-
-        pan_pl = get_placement(pos=(1.0, -0.75), size=(0.5, 0.5), rotation=-np.pi / 2)
-        # moka_pl = get_placement()
-
-        # categories registered in kitchen_objects: pot, moka_pot
-        add_cfg(self.frying_pan, "pot", True, pan_pl, mjcf_path="/objects/lightwheel/pot/Pot086/model.xml")
-        # add_cfg(self.moka_pot, "moka_pot", True, moka_pl, mjcf_path="/objects/lightwheel/moka_pot/MokaPot001/model.xml")
+        )
 
         return cfgs
 
@@ -79,31 +71,24 @@ class L90K3PutTheFryingPanOnTheStove(_BasePutOnStove):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos=(0.55, -1.0), size=(0.5, 0.5), rotation=None):
-            return dict(
-                fixture=self.counter,
-                size=size,
-                pos=pos,
-                rotation=rotation,
-                margin=0.02,
-                ensure_valid_placement=False,
+        pan_pl = dict(
+            fixture=self.counter,
+            size=(0.8, 0.8),
+            pos=(1.0, -0.75),
+            rotation=-np.pi / 2,
+            margin=0.02,
+            ensure_valid_placement=False,
+        )
+
+        cfgs.append(
+            dict(
+                name=self.frying_pan,
+                obj_groups="pot",
+                graspable=True,
+                placement=pan_pl,
+                asset_name="Pot086.usd",
             )
-
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None, init_robot_here=False, object_scale=None):
-            cfg = dict(name=name, obj_groups=obj_groups, graspable=graspable, placement=placement)
-            if mjcf_path is not None:
-                cfg["info"] = dict(mjcf_path=mjcf_path)
-            if init_robot_here:
-                cfg["init_robot_here"] = True
-            if object_scale is not None:
-                cfg["object_scale"] = object_scale
-            cfgs.append(cfg)
-
-        pan_pl = get_placement(pos=(1.0, -0.75), size=(0.8, 0.8), rotation=-np.pi / 2)
-        # moka_pl = get_placement()
-
-        # categories registered in kitchen_objects: pot, moka_pot
-        add_cfg(self.frying_pan, "pot", True, pan_pl, mjcf_path="/objects/lightwheel/pot/Pot086/model.xml")
+        )
         # add_cfg(self.moka_pot, "moka_pot", True, moka_pl, mjcf_path="/objects/lightwheel/moka_pot/MokaPot001/model.xml")
 
         return cfgs
@@ -133,31 +118,24 @@ class L90K3PutTheMokaPotOnTheStove(_BasePutOnStove):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos=(0.55, -1.0), size=(0.8, 0.8), rotation=None):
-            return dict(
-                fixture=self.counter,
-                size=size,
-                pos=pos,
-                rotation=rotation,
-                margin=0.02,
-                ensure_valid_placement=False,
+        pan_pl = dict(
+            fixture=self.counter,
+            size=(0.8, 0.8),
+            pos=(1.0, -0.75),
+            rotation=-np.pi / 2,
+            margin=0.02,
+            ensure_valid_placement=False,
+        )
+
+        cfgs.append(
+            dict(
+                name=self.frying_pan,
+                obj_groups="pot",
+                graspable=True,
+                placement=pan_pl,
+                asset_name="Pot086.usd",
             )
-
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None, init_robot_here=False, object_scale=None):
-            cfg = dict(name=name, obj_groups=obj_groups, graspable=graspable, placement=placement)
-            if mjcf_path is not None:
-                cfg["info"] = dict(mjcf_path=mjcf_path)
-            if init_robot_here:
-                cfg["init_robot_here"] = True
-            if object_scale is not None:
-                cfg["object_scale"] = object_scale
-            cfgs.append(cfg)
-
-        pan_pl = get_placement(pos=(1.0, -0.75), size=(0.8, 0.8), rotation=-np.pi / 2)
-        # moka_pl = get_placement()
-
-        # categories registered in kitchen_objects: pot, moka_pot
-        add_cfg(self.frying_pan, "pot", True, pan_pl, mjcf_path="/objects/lightwheel/pot/Pot086/model.xml")
+        )
         # add_cfg(self.moka_pot, "moka_pot", True, moka_pl, mjcf_path="/objects/lightwheel/moka_pot/MokaPot001/model.xml")
 
         return cfgs

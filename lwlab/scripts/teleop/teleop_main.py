@@ -907,7 +907,7 @@ def main():
                     reset_physx(env)
                     from lwlab.utils.teleop_utils import convert_list_to_2d_tensor
                     initial_state_converted = convert_list_to_2d_tensor(initial_state)
-                    env.reset_to(initial_state_converted, torch.tensor([0], device=env.device), seed=env.cfg.seed, is_relative=False)
+                    env.reset_to(initial_state_converted, torch.tensor([0], device=env.device), seed=env.cfg.seed, is_relative=True)
                     if teleop_interface is not None:
                         teleop_interface.reset()
 

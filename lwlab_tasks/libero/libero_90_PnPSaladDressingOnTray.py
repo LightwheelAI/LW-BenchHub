@@ -43,41 +43,55 @@ class L90L4PickUpTheSaladDressingAndPutItInTheTray(LwLabTaskBase):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos=(0.0, -1), size=(0.8, 0.8)):
-            return dict(
-                fixture=self.counter,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
-            )
-        tray_placement = get_placement()
-        akita_black_bowl_placement = get_placement()
-        chocolate_pudding_placement = get_placement()
+        tray_placement = dict(
+            fixture=self.counter,
+            size=(0.8, 0.8),
+            pos=(0.0, -1),
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+        akita_black_bowl_placement = dict(
+            fixture=self.counter,
+            size=(0.8, 0.8),
+            pos=(0.0, -1),
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+        chocolate_pudding_placement = dict(
+            fixture=self.counter,
+            size=(0.8, 0.8),
+            pos=(0.0, -1),
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
 
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        placement=placement,
-                    )
-                )
-        add_cfg(self.akita_black_bowl, self.akita_black_bowl, True, akita_black_bowl_placement, mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
-        add_cfg(self.chocolate_pudding, self.chocolate_pudding, True, chocolate_pudding_placement, mjcf_path="/objects/lightwheel/chocolate_pudding/ChocolatePudding001/model.xml")
-        add_cfg(self.wooden_tray, self.wooden_tray, True, tray_placement, mjcf_path="/objects/lightwheel/tray/Tray016/model.xml")
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups=self.akita_black_bowl,
+                graspable=True,
+                placement=akita_black_bowl_placement,
+                asset_name="Bowl008.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.chocolate_pudding,
+                obj_groups=self.chocolate_pudding,
+                graspable=True,
+                placement=chocolate_pudding_placement,
+                asset_name="ChocolatePudding001.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.wooden_tray,
+                obj_groups=self.wooden_tray,
+                graspable=True,
+                placement=tray_placement,
+                asset_name="Tray016.usd",
+            )
+        )
 
         return cfgs
 

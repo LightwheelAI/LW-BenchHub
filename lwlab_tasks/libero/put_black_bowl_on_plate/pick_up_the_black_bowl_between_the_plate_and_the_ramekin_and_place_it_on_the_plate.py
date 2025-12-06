@@ -30,9 +30,7 @@ class LSPickUpBlackBowlBetweenPlateAndRamekinAndPlaceItOnPlate(PutBlackBowlOnPla
             dict(
                 name=self.bowl_target,
                 obj_groups="bowl",
-                info=dict(
-                    mjcf_path=self.bowl_mjcf_path
-                ),
+                asset_name=self.bowl_asset_name,
                 graspable=True,
                 object_scale=0.6,
                 placement=dict(
@@ -47,9 +45,7 @@ class LSPickUpBlackBowlBetweenPlateAndRamekinAndPlaceItOnPlate(PutBlackBowlOnPla
             dict(
                 name=self.bowl,
                 obj_groups="bowl",
-                info=dict(
-                    mjcf_path=self.bowl_mjcf_path
-                ),
+                asset_name=self.bowl_asset_name,
                 graspable=True,
                 object_scale=0.6,
                 placement=dict(
@@ -62,32 +58,6 @@ class LSPickUpBlackBowlBetweenPlateAndRamekinAndPlaceItOnPlate(PutBlackBowlOnPla
         )
 
         return cfgs
-
-    def _load_model(self):
-        if self.fix_object_pose_cfg is None:
-            self.fix_object_pose_cfg = {}
-
-        super()._load_model()
-        if (
-            hasattr(self, 'object_placements')
-            and self.ramekin in self.object_placements
-            and self.plate in self.object_placements
-        ):
-            ramekin_pos = self.object_placements[self.ramekin][0]
-            plate_pos = self.object_placements[self.plate][0]
-
-            bowl_obj = copy.deepcopy(self.object_placements[self.bowl_target])
-            bowl_pos = list(bowl_obj[0])
-
-            bowl_pos[0] = ramekin_pos[0] * 0.63 + plate_pos[0] * 0.37
-            bowl_pos[1] = ramekin_pos[1] * 0.63 + plate_pos[1] * 0.37
-
-            bowl_obj = list(bowl_obj)
-            bowl_obj[0] = bowl_pos
-
-            self.fix_object_pose_cfg[self.bowl_target] = {"pos": bowl_pos}
-
-            self.object_placements[self.bowl_target] = tuple(bowl_obj)
 
     def _check_success(self, env):
         '''

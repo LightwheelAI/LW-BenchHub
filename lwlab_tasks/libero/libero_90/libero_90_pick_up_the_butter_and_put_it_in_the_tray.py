@@ -50,9 +50,7 @@ class L90L3PickUpTheButterAndPutItInTheTray(LwLabTaskBase):
                     pos=(0.25, -0.2),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/tray/Tray016/model.xml",
-                ),
+                asset_name="Tray016.usd",
             )
         )
 
@@ -68,9 +66,7 @@ class L90L3PickUpTheButterAndPutItInTheTray(LwLabTaskBase):
                     pos=(0.5, -0.1),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/alphabet_soup/AlphabetSoup001/model.xml",
-                ),
+                asset_name="AlphabetSoup001.usd",
             )
         )
 
@@ -85,9 +81,7 @@ class L90L3PickUpTheButterAndPutItInTheTray(LwLabTaskBase):
                     pos=(0.4, -0.3),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/butter/Butter001/model.xml",
-                ),
+                asset_name="Butter001.usd",
             )
         )
 
@@ -102,9 +96,7 @@ class L90L3PickUpTheButterAndPutItInTheTray(LwLabTaskBase):
                     pos=(-0.25, -0.1),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/ketchup/Ketchup003/model.xml",
-                ),
+                asset_name="Ketchup003.usd",
             )
         )
 
@@ -119,9 +111,7 @@ class L90L3PickUpTheButterAndPutItInTheTray(LwLabTaskBase):
                     pos=(-0.5, -0.1),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml",
-                ),
+                asset_name="CreamCheeseStick013.usd",
             )
         )
 

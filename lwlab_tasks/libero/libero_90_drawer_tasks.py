@@ -71,50 +71,58 @@ class L90K5PutTheBlackBowlInTheTopDrawerOfTheCabinet(LiberoDrawerTasksBase):
         return ep_meta
 
     def _get_obj_cfgs(self):
+
+        bowl_placement = dict(
+            fixture=self.table,
+            pos=(0.2, -0.60),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.6, 0.6),
+        )
+        ketchup_placement = dict(
+            fixture=self.table,
+            pos=(-0.3, -0.80),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.45, 0.45),
+        )
+        plate_placement = dict(
+            fixture=self.table,
+            pos=(0.3, -0.80),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.7),
+        )
         cfgs = []
 
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.table,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                asset_name="Bowl008.usd",
+                object_scale=0.8,
             )
-
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None, scale=1.0):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        placement=placement,
-                    )
-                )
-
-        bowl_placement = get_placement((0.2, -0.6), (0.6, 0.6))
-        ketchup_placement = get_placement((-0.3, -0.8), (0.45, 0.45))
-        plate_placement = get_placement((0.3, -0.8), (0.7, 0.7))
-
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml", scale=0.8)
-        add_cfg(self.ketchup, "ketchup", True, ketchup_placement,
-                mjcf_path="/objects/lightwheel/ketchup/Ketchup003/model.xml")
-        add_cfg(self.plate, "plate", False, plate_placement,
-                mjcf_path="/objects/lightwheel/plate/Plate012/model.xml")
+        )
+        cfgs.append(
+            dict(
+                name=self.ketchup,
+                obj_groups="ketchup",
+                graspable=True,
+                placement=ketchup_placement,
+                asset_name="Ketchup003.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.plate,
+                obj_groups="plate",
+                graspable=False,
+                placement=plate_placement,
+                asset_name="Plate012.usd",
+            )
+        )
 
         return cfgs
 
@@ -156,45 +164,40 @@ class L90K1OpenTheTopDrawerOfTheCabinetAndPutTheBowlInIt(LiberoDrawerTasksBase):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.table,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
+        bowl_placement = dict(
+            fixture=self.table,
+            pos=(0.0, -0.60),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.5),
+        )
+        plate_placement = dict(
+            fixture=self.table,
+            pos=(0.0, -0.80),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.7),
+        )
+
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                asset_name="Bowl008.usd",
+                object_scale=0.7,
             )
-
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None, scale=1.0):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        object_scale=scale,
-                        graspable=graspable,
-                        placement=placement,
-                    )
-                )
-
-        bowl_placement = get_placement((0.0, -0.6), (0.5, 0.5))
-        plate_placement = get_placement((0.0, -0.8), (0.7, 0.7))
-
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml", scale=0.7)
-        add_cfg(self.plate, "plate", False, plate_placement,
-                mjcf_path="/objects/lightwheel/plate/Plate012/model.xml")
+        )
+        cfgs.append(
+            dict(
+                name=self.plate,
+                obj_groups="plate",
+                graspable=False,
+                placement=plate_placement,
+                asset_name="Plate012.usd",
+            )
+        )
 
         return cfgs
 
@@ -223,46 +226,55 @@ class L90K5CloseTheTopDrawerOfTheCabinet(LiberoDrawerTasksBase):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.table,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
+        bowl_placement = dict(
+            fixture=self.table,
+            pos=(0.0, -0.60),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.5),
+        )
+        ketchup_placement = dict(
+            fixture=self.table,
+            pos=(-0.3, -0.80),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.45, 0.45),
+        )
+        plate_placement = dict(
+            fixture=self.table,
+            pos=(0.3, -0.80),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.7),
+        )
+
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                asset_name="Bowl008.usd",
             )
-
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        placement=placement,
-                    )
-                )
-
-        bowl_placement = get_placement((0.0, -0.6), (0.5, 0.5))
-        ketchup_placement = get_placement((-0.3, -0.8), (0.45, 0.45))
-        plate_placement = get_placement((0.3, -0.8), (0.7, 0.7))
-
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
-        add_cfg(self.ketchup, "ketchup", True, ketchup_placement,
-                mjcf_path="/objects/lightwheel/ketchup/Ketchup003/model.xml")
-        add_cfg(self.plate, "plate", False, plate_placement,
-                mjcf_path="/objects/lightwheel/plate/Plate012/model.xml")
+        )
+        cfgs.append(
+            dict(
+                name=self.ketchup,
+                obj_groups="ketchup",
+                graspable=True,
+                placement=ketchup_placement,
+                asset_name="Ketchup003.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.plate,
+                obj_groups="plate",
+                graspable=False,
+                placement=plate_placement,
+                asset_name="Plate012.usd",
+            )
+        )
 
         return cfgs
 
@@ -290,46 +302,55 @@ class L90K10CloseTheTopDrawerOfTheCabinet(LiberoDrawerTasksBase):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.table,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
+        bowl_placement = dict(
+            fixture=self.table,
+            pos=(0.0, -0.60),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.5),
+        )
+        butter_placement = dict(
+            fixture=self.table,
+            pos=(-0.3, -0.80),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.3, 0.3),
+        )
+        chocolate_pudding_placement = dict(
+            fixture=self.table,
+            pos=(0.3, -0.80),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.3, 0.3),
+        )
+
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                asset_name="Bowl008.usd",
             )
-
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        placement=placement,
-                    )
-                )
-
-        bowl_placement = get_placement((0.0, -0.6), (0.5, 0.5))
-        butter_placement = get_placement((-0.3, -0.8), (0.3, 0.3))
-        chocolate_pudding_placement = get_placement((0.3, -0.8), (0.3, 0.3))
-
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
-        add_cfg(self.butter, "butter", True, butter_placement,
-                mjcf_path="/objects/lightwheel/butter/Butter001/model.xml")
-        add_cfg(self.chocolate_pudding, "chocolate_pudding", True, chocolate_pudding_placement,
-                mjcf_path="/objects/lightwheel/chocolate_pudding/ChocolatePudding001/model.xml")
+        )
+        cfgs.append(
+            dict(
+                name=self.butter,
+                obj_groups="butter",
+                graspable=True,
+                placement=butter_placement,
+                asset_name="Butter001.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.chocolate_pudding,
+                obj_groups="chocolate_pudding",
+                graspable=True,
+                placement=chocolate_pudding_placement,
+                asset_name="ChocolatePudding001.usd",
+            )
+        )
 
         return cfgs
 
@@ -357,33 +378,24 @@ class L90K4CloseTheBottomDrawerOfTheCabinet(LiberoDrawerTasksBase):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.table,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
+        bowl_placement = dict(
+            fixture=self.table,
+            pos=(0.0, -0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.3, 0.3),
+        )
+
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                asset_name="Bowl008.usd",
+                object_scale=0.7,
             )
-
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None, disable_articulation=False, object_scale=1.0):
-            cfg = dict(
-                name=name,
-                obj_groups=obj_groups,
-                object_scale=object_scale,
-                graspable=graspable,
-                placement=placement,
-            )
-            if mjcf_path is not None:
-                cfg["info"] = dict(mjcf_path=mjcf_path)
-            if disable_articulation:
-                cfg["articulation_enabled"] = False
-            cfgs.append(cfg)
-
-        bowl_placement = get_placement((0.0, -0.3), (0.3, 0.3))
-
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml", object_scale=0.7)
+        )
         cfgs.append(
             dict(
                 name=f"wine_bottle",
@@ -391,9 +403,7 @@ class L90K4CloseTheBottomDrawerOfTheCabinet(LiberoDrawerTasksBase):
                 graspable=True,
                 washable=True,
                 object_scale=0.8,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml"
-                ),
+                asset_name="Bottle054.usd",
                 init_robot_here=True,
                 placement=dict(
                     fixture=self.table,
@@ -502,34 +512,24 @@ class L90K4PutTheWineBottleInTheBottomDrawerOfTheCabinet(L90K4CloseTheBottomDraw
 
     def _get_obj_cfgs(self):
         cfgs = []
+        bowl_placement = dict(
+            fixture=self.table,
+            pos=(0.0, -0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.3, 0.3),
+        )
 
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.table,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                asset_name="Bowl008.usd",
+                object_scale=0.7,
             )
-
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None, disable_articulation=False, object_scale=1.0):
-            cfg = dict(
-                name=name,
-                obj_groups=obj_groups,
-                object_scale=object_scale,
-                graspable=graspable,
-                placement=placement,
-            )
-            if mjcf_path is not None:
-                cfg["info"] = dict(mjcf_path=mjcf_path)
-            if disable_articulation:
-                cfg["articulation_enabled"] = False
-            cfgs.append(cfg)
-
-        bowl_placement = get_placement((0.0, -0.3), (0.3, 0.3))
-
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml", object_scale=0.7)
+        )
         cfgs.append(
             dict(
                 name=f"wine_bottle",
@@ -537,9 +537,7 @@ class L90K4PutTheWineBottleInTheBottomDrawerOfTheCabinet(L90K4CloseTheBottomDraw
                 graspable=True,
                 washable=True,
                 object_scale=0.7,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml"
-                ),
+                asset_name="Bottle054.usd",
                 init_robot_here=True,
                 placement=dict(
                     fixture=self.table,
@@ -579,47 +577,56 @@ class L90K10CloseTheTopDrawerOfTheCabinetAndPutTheBlackBowlOnTopOfIt(LiberoDrawe
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.table,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
-            )
-
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        placement=placement,
-                    )
-                )
-
         # According to task.csv, need: akita_black_bowl, butter, chocolate_pudding
-        bowl_placement = get_placement((0.0, -0.6), (0.5, 0.5))
-        butter_placement = get_placement((-0.3, -0.8), (0.3, 0.3))
-        chocolate_pudding_placement = get_placement((0.3, -0.8), (0.3, 0.3))
+        bowl_placement = dict(
+            fixture=self.table,
+            pos=(0.0, -0.60),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.5),
+        )
+        butter_placement = dict(
+            fixture=self.table,
+            pos=(-0.3, -0.80),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.3, 0.3),
+        )
+        chocolate_pudding_placement = dict(
+            fixture=self.table,
+            pos=(0.3, -0.80),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.3, 0.3),
+        )
 
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
-        add_cfg(self.butter, "butter", True, butter_placement,
-                mjcf_path="/objects/lightwheel/butter/Butter001/model.xml")
-        add_cfg(self.chocolate_pudding, "chocolate_pudding", True, chocolate_pudding_placement,
-                mjcf_path="/objects/lightwheel/chocolate_pudding/ChocolatePudding001/model.xml")
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                asset_name="Bowl008.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.butter,
+                obj_groups="butter",
+                graspable=True,
+                placement=butter_placement,
+                asset_name="Butter001.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.chocolate_pudding,
+                obj_groups="chocolate_pudding",
+                graspable=True,
+                placement=chocolate_pudding_placement,
+                asset_name="ChocolatePudding001.usd",
+            )
+        )
 
         return cfgs
 
@@ -640,9 +647,6 @@ class L90K10CloseTheTopDrawerOfTheCabinetAndPutTheBlackBowlOnTopOfIt(LiberoDrawe
     def _check_success(self, env):
         # Check if the top drawer is closed
         drawer_closed = self.drawer.is_closed(env, [self.top_drawer_joint_name])
-
-        # Check if the black bowl is on top of the drawer
-        # Get bowl position and check if it's on the drawer
         bowl_pos = env.scene.rigid_objects[self.akita_black_bowl].data.root_pos_w[0, :].cpu().numpy()
         bowl_on_drawer = OU.point_in_fixture(bowl_pos, self.drawer, only_2d=True)
         bowl_on_drawer_tensor = torch.tensor(bowl_on_drawer, dtype=torch.bool, device=env.device).repeat(env.num_envs)
@@ -659,7 +663,6 @@ class _BaseDrawerTasksWithoutWineRack(LwLabTaskBase):
 
     task_name: str = "_BaseDrawerTasksWithoutWineRack"
     enable_fixtures = ["storage_furniture"]
-    # removable_fixtures = enable_fixtures
 
     def _setup_kitchen_references(self, scene):
         super()._setup_kitchen_references(scene)
@@ -717,52 +720,73 @@ class L90K10PutTheBlackBowlInTheTopDrawerOfTheCabinet(_BaseDrawerTasksWithoutWin
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.table,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
-            )
-
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None, scale=1.0):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        placement=placement,
-                    )
-                )
-
         # According to task.csv, need: akita_black_bowl, butter, chocolate_pudding
-        bowl_placement = get_placement((-0.3, -0.8), (0.5, 0.5))
-        butter_placement_1 = get_placement((0.3, -0.8), (0.3, 0.3))
-        butter_placement_2 = get_placement((0.3, -0.3), (0.3, 0.3))
-        chocolate_pudding_placement = get_placement((-0.3, -0.3), (0.3, 0.3))
+        bowl_placement = dict(
+            fixture=self.table,
+            pos=(-0.3, -0.8),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.5),
+        )
+        butter_placement_1 = dict(
+            fixture=self.table,
+            pos=(0.3, -0.80),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.3, 0.3),
+        )
+        butter_placement_2 = dict(
+            fixture=self.table,
+            pos=(0.3, -0.3),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.3, 0.3),
+        )
+        chocolate_pudding_placement = dict(
+            fixture=self.table,
+            pos=(-0.3, -0.3),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.3, 0.3),
+        )
 
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml", scale=0.7)
-        add_cfg(self.butter_1, "butter", True, butter_placement_1,
-                mjcf_path="/objects/lightwheel/butter/Butter001/model.xml")
-        add_cfg(self.butter_2, "butter", True, butter_placement_2,
-                mjcf_path="/objects/lightwheel/butter/Butter001/model.xml")
-        add_cfg(self.chocolate_pudding, "chocolate_pudding", True, chocolate_pudding_placement,
-                mjcf_path="/objects/lightwheel/chocolate_pudding/ChocolatePudding001/model.xml")
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                asset_name="Bowl008.usd",
+                object_scale=0.7,
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.butter_1,
+                obj_groups="butter",
+                graspable=True,
+                placement=butter_placement_1,
+                asset_name="Butter001.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.butter_2,
+                obj_groups="butter",
+                graspable=True,
+                placement=butter_placement_2,
+                asset_name="Butter001.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.chocolate_pudding,
+                obj_groups="chocolate_pudding",
+                graspable=True,
+                placement=chocolate_pudding_placement,
+                asset_name="ChocolatePudding001.usd",
+            )
+        )
         return cfgs
 
     def _check_success(self, env):
@@ -793,50 +817,72 @@ class L90K10PutTheButterAtTheFrontInTheTopDrawerOfTheCabinetAndCloseIt(_BaseDraw
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.table,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
-            )
-
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        placement=placement,
-                    )
-                )
-
         # According to task.csv, need: akita_black_bowl, butter, chocolate_pudding
-        bowl_placement = get_placement((-0.3, -0.8), (0.5, 0.5))
-        butter_placement_1 = get_placement((0.3, -0.8), (0.2, 0.2))
-        butter_placement_2 = get_placement((0.3, 0.0), (0.2, 0.2))
-        chocolate_pudding_placement = get_placement((-0.3, -0.3), (0.3, 0.3))
+        bowl_placement = dict(
+            fixture=self.table,
+            pos=(-0.3, -0.8),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.5),
+        )
+        butter_placement_1 = dict(
+            fixture=self.table,
+            pos=(0.3, -0.8),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.2, 0.2),
+        )
+        butter_placement_2 = dict(
+            fixture=self.table,
+            pos=(0.3, 0.0),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.2, 0.2),
+        )
+        chocolate_pudding_placement = dict(
+            fixture=self.table,
+            pos=(-0.3, -0.3),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.3, 0.3),
+        )
 
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
-        add_cfg(self.butter_1, "butter", True, butter_placement_1,
-                mjcf_path="/objects/lightwheel/butter/Butter001/model.xml")
-        add_cfg(self.butter_2, "butter", True, butter_placement_2,
-                mjcf_path="/objects/lightwheel/butter/Butter001/model.xml")
-        add_cfg(self.chocolate_pudding, "chocolate_pudding", True, chocolate_pudding_placement,
-                mjcf_path="/objects/lightwheel/chocolate_pudding/ChocolatePudding001/model.xml")
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                asset_name="Bowl008.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.butter_1,
+                obj_groups="butter",
+                graspable=True,
+                placement=butter_placement_1,
+                asset_name="Butter001.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.butter_2,
+                obj_groups="butter",
+                graspable=True,
+                placement=butter_placement_2,
+                asset_name="Butter001.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.chocolate_pudding,
+                obj_groups="chocolate_pudding",
+                graspable=True,
+                placement=chocolate_pudding_placement,
+                asset_name="ChocolatePudding001.usd",
+            )
+        )
 
         return cfgs
 
@@ -879,52 +925,72 @@ class L90K10PutTheChocolatePuddingInTheTopDrawerOfTheCabinetAndCloseIt(_BaseDraw
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.table,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
+        bowl_placement = dict(
+            fixture=self.table,
+            pos=(-0.3, -0.8),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.3, 0.3),
+        )
+        butter_placement_1 = dict(
+            fixture=self.table,
+            pos=(0.3, -0.8),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.3, 0.3),
+        )
+        butter_placement_2 = dict(
+            fixture=self.table,
+            pos=(0.3, -0.3),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.3, 0.3),
+        )
+        chocolate_pudding_placement = dict(
+            fixture=self.table,
+            pos=(-0.3, -0.3),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.5),
+        )
+
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                asset_name="Bowl008.usd",
             )
-
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None, scale=1.0):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        placement=placement,
-                        object_scale=scale
-                    )
-                )
-
-        # According to task.csv, need: akita_black_bowl, butter, chocolate_pudding
-        bowl_placement = get_placement((-0.3, -0.8), (0.3, 0.3))
-        butter_placement_1 = get_placement((0.3, -0.8), (0.3, 0.3))
-        butter_placement_2 = get_placement((0.3, -0.3), (0.3, 0.3))
-        chocolate_pudding_placement = get_placement((-0.3, -0.3), (0.5, 0.5))
-
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
-        add_cfg(self.butter_1, "butter", True, butter_placement_1,
-                mjcf_path="/objects/lightwheel/butter/Butter001/model.xml")
-        add_cfg(self.butter_2, "butter", True, butter_placement_2,
-                mjcf_path="/objects/lightwheel/butter/Butter001/model.xml")
-        add_cfg(self.chocolate_pudding, "chocolate_pudding", True, chocolate_pudding_placement,
-                mjcf_path="/objects/lightwheel/chocolate_pudding/ChocolatePudding001/model.xml", scale=0.7)
+        )
+        cfgs.append(
+            dict(
+                name=self.butter_1,
+                obj_groups="butter",
+                graspable=True,
+                placement=butter_placement_1,
+                asset_name="Butter001.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.butter_2,
+                obj_groups="butter",
+                graspable=True,
+                placement=butter_placement_2,
+                asset_name="Butter001.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.chocolate_pudding,
+                obj_groups="chocolate_pudding",
+                graspable=True,
+                placement=chocolate_pudding_placement,
+                asset_name="ChocolatePudding001.usd",
+                object_scale=0.7,
+            )
+        )
 
         return cfgs
 

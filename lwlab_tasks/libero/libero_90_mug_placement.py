@@ -32,36 +32,6 @@ class LiberoMugPlacementBase(LwLabTaskBase):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos=(0.0, -1), size=(0.5, 0.5)):
-            return dict(
-                fixture=self.counter,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
-            )
-
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        placement=placement,
-                    )
-                )
-
         return cfgs
 
 
@@ -92,47 +62,40 @@ class L90K6PutTheYellowAndWhiteMugToTheFrontOfTheWhiteMug(LiberoMugPlacementBase
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos=(0.0, -1), size=(0.5, 0.5), rotation=None):
-            cfg = dict(
-                fixture=self.counter,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
+        white_mug_placement = dict(
+            fixture=self.counter,
+            size=(0.3, 0.3),
+            pos=(0.2, -0.6),
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+        yellow_white_mug_placement = dict(
+            fixture=self.counter,
+            size=(0.3, 0.3),
+            pos=(-0.2, -0.2),
+            rotation=-np.pi / 2.0,
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+
+        cfgs.append(
+            dict(
+                name=self.porcelain_mug,
+                obj_groups="cup",
+                graspable=False,
+                placement=white_mug_placement,
+                asset_name="Cup012.usd",
             )
-            if rotation:
-                cfg["rotation"] = rotation
-            return cfg
-
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        placement=placement,
-                    )
-                )
-
-        # 白色马克杯放在后面，黄白色马克杯放在前面
-        white_mug_placement = get_placement(pos=(0.2, -0.6), size=(0.3, 0.3))
-        yellow_white_mug_placement = get_placement(pos=(-0.2, -0.2), size=(0.3, 0.3), rotation=-np.pi / 2.0)
-
-        add_cfg(self.porcelain_mug, "cup", False, white_mug_placement,
-                mjcf_path="/objects/lightwheel/cup/Cup012/model.xml")
-        add_cfg(self.white_yellow_mug, "cup", True, yellow_white_mug_placement,
-                mjcf_path="/objects/lightwheel/cup/Cup014/model.xml")
+        )
+        cfgs.append(
+            dict(
+                name=self.white_yellow_mug,
+                obj_groups="cup",
+                graspable=True,
+                placement=yellow_white_mug_placement,
+                asset_name="Cup014.usd",
+            )
+        )
 
         return cfgs
 
@@ -142,7 +105,6 @@ class L90K6PutTheYellowAndWhiteMugToTheFrontOfTheWhiteMug(LiberoMugPlacementBase
         return ep_meta
 
     def _check_success(self, env):
-        # 检查黄白色马克杯是否在白色马克杯前面
         return OU.check_place_obj1_side_by_obj2(
             env,
             self.white_yellow_mug,
@@ -211,55 +173,88 @@ class L90L5PutTheRedMugOnTheLeftPlate(LiberoMugPlacementBase):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos=(0.0, -1), size=(0.5, 0.5)):
-            return dict(
-                fixture=self.counter,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
+        plate_left_placement = dict(
+            fixture=self.counter,
+            size=(0.5, 0.5),
+            pos=(-0.6, -0.4),
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+        plate_right_placement = dict(
+            fixture=self.counter,
+            size=(0.5, 0.5),
+            pos=(0.6, -0.4),
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+        red_mug_placement = dict(
+            fixture=self.counter,
+            size=(0.5, 0.5),
+            pos=(0.0, -1.2),
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+        white_yellow_mug_placement = dict(
+            fixture=self.counter,
+            size=(0.5, 0.5),
+            pos=(-0.3, -0.8),
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+        porcelain_mug_placement = dict(
+            fixture=self.counter,
+            size=(0.5, 0.5),
+            pos=(0.3, -0.8),
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+
+        cfgs.append(
+            dict(
+                name=self.plate_left,
+                obj_groups="plate",
+                graspable=False,
+                placement=plate_left_placement,
+                asset_name="Plate012.usd",
+                init_robot_here=True,
             )
-
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None, init_robot_here=False):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                        **({"init_robot_here": True} if init_robot_here else {}),
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        placement=placement,
-                        **({"init_robot_here": True} if init_robot_here else {}),
-                    )
-                )
-
-        # 左边盘子，右边盘子，红色马克杯放在右边，其他马克杯作为干扰物
-        plate_left_placement = get_placement(pos=(-0.6, -0.4), size=(0.35, 0.35))
-        plate_right_placement = get_placement(pos=(0.6, -0.4), size=(0.35, 0.35))
-        red_mug_placement = get_placement(pos=(0.0, -1.2), size=(0.3, 0.3))
-        white_yellow_mug_placement = get_placement(pos=(-0.3, -1), size=(0.3, 0.3))
-        porcelain_mug_placement = get_placement(pos=(0.3, -1), size=(0.3, 0.3))
-
-        add_cfg(self.plate_left, "plate", False, plate_left_placement,
-                mjcf_path="/objects/lightwheel/plate/Plate012/model.xml", init_robot_here=True)
-        add_cfg(self.plate_right, "plate", False, plate_right_placement,
-                mjcf_path="/objects/lightwheel/plate/Plate012/model.xml")
-        add_cfg(self.red_coffee_mug, "cup", True, red_mug_placement,
-                mjcf_path="/objects/lightwheel/cup/Cup030/model.xml")
-        add_cfg(self.porcelain_mug, "cup", True, porcelain_mug_placement,
-                mjcf_path="/objects/lightwheel/cup/Cup012/model.xml")
-        add_cfg(self.white_yellow_mug, "cup", True, white_yellow_mug_placement,
-                mjcf_path="/objects/lightwheel/cup/Cup014/model.xml")
+        )
+        cfgs.append(
+            dict(
+                name=self.plate_right,
+                obj_groups="plate",
+                graspable=False,
+                placement=plate_right_placement,
+                asset_name="Plate012.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.red_coffee_mug,
+                obj_groups="cup",
+                graspable=True,
+                placement=red_mug_placement,
+                asset_name="Cup030.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.porcelain_mug,
+                obj_groups="cup",
+                graspable=True,
+                placement=porcelain_mug_placement,
+                asset_name="Cup012.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.white_yellow_mug,
+                obj_groups="cup",
+                graspable=True,
+                placement=white_yellow_mug_placement,
+                asset_name="Cup014.usd",
+            )
+        )
 
         return cfgs
 
@@ -269,7 +264,6 @@ class L90L5PutTheRedMugOnTheLeftPlate(LiberoMugPlacementBase):
         return ep_meta
 
     def _check_success(self, env):
-        # 检查红色马克杯是否在左边盘子上
         success = OU.check_place_obj1_on_obj2(
             env,
             'red_coffee_mug',

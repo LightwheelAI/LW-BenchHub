@@ -34,9 +34,6 @@ class LiberoBlackBowlAndPlateBase(LwLabTaskBase):
     def _reset_internal(self, env_ids):
         super()._reset_internal(env_ids)
 
-    def _load_model(self):
-        super()._load_model()
-
     def _get_obj_cfgs(self):
         cfgs = []
 
@@ -48,46 +45,74 @@ class LiberoBlackBowlAndPlateBase(LwLabTaskBase):
         middle_pos = (base_x, middle_y)
         back_pos = (base_x, middle_y - spacing)
 
-        def get_placement(pos=(0.0, -1), size=(0.5, 0.5), ensure_valid_placement=False):
-            return dict(
-                fixture=self.counter,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=ensure_valid_placement,
+        plate_placement = dict(
+            fixture=self.counter,
+            size=(0.28, 0.28),
+            pos=(0.15, -0.2),
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+        black_bowl_front_placement = dict(
+            fixture=self.counter,
+            size=(0.22, 0.22),
+            pos=front_pos,
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+        black_bowl_middle_placement = dict(
+            fixture=self.counter,
+            size=(0.22, 0.22),
+            pos=middle_pos,
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+        black_bowl_back_placement = dict(
+            fixture=self.counter,
+            size=(0.22, 0.22),
+            pos=back_pos,
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl_back,
+                obj_groups='akita_black_bowl',
+                graspable=True,
+                placement=black_bowl_back_placement,
+                asset_name='Bowl008.usd',
+                object_scale=0.8,
             )
-
-        plate_placement = get_placement(pos=(0.15, -0.2), size=(0.28, 0.28))
-        black_bowl_front_placement = get_placement(pos=front_pos, size=(0.22, 0.22))
-        black_bowl_middle_placement = get_placement(pos=middle_pos, size=(0.22, 0.22))
-        black_bowl_back_placement = get_placement(pos=back_pos, size=(0.22, 0.22))
-
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None, scale=1.0):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        object_scale=scale,
-                        graspable=graspable,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        object_scale=scale,
-                        graspable=graspable,
-                        placement=placement,
-                    )
-                )
-        add_cfg(self.akita_black_bowl_back, 'akita_black_bowl', True, black_bowl_back_placement, mjcf_path='/objects/lightwheel/bowl/Bowl008/model.xml', scale=0.8)
-        add_cfg(self.plate, self.plate, True, plate_placement, mjcf_path='/objects/lightwheel/plate/Plate012/model.xml')
-        add_cfg(self.akita_black_bowl_middle, 'akita_black_bowl', True, black_bowl_middle_placement, mjcf_path='/objects/lightwheel/bowl/Bowl008/model.xml', scale=0.8)
-        add_cfg(self.akita_black_bowl_front, 'akita_black_bowl', True, black_bowl_front_placement, mjcf_path='/objects/lightwheel/bowl/Bowl008/model.xml', scale=0.8)
+        )
+        cfgs.append(
+            dict(
+                name=self.plate,
+                obj_groups=self.plate,
+                graspable=True,
+                placement=plate_placement,
+                asset_name='Plate012.usd',
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl_middle,
+                obj_groups='akita_black_bowl',
+                graspable=True,
+                placement=black_bowl_middle_placement,
+                asset_name='Bowl008.usd',
+                object_scale=0.8,
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl_front,
+                obj_groups='akita_black_bowl',
+                graspable=True,
+                placement=black_bowl_front_placement,
+                asset_name='Bowl008.usd',
+                object_scale=0.8,
+            )
+        )
         return cfgs
 
 
@@ -269,47 +294,56 @@ class L90K5PutTheBlackBowlOnThePlate(LiberoBlackBowlAndPlateBase):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.counter,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
+        plate_placement = dict(
+            fixture=self.counter,
+            pos=(0.55, -0.85),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.35, 0.35),
+        )
+        bowl_placement = dict(
+            fixture=self.counter,
+            pos=(-0.05, -0.25),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.35, 0.35),
+        )
+        ketchup_placement = dict(
+            fixture=self.counter,
+            pos=(0.20, -0.8),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.25, 0.25),
+        )
+
+        cfgs.append(
+            dict(
+                name=self.plate,
+                obj_groups="plate",
+                graspable=False,
+                placement=plate_placement,
+                asset_name="Plate012.usd",
+                init_robot_here=True,
             )
-
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None, init_robot_here=False):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                        **({"init_robot_here": True} if init_robot_here else {}),
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        placement=placement,
-                        **({"init_robot_here": True} if init_robot_here else {}),
-                    )
-                )
-
-        plate_placement = get_placement((0.55, -0.85), (0.35, 0.35))
-        bowl_placement = get_placement((-0.05, -0.25), (0.35, 0.35))
-        ketchup_placement = get_placement((0.20, -0.8), (0.25, 0.25))
-
-        add_cfg(self.plate, "plate", False, plate_placement,
-                mjcf_path="/objects/lightwheel/plate/Plate012/model.xml", init_robot_here=True)
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
-        add_cfg(self.ketchup, "ketchup", True, ketchup_placement, mjcf_path="/objects/lightwheel/ketchup/Ketchup003/model.xml")
+        )
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                asset_name="Bowl008.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.ketchup,
+                obj_groups="ketchup",
+                graspable=True,
+                placement=ketchup_placement,
+                asset_name="Ketchup003.usd",
+            )
+        )
 
         return cfgs
 

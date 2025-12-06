@@ -47,9 +47,7 @@ class L90L4StackTheRightBowlOnTheLeftBowlAndPlaceThemInTheTray(LwLabTaskBase):
                     pos=(0.25, 0.5),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/tray/Tray016/model.xml",
-                ),
+                asset_name="Tray016.usd",
             )
         )
 
@@ -65,9 +63,7 @@ class L90L4StackTheRightBowlOnTheLeftBowlAndPlaceThemInTheTray(LwLabTaskBase):
                     pos=(-0.25, -0.5),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/chocolate_pudding/ChocolatePudding001/model.xml",
-                ),
+                asset_name="ChocolatePudding001.usd",
             )
         )
 
@@ -75,9 +71,7 @@ class L90L4StackTheRightBowlOnTheLeftBowlAndPlaceThemInTheTray(LwLabTaskBase):
             dict(
                 name=self.bowl_left,
                 obj_groups="bowl",
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml"
-                ),
+                asset_name="Bowl008.usd",
                 graspable=True,
                 object_scale=0.6,
                 placement=dict(
@@ -93,9 +87,7 @@ class L90L4StackTheRightBowlOnTheLeftBowlAndPlaceThemInTheTray(LwLabTaskBase):
             dict(
                 name=self.bowl_right,
                 obj_groups="bowl",
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml"
-                ),
+                asset_name="Bowl008.usd",
                 graspable=True,
                 object_scale=0.6,
                 placement=dict(

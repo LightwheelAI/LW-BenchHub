@@ -38,7 +38,7 @@ class L90L3PickUpTheTomatoSauceAndPutItInTheTray(Libero10PutInBasket):
             if cfgs[cfg_index]['name'] == self.basket:
                 # Replace basket with wooden_tray
                 cfgs[cfg_index]['name'] = self.wooden_tray
-                cfgs[cfg_index]['info']['mjcf_path'] = "/objects/lightwheel/tray/Tray016/model.xml"
+                cfgs[cfg_index]['asset_name'] = "Tray016.usd"
                 cfgs[cfg_index]['object_scale'] = 0.6
             if cfgs[cfg_index]['name'] in pop_objs:
                 cfgs.pop(cfg_index)

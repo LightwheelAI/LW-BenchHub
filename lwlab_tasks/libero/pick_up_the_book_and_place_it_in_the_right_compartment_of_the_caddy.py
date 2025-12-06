@@ -16,13 +16,7 @@ class PubBookInCaddy(LwLabTaskBase):
             "table",
             dict(id=FixtureType.TABLE, size=(1.0, 0.6)),
         )
-        self.obj_name = []
         self.init_robot_base_ref = self.dining_table
-
-    def _load_model(self):
-        super()._load_model()
-        for cfg in self.object_cfgs:
-            self.obj_name.append(cfg["name"])
 
     def get_ep_meta(self):
         ep_meta = super().get_ep_meta()
@@ -39,9 +33,7 @@ class PubBookInCaddy(LwLabTaskBase):
                 obj_groups="book",
                 graspable=True,
                 object_scale=0.4,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/book/Book042/model.xml",
-                ),
+                asset_name="Book042.usd",
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.5, 0.55),
@@ -56,9 +48,7 @@ class PubBookInCaddy(LwLabTaskBase):
                 name="red_coffee_mug",
                 obj_groups="cup",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup030/model.xml",
-                ),
+                asset_name="Cup030.usd",
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.5, 0.55),
@@ -70,74 +60,7 @@ class PubBookInCaddy(LwLabTaskBase):
         return cfgs
 
     def _check_success(self, env):
-        # 打开柜子底部抽屉
         return False
-
-
-class PubBookInCaddy1(PubBookInCaddy):
-
-    task_name = "PubBookInCaddy1"
-
-    def get_ep_meta(self):
-        ep_meta = super().get_ep_meta()
-        ep_meta[
-            "lang"
-        ] = f"pick up the red mug and place it to the right compartment of the caddy."
-        return ep_meta
-
-    def _get_obj_cfgs(self):
-        cfgs = []
-        cfgs.append(
-            dict(
-                name="black_book",
-                obj_groups="book",
-                object_scale=0.4,
-                graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/book/Book042/model.xml",
-                ),
-                placement=dict(
-                    fixture=self.dining_table,
-                    size=(0.5, 0.55),
-                    margin=0.02,
-                    pos=(-0.1, -0.5)
-                ),
-            )
-        )
-
-        cfgs.append(
-            dict(
-                name="red_coffee_mug",
-                obj_groups="cup",
-                graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup030/model.xml",
-                ),
-                placement=dict(
-                    fixture=self.dining_table,
-                    size=(0.5, 0.55),
-                    margin=0.02,
-                    pos=(-0.1, -0.5)
-                ),
-            )
-        )
-        cfgs.append(
-            dict(
-                name="porcelain_mug",
-                obj_groups="cup",
-                graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup012/model.xml",
-                ),
-                placement=dict(
-                    fixture=self.dining_table,
-                    size=(0.5, 0.55),
-                    margin=0.02,
-                    pos=(-0.1, -0.5)
-                ),
-            )
-        )
-        return cfgs
 
 
 class L90S3PickUpTheRedMugAndPlaceItToTheRightOfTheCaddy(PubBookInCaddy):
@@ -159,9 +82,7 @@ class L90S3PickUpTheRedMugAndPlaceItToTheRightOfTheCaddy(PubBookInCaddy):
                 graspable=True,
                 object_scale=2.0,
                 init_robot_here=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/desk_caddy/DeskCaddy001/model.xml",
-                ),
+                asset_name="DeskCaddy001.usd",
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.8, 0.5),
@@ -175,9 +96,7 @@ class L90S3PickUpTheRedMugAndPlaceItToTheRightOfTheCaddy(PubBookInCaddy):
                 obj_groups="book",
                 object_scale=0.4,
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/book/Book042/model.xml",
-                ),
+                asset_name="Book042.usd",
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.5, 0.3),
@@ -192,9 +111,7 @@ class L90S3PickUpTheRedMugAndPlaceItToTheRightOfTheCaddy(PubBookInCaddy):
                 name="red_coffee_mug",
                 obj_groups="cup",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup030/model.xml",
-                ),
+                asset_name="Cup030.usd",
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.5, 0.3),
@@ -208,9 +125,7 @@ class L90S3PickUpTheRedMugAndPlaceItToTheRightOfTheCaddy(PubBookInCaddy):
                 name="porcelain_mug",
                 obj_groups="cup",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup012/model.xml",
-                ),
+                asset_name="Cup012.usd",
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.5, 0.3),

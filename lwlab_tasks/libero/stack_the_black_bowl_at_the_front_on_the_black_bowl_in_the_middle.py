@@ -18,15 +18,8 @@ class L90K2StackTheBlackBowlAtTheFrontOnTheBlackBowlInTheMiddle(LwLabTaskBase):
             "dining_table",
             dict(id=FixtureType.TABLE, size=(1.0, 0.6)),
         )
-        self.obj_name = []
         self.drawer = self.register_fixture_ref("singlecabinet", dict(id=FixtureType.STORAGE_FURNITURE))
-
         self.init_robot_base_ref = self.dining_table
-
-    def _load_model(self):
-        super()._load_model()
-        for cfg in self.object_cfgs:
-            self.obj_name.append(cfg["name"])
 
     def get_ep_meta(self):
         ep_meta = super().get_ep_meta()
@@ -44,9 +37,7 @@ class L90K2StackTheBlackBowlAtTheFrontOnTheBlackBowlInTheMiddle(LwLabTaskBase):
                 graspable=True,
                 washable=True,
                 object_scale=0.7,  # Scale down bowls to fit better
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml"
-                ),
+                asset_name="Bowl008.usd",
                 init_robot_here=True,
                 placement=dict(
                     fixture=self.dining_table,
@@ -63,9 +54,7 @@ class L90K2StackTheBlackBowlAtTheFrontOnTheBlackBowlInTheMiddle(LwLabTaskBase):
                 graspable=True,
                 washable=True,
                 object_scale=0.7,  # Scale down bowls to fit better
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml"
-                ),
+                asset_name="Bowl008.usd",
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.30, 0.30),  # Reduce sampling area
@@ -81,9 +70,7 @@ class L90K2StackTheBlackBowlAtTheFrontOnTheBlackBowlInTheMiddle(LwLabTaskBase):
                 graspable=True,
                 washable=True,
                 object_scale=0.7,  # Scale down bowls to fit better
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml"
-                ),
+                asset_name="Bowl008.usd",
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.30, 0.30),  # Reduce sampling area
@@ -99,9 +86,7 @@ class L90K2StackTheBlackBowlAtTheFrontOnTheBlackBowlInTheMiddle(LwLabTaskBase):
                 graspable=True,
                 washable=True,
                 object_scale=0.6,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/plate/Plate012/model.xml"
-                ),
+                asset_name="Plate012.usd",
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.35, 0.30),  # Reduce sampling area

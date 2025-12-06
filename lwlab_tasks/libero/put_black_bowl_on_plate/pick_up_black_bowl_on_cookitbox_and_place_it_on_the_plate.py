@@ -24,9 +24,6 @@ class LSPickUpTheBlackBowlOnTheCookieBoxAndPlaceItOnThePlate(PutBlackBowlOnPlate
         self.bowl = "bowl"
         self.storage_furniture.set_target_reg_int(("int1",))
 
-    def _load_model(self):
-        super()._load_model()
-
     def _get_obj_cfgs(self):
         cfgs = super()._get_obj_cfgs()
 
@@ -34,9 +31,7 @@ class LSPickUpTheBlackBowlOnTheCookieBoxAndPlaceItOnThePlate(PutBlackBowlOnPlate
             dict(
                 name=self.bowl_target,
                 obj_groups="bowl",
-                info=dict(
-                    mjcf_path=self.bowl_mjcf_path
-                ),
+                asset_name=self.bowl_asset_name,
                 graspable=True,
                 object_scale=0.6,
                 placement=dict(
@@ -50,9 +45,7 @@ class LSPickUpTheBlackBowlOnTheCookieBoxAndPlaceItOnThePlate(PutBlackBowlOnPlate
             dict(
                 name=self.bowl,
                 obj_groups="bowl",
-                info=dict(
-                    mjcf_path=self.bowl_mjcf_path
-                ),
+                asset_name=self.bowl_asset_name,
                 graspable=True,
                 object_scale=0.6,
                 placement=dict(
@@ -185,9 +178,7 @@ class LSPickUpTheBlackBowlOnTheWoodenCabinetAndPlaceItOnThePlate(LSPickUpTheBlac
             dict(
                 name=self.bowl,
                 obj_groups="bowl",
-                info=dict(
-                    mjcf_path=self.bowl_mjcf_path
-                ),
+                asset_name=self.bowl_asset_name,
                 graspable=True,
                 object_scale=0.6,
                 placement=dict(
@@ -203,9 +194,7 @@ class LSPickUpTheBlackBowlOnTheWoodenCabinetAndPlaceItOnThePlate(LSPickUpTheBlac
             dict(
                 name=self.bowl_target,
                 obj_groups="bowl",
-                info=dict(
-                    mjcf_path=self.bowl_mjcf_path
-                ),
+                asset_name=self.bowl_asset_name,
                 graspable=True,
                 object_scale=0.6,
                 placement=dict(

@@ -30,9 +30,7 @@ class PutObjectInBasket(LwLabTaskBase):
                     pos=(0.1, 0.0),
                     # ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/basket/Basket058/model.xml",
-                ),
+                asset_name="Basket058.usd",
             )
         )
 

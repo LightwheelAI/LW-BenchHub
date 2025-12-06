@@ -16,13 +16,7 @@ class L90K1PutTheBlackBowlOnThePlate(LwLabTaskBase):
             "dining_table",
             dict(id=FixtureType.TABLE, size=(1.0, 0.35)),
         )
-        self.obj_name = []
         self.init_robot_base_ref = self.dining_table
-
-    def _load_model(self):
-        super()._load_model()
-        for cfg in self.object_cfgs:
-            self.obj_name.append(cfg["name"])
 
     def get_ep_meta(self):
         ep_meta = super().get_ep_meta()
@@ -39,9 +33,7 @@ class L90K1PutTheBlackBowlOnThePlate(LwLabTaskBase):
                 obj_groups=["bowl"],
                 graspable=True,
                 washable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml"
-                ),
+                asset_name="Bowl008.usd",
                 init_robot_here=True,
                 placement=dict(
                     fixture=self.dining_table,
@@ -58,9 +50,7 @@ class L90K1PutTheBlackBowlOnThePlate(LwLabTaskBase):
                 obj_groups=["plate"],
                 graspable=True,
                 washable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/plate/Plate012/model.xml"
-                ),
+                asset_name="Plate012.usd",
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.5, 0.5),
@@ -74,11 +64,4 @@ class L90K1PutTheBlackBowlOnThePlate(LwLabTaskBase):
     def _check_success(self, env):
         th = env.cfg.isaaclab_arena_env.task.objects["plate"].horizontal_radius
         bowl_in_plate = OU.check_obj_in_receptacle_no_contact(env, "akita_black_bowl", "plate", th)
-        far_from_objects = self._gripper_obj_farfrom_objects(env)
-        return bowl_in_plate & far_from_objects
-
-    def _gripper_obj_farfrom_objects(self, env):
-        gripper_far_tensor = torch.tensor([True], device=env.device).repeat(env.num_envs)
-        for obj_name in self.obj_name:
-            gripper_far_tensor = gripper_far_tensor & OU.gripper_obj_far(env, obj_name)
-        return gripper_far_tensor
+        return bowl_in_plate & OU.gripper_obj_far(env, "akita_black_bowl")

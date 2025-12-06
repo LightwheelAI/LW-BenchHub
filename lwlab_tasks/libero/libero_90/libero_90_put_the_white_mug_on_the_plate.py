@@ -45,9 +45,7 @@ class L90L6PutTheWhiteMugOnThePlate(LwLabTaskBase):
                     pos=(0.5, -0.6),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/chocolate_pudding/ChocolatePudding001/model.xml",
-                ),
+                asset_name="ChocolatePudding001.usd",
             )
         )
 
@@ -63,9 +61,7 @@ class L90L6PutTheWhiteMugOnThePlate(LwLabTaskBase):
                     pos=(0.25, -0.8),
                     ensure_valid_placement=True,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/plate/Plate012/model.xml",
-                )
+                asset_name="Plate012.usd",
             )
         )
 
@@ -79,9 +75,7 @@ class L90L6PutTheWhiteMugOnThePlate(LwLabTaskBase):
                     pos=(-0.25, -0.8),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup012/model.xml",
-                ),
+                asset_name="Cup012.usd",
             )
         )
 
@@ -95,9 +89,7 @@ class L90L6PutTheWhiteMugOnThePlate(LwLabTaskBase):
                     pos=(-0.5, -0.8),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup030/model.xml",
-                ),
+                asset_name="Cup030.usd",
             )
         )
 

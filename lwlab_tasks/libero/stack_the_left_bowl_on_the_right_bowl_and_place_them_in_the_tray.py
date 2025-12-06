@@ -18,13 +18,7 @@ class L90L4StackTheLeftBowlOnTheRightBowlAndPlaceThemInTheTray(LwLabTaskBase):
             "dining_table",
             dict(id=FixtureType.TABLE, size=(1.0, 0.6)),
         )
-        self.obj_name = []
         self.init_robot_base_ref = self.dining_table
-
-    def _load_model(self):
-        super()._load_model()
-        for cfg in self.object_cfgs:
-            self.obj_name.append(cfg["name"])
 
     def get_ep_meta(self):
         ep_meta = super().get_ep_meta()
@@ -41,9 +35,7 @@ class L90L4StackTheLeftBowlOnTheRightBowlAndPlaceThemInTheTray(LwLabTaskBase):
                 obj_groups=["tray"],
                 graspable=True,
                 washable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/tray/Tray016/model.xml"
-                ),
+                asset_name="Tray016.usd",
                 object_scale=0.6,
                 placement=dict(
                     fixture=self.dining_table,
@@ -60,13 +52,11 @@ class L90L4StackTheLeftBowlOnTheRightBowlAndPlaceThemInTheTray(LwLabTaskBase):
                 obj_groups=["bowl"],
                 graspable=True,
                 washable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml"
-                ),
+                asset_name="Bowl008.usd",
                 init_robot_here=True,
                 placement=dict(
                     fixture=self.dining_table,
-                    size=(0.35, 0.35),
+                    size=(0.5, 0.5),
                     margin=0.02,
                     pos=(-0.1, -0.8),
                 ),
@@ -78,15 +68,12 @@ class L90L4StackTheLeftBowlOnTheRightBowlAndPlaceThemInTheTray(LwLabTaskBase):
                 obj_groups=["bowl"],
                 graspable=True,
                 washable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml"
-                ),
-                init_robot_here=True,
+                asset_name="Bowl008.usd",
                 placement=dict(
                     fixture=self.dining_table,
-                    size=(0.35, 0.35),
+                    size=(0.5, 0.5),
                     margin=0.02,
-                    pos=(0.2, -0.8),
+                    pos=(0.4, -0.8),
                 ),
             )
         )
@@ -95,9 +82,7 @@ class L90L4StackTheLeftBowlOnTheRightBowlAndPlaceThemInTheTray(LwLabTaskBase):
                 name="chocolate_pudding",
                 obj_groups="chocolate_pudding",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/chocolate_pudding/ChocolatePudding001/model.xml",
-                ),
+                asset_name="ChocolatePudding001.usd",
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.80, 0.50),

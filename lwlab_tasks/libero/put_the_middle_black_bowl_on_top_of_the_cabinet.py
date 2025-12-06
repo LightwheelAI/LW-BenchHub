@@ -21,8 +21,11 @@ class L90K2PutTheMiddleBlackBowlOnTopOfTheCabinet(LwLabTaskBase):
         self.obj_name = []
         self.init_robot_base_ref = self.dining_table
 
-    def _load_model(self):
-        super()._load_model()
+    def _setup_scene(self, env, env_ids=None):
+        """
+        Resets simulation internal configurations.
+        """
+        super()._setup_scene(env, env_ids)
         for cfg in self.object_cfgs:
             self.obj_name.append(cfg["name"])
 
@@ -41,9 +44,7 @@ class L90K2PutTheMiddleBlackBowlOnTopOfTheCabinet(LwLabTaskBase):
                 obj_groups=["bowl"],
                 graspable=True,
                 washable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml"
-                ),
+                asset_name="Bowl008.usd",
                 init_robot_here=True,
                 placement=dict(
                     fixture=self.dining_table,
@@ -59,9 +60,7 @@ class L90K2PutTheMiddleBlackBowlOnTopOfTheCabinet(LwLabTaskBase):
                 obj_groups=["bowl"],
                 graspable=True,
                 washable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml"
-                ),
+                asset_name="Bowl008.usd",
                 init_robot_here=True,
                 placement=dict(
                     fixture=self.dining_table,
@@ -77,9 +76,7 @@ class L90K2PutTheMiddleBlackBowlOnTopOfTheCabinet(LwLabTaskBase):
                 obj_groups=["bowl"],
                 graspable=True,
                 washable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml"
-                ),
+                asset_name="Bowl008.usd",
                 init_robot_here=True,
                 placement=dict(
                     fixture=self.dining_table,
@@ -96,9 +93,7 @@ class L90K2PutTheMiddleBlackBowlOnTopOfTheCabinet(LwLabTaskBase):
                 graspable=True,
                 washable=True,
                 object_scale=0.6,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/plate/Plate012/model.xml"
-                ),
+                asset_name="Plate012.usd",
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.6, 0.35),

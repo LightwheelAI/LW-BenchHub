@@ -17,7 +17,7 @@ class PutBlackBowlOnPlate(LwLabTaskBase):
         self.ramekin = "ramekin"
         self.cookies = "cookies"
         # akita black bowl
-        self.bowl_mjcf_path = "/objects/lightwheel/bowl/Bowl008/model.xml"
+        self.bowl_asset_name = "Bowl008.usd"
         self.bowl_placement = {
             "between_plate_and_ramekin": dict(
                 fixture=self.dining_table,
@@ -73,9 +73,7 @@ class PutBlackBowlOnPlate(LwLabTaskBase):
                     pos=(1, 1),
                     ensure_valid_placement=True,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cookies/Cookies002/model.xml",
-                ),
+                asset_name="Cookies002.usd",
             )
         )
         cfgs.append(
@@ -90,9 +88,7 @@ class PutBlackBowlOnPlate(LwLabTaskBase):
                     pos=(1, -0.1),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/plate/Plate012/model.xml",
-                ),
+                asset_name="Plate012.usd",
             )
         )
         # ramekin
@@ -108,9 +104,7 @@ class PutBlackBowlOnPlate(LwLabTaskBase):
                     pos=(1, 0),
                     ensure_valid_placement=True,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bowl/Bowl009/model.xml",
-                ),
+                asset_name="Bowl009.usd",
             )
         )
 

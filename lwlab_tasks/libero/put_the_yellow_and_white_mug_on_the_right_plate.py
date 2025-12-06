@@ -34,12 +34,10 @@ class L90L5PutTheYellowAndWhiteMugOnTheRightPlate(LwLabTaskBase):
                 name="porcelain_mug",
                 obj_groups="cup",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup012/model.xml",
-                ),
+                asset_name="Cup012.usd",
                 placement=dict(
                     fixture=self.table,
-                    size=(0.50, 0.50),
+                    size=(0.50, 0.30),
                     pos=(0.1, -0.2),
                 ),
             )
@@ -49,12 +47,10 @@ class L90L5PutTheYellowAndWhiteMugOnTheRightPlate(LwLabTaskBase):
                 name="red_coffee_mug",
                 obj_groups="cup",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup030/model.xml",
-                ),
+                asset_name="Cup030.usd",
                 placement=dict(
                     fixture=self.table,
-                    size=(0.50, 0.50),
+                    size=(0.50, 0.30),
                     pos=(-0.1, -0.3),
                 ),
             )
@@ -65,13 +61,11 @@ class L90L5PutTheYellowAndWhiteMugOnTheRightPlate(LwLabTaskBase):
                 name="white_yellow_mug",
                 obj_groups="cup",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup014/model.xml",
-                ),
+                asset_name="Cup014.usd",
                 placement=dict(
                     fixture=self.table,
-                    size=(0.50, 0.30),
-                    pos=(-0.2, -0.8),
+                    size=(0.50, 0.50),
+                    pos=(-0.3, -0.8),
                 ),
             )
         )
@@ -82,9 +76,7 @@ class L90L5PutTheYellowAndWhiteMugOnTheRightPlate(LwLabTaskBase):
                 graspable=True,
                 washable=True,
                 object_scale=0.8,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/plate/Plate012/model.xml"
-                ),
+                asset_name="Plate012.usd",
                 placement=dict(
                     fixture=self.table,
                     size=(0.50, 0.3),
@@ -100,9 +92,7 @@ class L90L5PutTheYellowAndWhiteMugOnTheRightPlate(LwLabTaskBase):
                 graspable=True,
                 washable=True,
                 object_scale=0.8,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/plate/Plate012/model.xml"
-                ),
+                asset_name="Plate012.usd",
                 placement=dict(
                     fixture=self.table,
                     size=(0.50, 0.5),
@@ -150,9 +140,7 @@ class L90L5PutTheWhiteMugOnTheLeftPlate(LwLabTaskBase):
                 graspable=True,
                 washable=True,
                 object_scale=0.8,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/plate/Plate012/model.xml"
-                ),
+                asset_name="Plate012.usd",
                 placement=dict(
                     fixture=self.table,
                     size=(0.50, 0.5),
@@ -168,9 +156,7 @@ class L90L5PutTheWhiteMugOnTheLeftPlate(LwLabTaskBase):
                 graspable=True,
                 washable=True,
                 object_scale=0.8,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/plate/Plate012/model.xml"
-                ),
+                asset_name="Plate012.usd",
                 placement=dict(
                     fixture=self.table,
                     size=(0.50, 0.5),
@@ -184,9 +170,7 @@ class L90L5PutTheWhiteMugOnTheLeftPlate(LwLabTaskBase):
                 name="porcelain_mug",
                 obj_groups="cup",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup012/model.xml",
-                ),
+                asset_name="Cup012.usd",
                 placement=dict(
                     fixture=self.table,
                     size=(0.50, 0.30),
@@ -199,9 +183,7 @@ class L90L5PutTheWhiteMugOnTheLeftPlate(LwLabTaskBase):
                 name="red_coffee_mug",
                 obj_groups="cup",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup030/model.xml",
-                ),
+                asset_name="Cup030.usd",
                 placement=dict(
                     fixture=self.table,
                     size=(0.50, 0.50),
@@ -215,9 +197,7 @@ class L90L5PutTheWhiteMugOnTheLeftPlate(LwLabTaskBase):
                 name="white_yellow_mug",
                 obj_groups="cup",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup014/model.xml",
-                ),
+                asset_name="Cup014.usd",
                 placement=dict(
                     fixture=self.table,
                     size=(0.50, 0.50),

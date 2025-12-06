@@ -16,13 +16,7 @@ class L90L1PickUpTheAlphabetSoupAndPutItInTheBasket(LwLabTaskBase):
             "dining_table",
             dict(id=FixtureType.TABLE, size=(1.0, 0.35)),
         )
-        self.obj_name = []
         self.init_robot_base_ref = self.dining_table
-
-    def _load_model(self):
-        super()._load_model()
-        for cfg in self.object_cfgs:
-            self.obj_name.append(cfg["name"])
 
     def get_ep_meta(self):
         ep_meta = super().get_ep_meta()
@@ -39,9 +33,7 @@ class L90L1PickUpTheAlphabetSoupAndPutItInTheBasket(LwLabTaskBase):
                 obj_groups=["basket"],
                 graspable=True,
                 washable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/basket/Basket058/model.xml"
-                ),
+                asset_name="Basket058.usd",
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.5, 0.5),
@@ -57,9 +49,7 @@ class L90L1PickUpTheAlphabetSoupAndPutItInTheBasket(LwLabTaskBase):
                 graspable=True,
                 washable=True,
                 object_scale=0.8,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/alphabet_soup/AlphabetSoup001/model.xml"
-                ),
+                asset_name="AlphabetSoup001.usd",
                 init_robot_here=True,
                 placement=dict(
                     fixture=self.dining_table,
@@ -76,9 +66,7 @@ class L90L1PickUpTheAlphabetSoupAndPutItInTheBasket(LwLabTaskBase):
                 obj_groups=["butter"],
                 graspable=True,
                 washable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/butter/Butter001/model.xml"
-                ),
+                asset_name="Butter001.usd",
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.4, 0.35),
@@ -93,9 +81,7 @@ class L90L1PickUpTheAlphabetSoupAndPutItInTheBasket(LwLabTaskBase):
                 obj_groups="cream_cheese_stick",
                 init_robot_here=True,
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml",
-                ),
+                asset_name="CreamCheeseStick013.usd",
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.4, 0.35),
@@ -111,9 +97,7 @@ class L90L1PickUpTheAlphabetSoupAndPutItInTheBasket(LwLabTaskBase):
                 graspable=True,
                 washable=True,
                 object_scale=0.8,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/ketchup/Ketchup003/model.xml"
-                ),
+                asset_name="Ketchup003.usd",
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.4, 0.35),

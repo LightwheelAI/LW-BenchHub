@@ -41,9 +41,7 @@ class LOPickUpTheKetchupAndPlaceItInTheBasket(PutObjectInBasket):
                     pos=(-0.1, 0.0),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/alphabet_soup/AlphabetSoup001/model.xml",
-                ),
+                asset_name="AlphabetSoup001.usd",
             )
         )
 
@@ -58,9 +56,7 @@ class LOPickUpTheKetchupAndPlaceItInTheBasket(PutObjectInBasket):
                     pos=(-0.1, 0.0),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml",
-                ),
+                asset_name="CreamCheeseStick013.usd",
             )
         )
 
@@ -75,9 +71,7 @@ class LOPickUpTheKetchupAndPlaceItInTheBasket(PutObjectInBasket):
                     pos=(-0.2, 0.0),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/milk_drink/MilkDrink009/model.xml",
-                ),
+                asset_name="MilkDrink009.usd",
             )
         )
 

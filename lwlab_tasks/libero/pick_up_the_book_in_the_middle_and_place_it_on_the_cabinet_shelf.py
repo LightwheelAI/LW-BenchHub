@@ -42,9 +42,7 @@ class L90S4PickUpTheBookInTheMiddleAndPlaceItOnTheCabinetShelf(LwLabTaskBase):
                     pos=(-0.4, 0.10),
                     rotation=np.pi / 2,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/shelf/Shelf073/model.xml",
-                ),
+                asset_name="Shelf073.usd",
             )
         )
         cfgs.append(
@@ -52,9 +50,7 @@ class L90S4PickUpTheBookInTheMiddleAndPlaceItOnTheCabinetShelf(LwLabTaskBase):
                 name="black_book",
                 obj_groups="book",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/book/Book042/model.xml",
-                ),
+                asset_name="Book042.usd",
                 object_scale=0.4,
                 placement=dict(
                     fixture=self.table,
@@ -69,9 +65,7 @@ class L90S4PickUpTheBookInTheMiddleAndPlaceItOnTheCabinetShelf(LwLabTaskBase):
                 obj_groups="book",
                 graspable=True,
                 object_scale=0.4,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/book/Book043/model.xml",
-                ),
+                asset_name="Book043.usd",
                 placement=dict(
                     fixture=self.table,
                     size=(0.25, 0.25),
@@ -85,9 +79,7 @@ class L90S4PickUpTheBookInTheMiddleAndPlaceItOnTheCabinetShelf(LwLabTaskBase):
                 obj_groups="book",
                 object_scale=0.4,
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/book/Book043/model.xml",
-                ),
+                asset_name="Book043.usd",
                 placement=dict(
                     fixture=self.table,
                     size=(0.25, 0.25),

@@ -40,9 +40,7 @@ class L90K10PutTheButterAtTheBackInTheTopDrawerOfTheCabinetAndCloseIt(LwLabTaskB
                 obj_groups="butter",
                 graspable=True,
                 object_scale=0.8,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/butter/Butter001/model.xml",
-                ),
+                asset_name="Butter001.usd",
                 placement=dict(
                     fixture=self.table,
                     size=(0.80, 0.3),
@@ -56,9 +54,7 @@ class L90K10PutTheButterAtTheBackInTheTopDrawerOfTheCabinetAndCloseIt(LwLabTaskB
                 name="chocolate_pudding",
                 obj_groups="chocolate_pudding",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/chocolate_pudding/ChocolatePudding001/model.xml",
-                ),
+                asset_name="ChocolatePudding001.usd",
                 placement=dict(
                     fixture=self.table,
                     size=(0.80, 0.3),
@@ -71,9 +67,7 @@ class L90K10PutTheButterAtTheBackInTheTopDrawerOfTheCabinetAndCloseIt(LwLabTaskB
                 name="akita_black_bowl",
                 obj_groups="bowl",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml",
-                ),
+                asset_name="Bowl008.usd",
                 placement=dict(
                     fixture=self.table,
                     size=(0.80, 0.3),

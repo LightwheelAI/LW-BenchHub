@@ -21,13 +21,7 @@ class L90K4PutTheWineBottleOnTheWineRack(LwLabTaskBase):
             "winerack",
             dict(id=FixtureType.WINE_RACK),
         )
-        self.obj_name = []
         self.init_robot_base_ref = self.dining_table
-
-    def _load_model(self):
-        super()._load_model()
-        for cfg in self.object_cfgs:
-            self.obj_name.append(cfg["name"])
 
     def get_ep_meta(self):
         ep_meta = super().get_ep_meta()
@@ -44,9 +38,7 @@ class L90K4PutTheWineBottleOnTheWineRack(LwLabTaskBase):
                 obj_groups="bowl",
                 graspable=True,
                 washable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml"
-                ),
+                asset_name="Bowl008.usd",
                 init_robot_here=True,
                 placement=dict(
                     fixture=self.dining_table,
@@ -63,9 +55,7 @@ class L90K4PutTheWineBottleOnTheWineRack(LwLabTaskBase):
                 obj_groups="bottle",
                 graspable=True,
                 washable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml"
-                ),
+                asset_name="Bottle054.usd",
                 object_scale=0.8,
                 placement=dict(
                     fixture=self.dining_table,

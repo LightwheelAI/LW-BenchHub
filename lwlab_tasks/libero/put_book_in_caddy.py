@@ -30,9 +30,6 @@ class L90S3PickUpTheBookAndPlaceItInTheRightCompartmentOfTheCaddy(LwLabTaskBase)
         """
         super()._setup_scene(env, env_ids)
 
-    def _reset_internal(self, env_ids):
-        super()._reset_internal(env_ids)
-
     def _get_obj_cfgs(self):
         cfgs = []
 
@@ -50,9 +47,7 @@ class L90S3PickUpTheBookAndPlaceItInTheRightCompartmentOfTheCaddy(LwLabTaskBase)
                 graspable=True,
                 object_scale=2.0,
                 init_robot_here=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/desk_caddy/DeskCaddy001/model.xml",
-                ),
+                asset_name="DeskCaddy001.usd",
                 placement=placement,
             )
         )
@@ -62,9 +57,7 @@ class L90S3PickUpTheBookAndPlaceItInTheRightCompartmentOfTheCaddy(LwLabTaskBase)
                 object_scale=0.4,
                 obj_groups="book",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/book/Book042/model.xml",
-                ),
+                asset_name="Book042.usd",
                 placement=dict(
                     fixture=self.counter,
                     size=(0.4, 0.3),
@@ -79,9 +72,7 @@ class L90S3PickUpTheBookAndPlaceItInTheRightCompartmentOfTheCaddy(LwLabTaskBase)
                 name="porcelain_mug",
                 obj_groups="cup",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup012/model.xml",
-                ),
+                asset_name="Cup012.usd",
                 placement=placement,
             )
         )
@@ -90,9 +81,7 @@ class L90S3PickUpTheBookAndPlaceItInTheRightCompartmentOfTheCaddy(LwLabTaskBase)
                 name="red_coffee_mug",
                 obj_groups="cup",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup030/model.xml",
-                ),
+                asset_name="Cup030.usd",
                 placement=placement,
             )
         )
@@ -114,13 +103,7 @@ class L90S2PickUpTheBookAndPlaceItInTheRightCompartmentOfTheCaddy(L90S3PickUpThe
             "table",
             dict(id=FixtureType.TABLE, size=(1.0, 0.35)),
         )
-        self.obj_name = []
         self.init_robot_base_ref = self.dining_table
-
-    def _load_model(self):
-        super()._load_model()
-        for cfg in self.object_cfgs:
-            self.obj_name.append(cfg["name"])
 
     def get_ep_meta(self):
         ep_meta = super().get_ep_meta()
@@ -137,9 +120,7 @@ class L90S2PickUpTheBookAndPlaceItInTheRightCompartmentOfTheCaddy(L90S3PickUpThe
                 obj_groups="book",
                 object_scale=0.4,
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/book/Book042/model.xml",
-                ),
+                asset_name="Book042.usd",
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.5, 0.3),
@@ -155,9 +136,7 @@ class L90S2PickUpTheBookAndPlaceItInTheRightCompartmentOfTheCaddy(L90S3PickUpThe
                 graspable=True,
                 object_scale=2.0,
                 init_robot_here=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/desk_caddy/DeskCaddy001/model.xml",
-                ),
+                asset_name="DeskCaddy001.usd",
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.8, 0.45),
@@ -171,9 +150,7 @@ class L90S2PickUpTheBookAndPlaceItInTheRightCompartmentOfTheCaddy(L90S3PickUpThe
                 name="red_coffee_mug",
                 obj_groups="cup",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup030/model.xml",
-                ),
+                asset_name="Cup030.usd",
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.5, 0.55),
@@ -197,8 +174,6 @@ class L90S3PickUpTheBookAndPlaceItInTheLeftCompartmentOfTheCaddy(L90S2PickUpTheB
         return ep_meta
 
 
-# --- Libero90 variants consolidated from libero_90_put_black_book_in_caddy_compartments.py ---
-
 class _BaseBookInCaddy(LwLabTaskBase):
     task_name: str = "_BaseBookInCaddy"
 
@@ -213,35 +188,60 @@ class _BaseBookInCaddy(LwLabTaskBase):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos, size, rotation=None):
-            return dict(
-                fixture=self.counter,
-                size=size,
-                pos=pos,
-                rotation=rotation,
-                margin=0.02,
-                ensure_valid_placement=True,
+        caddy_pl = dict(
+            fixture=self.counter,
+            size=(0.6, 0.4),
+            pos=(0, -0.4),
+            rotation=np.pi / 8,
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+        book_pl = dict(
+            fixture=self.counter,
+            size=(0.35, 0.35),
+            pos=(0.2, -0.5),
+            rotation=0,
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+        mug_pl = dict(
+            fixture=self.counter,
+            size=(0.35, 0.3),
+            pos=(-0.3, -0.6),
+            rotation=0,
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+
+        cfgs.append(
+            dict(
+                name=self.desk_caddy,
+                obj_groups="desk_caddy",
+                graspable=True,
+                placement=caddy_pl,
+                asset_name="DeskCaddy001.usd",
+                object_scale=2.0,
             )
-
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None, init_robot_here=False, object_scale=None):
-            cfg = dict(name=name, obj_groups=obj_groups, graspable=graspable, placement=placement)
-            if mjcf_path is not None:
-                # TODO: asset missing locally, replace mjcf_path when available [[Book042 / DeskCaddy001 / Cup030]]
-                cfg["info"] = dict(mjcf_path=mjcf_path)
-            if init_robot_here:
-                cfg["init_robot_here"] = True
-            if object_scale is not None:
-                cfg["object_scale"] = object_scale
-            cfgs.append(cfg)
-
-        # Initial layout: caddy back-right, book front-left, mug as distractor front-right caddy_pl = get_placement((0, -0.5), (0.5, 0.6), np.pi / 8)
-        caddy_pl = get_placement((0, -0.4), (0.6, 0.4), np.pi / 8)
-        book_pl = get_placement((0.2, -0.5), (0.35, 0.35), 0)
-        mug_pl = get_placement((-0.3, -0.6), (0.35, 0.3), 0)
-
-        add_cfg(self.desk_caddy, "desk_caddy", True, caddy_pl, mjcf_path="/objects/lightwheel/desk_caddy/DeskCaddy001/model.xml", object_scale=2.0)
-        add_cfg(self.black_book, "book", True, book_pl, mjcf_path="/objects/lightwheel/book/Book042/model.xml", object_scale=0.4)
-        add_cfg(self.red_coffee_mug, "cup", True, mug_pl, mjcf_path="/objects/lightwheel/cup/Cup030/model.xml")
+        )
+        cfgs.append(
+            dict(
+                name=self.black_book,
+                obj_groups="book",
+                graspable=True,
+                placement=book_pl,
+                asset_name="Book042.usd",
+                object_scale=0.4,
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.red_coffee_mug,
+                obj_groups="cup",
+                graspable=True,
+                placement=mug_pl,
+                asset_name="Cup030.usd",
+            )
+        )
 
         return cfgs
 
@@ -289,9 +289,7 @@ class L10S1PickUpTheBookAndPlaceItInTheBackCompartmentOfTheCaddy(L90S3PickUpTheB
                 obj_groups="book",
                 object_scale=0.4,
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/book/Book042/model.xml",
-                ),
+                asset_name="Book042.usd",
                 placement=dict(
                     fixture=self.counter,
                     size=(0.5, 0.3),
@@ -307,9 +305,7 @@ class L10S1PickUpTheBookAndPlaceItInTheBackCompartmentOfTheCaddy(L90S3PickUpTheB
                 graspable=True,
                 object_scale=2.0,
                 init_robot_here=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/desk_caddy/DeskCaddy001/model.xml",
-                ),
+                asset_name="DeskCaddy001.usd",
                 placement=dict(
                     fixture=self.counter,
                     size=(0.8, 0.45),
@@ -323,9 +319,7 @@ class L10S1PickUpTheBookAndPlaceItInTheBackCompartmentOfTheCaddy(L90S3PickUpTheB
                 name="white_yellow_mug",
                 obj_groups="cup",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup014/model.xml",
-                ),
+                asset_name="Cup014.usd",
                 placement=dict(
                     fixture=self.counter,
                     size=(0.5, 0.3),
@@ -355,36 +349,76 @@ class _BaseStudyScene4(LwLabTaskBase):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos, size, rotation=None):
-            return dict(
-                fixture=self.counter,
-                size=size,
-                pos=pos,
-                rotation=rotation,
-                margin=0.02,
-                ensure_valid_placement=True,
+        left_book_pl = dict(
+            fixture=self.counter,
+            size=(0.35, 0.35),
+            pos=(-0.35, 0.8),
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+        right_book_pl = dict(
+            fixture=self.counter,
+            size=(0.35, 0.35),
+            pos=(0.35, -0.6),
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+        middle_book_pl = dict(
+            fixture=self.counter,
+            size=(0.35, 0.35),
+            pos=(0, -0.6),
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+        shelf_pl = dict(
+            fixture=self.counter,
+            size=(0.5, 0.75),
+            pos=(0.7, -0.5),
+            rotation=-np.pi / 2,
+            margin=0.02,
+            ensure_valid_placement=True,
+        )
+
+        cfgs.append(
+            dict(
+                name=self.shelf,
+                obj_groups="shelf",
+                graspable=True,
+                placement=shelf_pl,
+                asset_name="Shelf073.usd",
+                object_scale=1.0,
             )
-
-        def add_cfg(name, obj_groups, graspable, placement, mjcf_path=None, init_robot_here=False, object_scale=None):
-            cfg = dict(name=name, obj_groups=obj_groups, graspable=graspable, placement=placement)
-            if mjcf_path is not None:
-                cfg["info"] = dict(mjcf_path=mjcf_path)
-            if init_robot_here:
-                cfg["init_robot_here"] = True
-            if object_scale is not None:
-                cfg["object_scale"] = object_scale
-            cfgs.append(cfg)
-
-        # Books placed symmetrically on left and right sides
-        left_book_pl = get_placement((-0.35, 0.8), (0.35, 0.35))
-        right_book_pl = get_placement((0.35, -0.6), (0.35, 0.35))
-        middle_book_pl = get_placement((0, -0.6), (0.35, 0.35))
-        shelf_pl = get_placement((0.7, -0.5), (0.5, 0.75), rotation=-np.pi / 2)
-
-        add_cfg(self.shelf, "shelf", True, shelf_pl, mjcf_path="/objects/lightwheel/shelf/Shelf073/model.xml", object_scale=1.0)
-        add_cfg(self.black_book, "book", True, left_book_pl, mjcf_path="/objects/lightwheel/book/Book042/model.xml", object_scale=0.4)
-        add_cfg(self.yellow_book, "book", True, right_book_pl, mjcf_path="/objects/lightwheel/book/Book043/model.xml", object_scale=0.4)
-        add_cfg(self.middle_book, "book", True, middle_book_pl, mjcf_path="/objects/lightwheel/book/Book043/model.xml", object_scale=0.4)
+        )
+        cfgs.append(
+            dict(
+                name=self.black_book,
+                obj_groups="book",
+                graspable=True,
+                placement=left_book_pl,
+                asset_name="Book042.usd",
+                object_scale=0.4,
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.yellow_book,
+                obj_groups="book",
+                graspable=True,
+                placement=right_book_pl,
+                asset_name="Book043.usd",
+                object_scale=0.4,
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.middle_book,
+                obj_groups="book",
+                graspable=True,
+                placement=middle_book_pl,
+                asset_name="Book043.usd",
+                object_scale=0.4,
+            )
+        )
 
         return cfgs
 
@@ -403,9 +437,9 @@ class L90S4PickUpTheBookOnTheLeftAndPlaceItOnTopOfTheShelf(_BaseStudyScene4):
             env,
             self.black_book,
             self.shelf,
-            th_z_axis_cos=0.0,  # 不检查Z轴角度
-            th_xy_dist=0.25,    # 保持XY距离检查
-            th_xyz_vel=0.5      # 保持稳定性检查
+            th_z_axis_cos=0.0,
+            th_xy_dist=0.25,
+            th_xyz_vel=0.5
         )
         return book_on_shelf_result
 

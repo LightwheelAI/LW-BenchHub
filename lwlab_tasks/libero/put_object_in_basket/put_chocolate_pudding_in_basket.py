@@ -38,9 +38,7 @@ class LOPickUpTheChocolatePuddingAndPlaceItInTheBasket(PutObjectInBasket):
                     pos=(-0.1, 0.0),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/chocolate_pudding/ChocolatePudding001/model.xml",
-                ),
+                asset_name="ChocolatePudding001.usd",
             )
         )
 
@@ -55,9 +53,7 @@ class LOPickUpTheChocolatePuddingAndPlaceItInTheBasket(PutObjectInBasket):
                     pos=(-0.1, 0.0),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/orange_juice/OrangeJuice001/model.xml",
-                ),
+                asset_name="OrangeJuice001.usd",
             )
         )
 
@@ -72,9 +68,7 @@ class LOPickUpTheChocolatePuddingAndPlaceItInTheBasket(PutObjectInBasket):
                     pos=(-0.2, 0.0),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/alphabet_soup/AlphabetSoup001/model.xml",
-                ),
+                asset_name="AlphabetSoup001.usd",
             )
         )
 

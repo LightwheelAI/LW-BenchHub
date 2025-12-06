@@ -37,9 +37,7 @@ class L90L3PickUpTheCreamCheeseAndPutItInTheTray(LwLabTaskBase):
                 obj_groups="cream_cheese_stick",
                 init_robot_here=True,
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml",
-                ),
+                asset_name="CreamCheeseStick013.usd",
                 placement=dict(
                     fixture=self.counter,
                     size=(0.4, 0.3),
@@ -55,9 +53,7 @@ class L90L3PickUpTheCreamCheeseAndPutItInTheTray(LwLabTaskBase):
                 obj_groups="tray",
                 graspable=True,
                 object_scale=0.8,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/tray/Tray016/model.xml",
-                ),
+                asset_name="Tray016.usd",
                 placement=dict(
                     fixture=self.counter,
                     size=(0.8, 0.7),
@@ -71,9 +67,7 @@ class L90L3PickUpTheCreamCheeseAndPutItInTheTray(LwLabTaskBase):
                 name="butter",
                 obj_groups="butter",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/butter/Butter001/model.xml",
-                ),
+                asset_name="Butter001.usd",
                 placement=dict(
                     fixture=self.counter,
                     size=(0.8, 0.3),
@@ -87,9 +81,7 @@ class L90L3PickUpTheCreamCheeseAndPutItInTheTray(LwLabTaskBase):
                 name="alphabet_soup",
                 obj_groups="alphabet_soup",
                 graspable=True,
-                info=dict(
-                    mjcf_path="/objects/lightwheel/alphabet_soup/AlphabetSoup001/model.xml",
-                ),
+                asset_name="AlphabetSoup001.usd",
                 placement=dict(
                     fixture=self.counter,
                     size=(0.8, 0.3),

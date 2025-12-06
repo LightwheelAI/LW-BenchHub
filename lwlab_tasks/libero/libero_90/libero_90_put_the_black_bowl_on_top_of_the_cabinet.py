@@ -44,9 +44,7 @@ class L90K1PutTheBlackBowlOnTopOfTheCabinet(LwLabTaskBase):
                     pos=(0.0, -0.5),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml",
-                ),
+                asset_name="Bowl008.usd",
             )
         )
 
@@ -62,9 +60,7 @@ class L90K1PutTheBlackBowlOnTopOfTheCabinet(LwLabTaskBase):
                     pos=(0.5, -0.15),
                     ensure_valid_placement=True,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/plate/Plate012/model.xml",
-                ),
+                asset_name="Plate012.usd",
             )
         )
 

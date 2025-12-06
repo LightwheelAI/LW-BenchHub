@@ -45,9 +45,7 @@ class L90S1PickUpTheBookAndPlaceItInTheFrontCompartmentOfTheCaddy(LwLabTaskBase)
                     pos=(-0.5, -0.3),
                     rotation=np.pi / 8,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/desk_caddy/DeskCaddy001/model.xml",
-                ),
+                asset_name="DeskCaddy001.usd",
             )
         )
 
@@ -63,9 +61,7 @@ class L90S1PickUpTheBookAndPlaceItInTheFrontCompartmentOfTheCaddy(LwLabTaskBase)
                     pos=(-0.3, -0.7),
                     ensure_valid_placement=True,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/book/Book042/model.xml",
-                )
+                asset_name="Book042.usd",
             )
         )
 
@@ -80,9 +76,7 @@ class L90S1PickUpTheBookAndPlaceItInTheFrontCompartmentOfTheCaddy(LwLabTaskBase)
                     pos=(0.0, -0.25),
                     ensure_valid_placement=True,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup014/model.xml",
-                )
+                asset_name="Cup014.usd",
             )
         )
 
@@ -114,9 +108,7 @@ class L90S2PickUpTheBookAndPlaceItInTheFrontCompartmentOfTheCaddy(L90S1PickUpThe
                     size=(0.6, 0.6),
                     pos=(-0.5, -0.3),
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/desk_caddy/DeskCaddy001/model.xml",
-                ),
+                asset_name="DeskCaddy001.usd",
             )
         )
 
@@ -132,9 +124,7 @@ class L90S2PickUpTheBookAndPlaceItInTheFrontCompartmentOfTheCaddy(L90S1PickUpThe
                     pos=(-0.3, -0.7),
                     ensure_valid_placement=True,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/book/Book042/model.xml",
-                )
+                asset_name="Book042.usd",
             )
         )
 
@@ -149,9 +139,7 @@ class L90S2PickUpTheBookAndPlaceItInTheFrontCompartmentOfTheCaddy(L90S1PickUpThe
                     pos=(0.0, -0.6),
                     ensure_valid_placement=True,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup030/model.xml",
-                )
+                asset_name="Cup030.usd",
             )
         )
 
@@ -177,9 +165,7 @@ class L90S3PickUpTheBookAndPlaceItInTheFrontCompartmentOfTheCaddy(L90S1PickUpThe
                     pos=(-0.5, -0.3),
                     rotation=np.pi / 8.0,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/desk_caddy/DeskCaddy001/model.xml",
-                ),
+                asset_name="DeskCaddy001.usd",
             )
         )
 
@@ -195,9 +181,7 @@ class L90S3PickUpTheBookAndPlaceItInTheFrontCompartmentOfTheCaddy(L90S1PickUpThe
                     pos=(-0.3, -0.7),
                     ensure_valid_placement=True,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/book/Book042/model.xml",
-                )
+                asset_name="Book042.usd",
             )
         )
 
@@ -212,9 +196,7 @@ class L90S3PickUpTheBookAndPlaceItInTheFrontCompartmentOfTheCaddy(L90S1PickUpThe
                     pos=(0.0, -0.6),
                     ensure_valid_placement=True,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cup/Cup012/model.xml",
-                )
+                asset_name="Cup012.usd",
             )
         )
 

@@ -41,9 +41,7 @@ class LOPickUpTheMilkAndPlaceItInTheBasket(PutObjectInBasket):
                     pos=(-0.1, 0.0),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/milk_drink/MilkDrink009/model.xml",
-                ),
+                asset_name="MilkDrink009.usd",
             )
         )
 
@@ -58,9 +56,7 @@ class LOPickUpTheMilkAndPlaceItInTheBasket(PutObjectInBasket):
                     pos=(-0.1, 0.0),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/chocolate_pudding/ChocolatePudding001/model.xml",
-                ),
+                asset_name="ChocolatePudding001.usd",
             )
         )
 
@@ -75,9 +71,7 @@ class LOPickUpTheMilkAndPlaceItInTheBasket(PutObjectInBasket):
                     pos=(-0.2, 0.0),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/butter/Butter001/model.xml",
-                ),
+                asset_name="Butter001.usd",
             )
         )
 
@@ -92,9 +86,7 @@ class LOPickUpTheMilkAndPlaceItInTheBasket(PutObjectInBasket):
                     pos=(0.1, 0.0),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/orange_juice/OrangeJuice001/model.xml",
-                ),
+                asset_name="OrangeJuice001.usd",
             )
         )
 
@@ -109,9 +101,7 @@ class LOPickUpTheMilkAndPlaceItInTheBasket(PutObjectInBasket):
                     pos=(-0.1, 0.0),
                     ensure_object_boundary_in_range=False,
                 ),
-                info=dict(
-                    mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml",
-                ),
+                asset_name="CreamCheeseStick013.usd",
             )
         )
 

@@ -39,9 +39,7 @@ class LSPickUpTheBlackBowlFromTableCenterAndPlaceItOnThePlate(PutBlackBowlOnPlat
             dict(
                 name=self.bowl_target,
                 obj_groups="bowl",
-                info=dict(
-                    mjcf_path=self.bowl_mjcf_path
-                ),
+                asset_name=self.bowl_asset_name,
                 graspable=True,
                 placement=dict(
                     fixture=self.dining_table,
@@ -56,15 +54,13 @@ class LSPickUpTheBlackBowlFromTableCenterAndPlaceItOnThePlate(PutBlackBowlOnPlat
             dict(
                 name=self.bowl,
                 obj_groups="bowl",
-                info=dict(
-                    mjcf_path=self.bowl_mjcf_path
-                ),
+                asset_name=self.bowl_asset_name,
                 graspable=True,
                 placement=dict(
                     fixture=self.dining_table,
                     size=(0.25, 0.25),
                     pos=(0.4, -1),
-                    ensure_valid_placement=True,
+                    ensure_valid_placement=False,
                 ),
             )
         )

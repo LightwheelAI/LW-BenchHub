@@ -72,52 +72,73 @@ class LGOpenTheMiddleDrawerOfTheCabinet(LiberoGoalTasksBase):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.table,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
-            )
-
-        def add_cfg(name, obj_groups, graspable, placement, scale=1.0, mjcf_path=None):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        placement=placement,
-                    )
-                )
-
         # According to task.csv, need: akita_black_bowl, cream_cheese, plate, wine_bottle
-        plate_placement = get_placement((0.4, -0.3), (0.7, 0.5))
-        bowl_placement = get_placement((-0.3, 0.2), (0.2, 0.7))
-        wine_bottle_placement = get_placement((-0.1, -0.3), (0.5, 0.5))
-        cream_cheese_placement = get_placement((0, -0.7), (0.7, 0.5))
+        plate_placement = dict(
+            fixture=self.table,
+            pos=(0.4, -0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.5),
+        )
+        bowl_placement = dict(
+            fixture=self.table,
+            pos=(-0.3, 0.20),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.6, 0.7),
+        )
+        wine_bottle_placement = dict(
+            fixture=self.table,
+            pos=(-0.1, -0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.5),
+        )
+        cream_cheese_placement = dict(
+            fixture=self.table,
+            pos=(0, -0.70),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.5),
+        )
 
-        add_cfg(self.plate, "plate", False, plate_placement,
-                mjcf_path="/objects/lightwheel/plate/Plate012/model.xml")
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
-        add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
-                mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
-                mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
+        cfgs.append(
+            dict(
+                name=self.plate,
+                obj_groups="plate",
+                graspable=False,
+                placement=plate_placement,
+                asset_name="Plate012.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                asset_name="Bowl008.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.wine_bottle,
+                obj_groups="bottle",
+                graspable=True,
+                placement=wine_bottle_placement,
+                object_scale=0.8,
+                asset_name="Bottle054.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.cream_cheese,
+                obj_groups="cream_cheese",
+                graspable=True,
+                placement=cream_cheese_placement,
+                asset_name="CreamCheeseStick013.usd",
+            )
+        )
 
         return cfgs
 
@@ -161,52 +182,73 @@ class LGPutTheBowlOnTopOfTheCabinet(LiberoGoalTasksBase):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.table,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
-            )
-
-        def add_cfg(name, obj_groups, graspable, placement, scale=1.0, mjcf_path=None):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        placement=placement,
-                    )
-                )
-
         # According to task.csv, need: akita_black_bowl, cream_cheese, plate, wine_bottle
-        plate_placement = get_placement((0.4, -0.3), (0.7, 0.5))
-        bowl_placement = get_placement((-0.3, 0.2), (0.2, 0.7))
-        wine_bottle_placement = get_placement((-0.1, -0.3), (0.5, 0.5))
-        cream_cheese_placement = get_placement((0, -0.7), (0.7, 0.5))
+        plate_placement = dict(
+            fixture=self.table,
+            pos=(0.4, -0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.5),
+        )
+        bowl_placement = dict(
+            fixture=self.table,
+            pos=(-0.3, 0.20),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.6, 0.7),
+        )
+        wine_bottle_placement = dict(
+            fixture=self.table,
+            pos=(-0.1, -0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.5),
+        )
+        cream_cheese_placement = dict(
+            fixture=self.table,
+            pos=(0, -0.70),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.5),
+        )
 
-        add_cfg(self.plate, "plate", False, plate_placement,
-                mjcf_path="/objects/lightwheel/plate/Plate012/model.xml")
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
-        add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
-                mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
-                mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
+        cfgs.append(
+            dict(
+                name=self.plate,
+                obj_groups="plate",
+                graspable=False,
+                placement=plate_placement,
+                asset_name="Plate012.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                asset_name="Bowl008.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.wine_bottle,
+                obj_groups="bottle",
+                graspable=True,
+                placement=wine_bottle_placement,
+                object_scale=0.8,
+                asset_name="Bottle054.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.cream_cheese,
+                obj_groups="cream_cheese",
+                graspable=True,
+                placement=cream_cheese_placement,
+                asset_name="CreamCheeseStick013.usd",
+            )
+        )
 
         return cfgs
 
@@ -222,16 +264,16 @@ class LGPutTheBowlOnTopOfTheCabinet(LiberoGoalTasksBase):
         return bowl_on_drawer_tensor & gripper_far
 
 
-class LiberoGoalOpenTopDrawerOfCabinet(LiberoGoalTasksBase):
+class LGOpenTopDrawerOfCabinet(LiberoGoalTasksBase):
     """
-    LiberoGoalOpenTopDrawerOfCabinet: open the top drawer of the cabinet
+    LGOpenTopDrawerOfCabinet: open the top drawer of the cabinet
 
     Steps:
         1. open the top drawer of the cabinet
 
     """
 
-    task_name: str = "LiberoGoalOpenTopDrawerOfCabinet"
+    task_name: str = "LGOpenTopDrawerOfCabinet"
 
     def get_ep_meta(self):
         ep_meta = super().get_ep_meta()
@@ -240,53 +282,73 @@ class LiberoGoalOpenTopDrawerOfCabinet(LiberoGoalTasksBase):
 
     def _get_obj_cfgs(self):
         cfgs = []
-
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.table,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
-            )
-
-        def add_cfg(name, obj_groups, graspable, placement, scale=1.0, mjcf_path=None):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        placement=placement,
-                    )
-                )
-
         # According to task.csv, need: akita_black_bowl, cream_cheese, plate, wine_bottle
-        plate_placement = get_placement((0.4, -0.3), (0.7, 0.5))
-        bowl_placement = get_placement((-0.3, 0.2), (0.2, 0.7))
-        wine_bottle_placement = get_placement((-0.1, -0.3), (0.5, 0.5))
-        cream_cheese_placement = get_placement((0, -0.7), (0.7, 0.5))
+        plate_placement = dict(
+            fixture=self.table,
+            pos=(0.4, -0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.5),
+        )
+        bowl_placement = dict(
+            fixture=self.table,
+            pos=(-0.3, 0.20),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.6, 0.7),
+        )
+        wine_bottle_placement = dict(
+            fixture=self.table,
+            pos=(-0.1, -0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.5),
+        )
+        cream_cheese_placement = dict(
+            fixture=self.table,
+            pos=(0, -0.70),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.5),
+        )
 
-        add_cfg(self.plate, "plate", False, plate_placement,
-                mjcf_path="/objects/lightwheel/plate/Plate012/model.xml")
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
-        add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
-                mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
-                mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
+        cfgs.append(
+            dict(
+                name=self.plate,
+                obj_groups="plate",
+                graspable=False,
+                placement=plate_placement,
+                asset_name="Plate012.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                asset_name="Bowl008.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.wine_bottle,
+                obj_groups="bottle",
+                graspable=True,
+                placement=wine_bottle_placement,
+                object_scale=0.8,
+                asset_name="Bottle054.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.cream_cheese,
+                obj_groups="cream_cheese",
+                graspable=True,
+                placement=cream_cheese_placement,
+                asset_name="CreamCheeseStick013.usd",
+            )
+        )
 
         return cfgs
 
@@ -329,53 +391,73 @@ class LGPutTheWineBottleOnTopOfTheCabinet(LiberoGoalTasksBase):
 
     def _get_obj_cfgs(self):
         cfgs = []
-
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.table,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
-            )
-
-        def add_cfg(name, obj_groups, graspable, placement, scale=1.0, mjcf_path=None):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        placement=placement,
-                    )
-                )
-
         # According to task.csv, need: akita_black_bowl, cream_cheese, plate, wine_bottle
-        plate_placement = get_placement((0.4, -0.3), (0.7, 0.5))
-        bowl_placement = get_placement((-0.3, 0.2), (0.2, 0.7))
-        wine_bottle_placement = get_placement((-0.1, -0.3), (0.5, 0.5))
-        cream_cheese_placement = get_placement((0, -0.7), (0.7, 0.5))
+        plate_placement = dict(
+            fixture=self.table,
+            pos=(0.4, -0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.5),
+        )
+        bowl_placement = dict(
+            fixture=self.table,
+            pos=(-0.3, 0.20),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.6, 0.7),
+        )
+        wine_bottle_placement = dict(
+            fixture=self.table,
+            pos=(-0.1, -0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.5),
+        )
+        cream_cheese_placement = dict(
+            fixture=self.table,
+            pos=(0, -0.70),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.5),
+        )
 
-        add_cfg(self.plate, "plate", False, plate_placement,
-                mjcf_path="/objects/lightwheel/plate/Plate012/model.xml")
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
-        add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
-                mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
-                mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
+        cfgs.append(
+            dict(
+                name=self.plate,
+                obj_groups="plate",
+                graspable=False,
+                placement=plate_placement,
+                asset_name="Plate012.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                asset_name="Bowl008.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.wine_bottle,
+                obj_groups="bottle",
+                graspable=True,
+                placement=wine_bottle_placement,
+                object_scale=0.8,
+                asset_name="Bottle054.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.cream_cheese,
+                obj_groups="cream_cheese",
+                graspable=True,
+                placement=cream_cheese_placement,
+                asset_name="CreamCheeseStick013.usd",
+            )
+        )
 
         return cfgs
 
@@ -411,53 +493,74 @@ class LGOpenTheTopDrawerAndPutTheBowlInside(LiberoGoalTasksBase):
 
     def _get_obj_cfgs(self):
         cfgs = []
-
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.table,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
-            )
-
-        def add_cfg(name, obj_groups, graspable, placement, scale=1.0, mjcf_path=None):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        placement=placement,
-                    )
-                )
-
         # According to task.csv, need: akita_black_bowl, cream_cheese, plate, wine_bottle
-        plate_placement = get_placement((0.4, -0.3), (0.7, 0.5))
-        bowl_placement = get_placement((-0.3, 0.2), (0.2, 0.7))
-        wine_bottle_placement = get_placement((-0.1, -0.3), (0.5, 0.5))
-        cream_cheese_placement = get_placement((0, -0.7), (0.7, 0.5))
+        plate_placement = dict(
+            fixture=self.table,
+            pos=(0.4, -0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.5),
+        )
+        bowl_placement = dict(
+            fixture=self.table,
+            pos=(-0.3, 0.20),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.6, 0.7),
+        )
+        wine_bottle_placement = dict(
+            fixture=self.table,
+            pos=(-0.1, -0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.5),
+        )
+        cream_cheese_placement = dict(
+            fixture=self.table,
+            pos=(0, -0.70),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.5),
+        )
 
-        add_cfg(self.plate, "plate", False, plate_placement,
-                mjcf_path="/objects/lightwheel/plate/Plate012/model.xml")
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement, scale=0.8,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
-        add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
-                mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
-                mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
+        cfgs.append(
+            dict(
+                name=self.plate,
+                obj_groups="plate",
+                graspable=False,
+                placement=plate_placement,
+                asset_name="Plate012.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                object_scale=0.8,
+                asset_name="Bowl008.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.wine_bottle,
+                obj_groups="bottle",
+                graspable=True,
+                placement=wine_bottle_placement,
+                object_scale=0.8,
+                asset_name="Bottle054.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.cream_cheese,
+                obj_groups="cream_cheese",
+                graspable=True,
+                placement=cream_cheese_placement,
+                asset_name="CreamCheeseStick013.usd",
+            )
+        )
 
         return cfgs
 
@@ -510,53 +613,73 @@ class LGPutTheBowlOnThePlate(LiberoGoalTasksBase):
 
     def _get_obj_cfgs(self):
         cfgs = []
-
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.table,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
-            )
-
-        def add_cfg(name, obj_groups, graspable, placement, scale=1.0, mjcf_path=None):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        placement=placement,
-                    )
-                )
-
         # According to task.csv, need: akita_black_bowl, cream_cheese, plate, wine_bottle
-        plate_placement = get_placement((0.4, -0.3), (0.7, 0.5))
-        bowl_placement = get_placement((-0.3, 0.2), (0.2, 0.7))
-        wine_bottle_placement = get_placement((-0.1, -0.3), (0.5, 0.5))
-        cream_cheese_placement = get_placement((0.2, -0.7), (0.7, 0.5))
+        plate_placement = dict(
+            fixture=self.table,
+            pos=(0.4, -0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.5),
+        )
+        bowl_placement = dict(
+            fixture=self.table,
+            pos=(-0.3, 0.20),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.8),
+        )
+        wine_bottle_placement = dict(
+            fixture=self.table,
+            pos=(-0.1, -0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.5),
+        )
+        cream_cheese_placement = dict(
+            fixture=self.table,
+            pos=(0.2, -0.70),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.5),
+        )
 
-        add_cfg(self.plate, "plate", False, plate_placement,
-                mjcf_path="/objects/lightwheel/plate/Plate012/model.xml")
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
-        add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
-                mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
-                mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
+        cfgs.append(
+            dict(
+                name=self.plate,
+                obj_groups="plate",
+                graspable=False,
+                placement=plate_placement,
+                asset_name="Plate012.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                asset_name="Bowl008.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.wine_bottle,
+                obj_groups="bottle",
+                graspable=True,
+                placement=wine_bottle_placement,
+                object_scale=0.8,
+                asset_name="Bottle054.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.cream_cheese,
+                obj_groups="cream_cheese",
+                graspable=True,
+                placement=cream_cheese_placement,
+                asset_name="CreamCheeseStick013.usd",
+            )
+        )
 
         return cfgs
 
@@ -595,52 +718,73 @@ class LGPutTheCreamCheeseInTheBowl(LiberoGoalTasksBase):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.table,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
-            )
-
-        def add_cfg(name, obj_groups, graspable, placement, scale=1.0, mjcf_path=None):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        placement=placement,
-                    )
-                )
-
         # According to task.csv, need: akita_black_bowl, cream_cheese, plate, wine_bottle
-        plate_placement = get_placement((0.3, 0.2), (0.5, 0.5))
-        bowl_placement = get_placement((0.4, -0.3), (0.5, 0.5))
-        wine_bottle_placement = get_placement((-0.9, -0.7), (0.5, 0.5))
-        cream_cheese_placement = get_placement((0, -0.3), (0.7, 0.5))
+        plate_placement = dict(
+            fixture=self.table,
+            pos=(0.3, 0.20),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.5),
+        )
+        bowl_placement = dict(
+            fixture=self.table,
+            pos=(0.4, -0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.5),
+        )
+        wine_bottle_placement = dict(
+            fixture=self.table,
+            pos=(-0.9, -0.70),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.5),
+        )
+        cream_cheese_placement = dict(
+            fixture=self.table,
+            pos=(0, -0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.7),
+        )
 
-        add_cfg(self.plate, "plate", False, plate_placement,
-                mjcf_path="/objects/lightwheel/plate/Plate012/model.xml")
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
-        add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
-                mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
-                mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
+        cfgs.append(
+            dict(
+                name=self.plate,
+                obj_groups="plate",
+                graspable=False,
+                placement=plate_placement,
+                asset_name="Plate012.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                asset_name="Bowl008.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.wine_bottle,
+                obj_groups="bottle",
+                graspable=True,
+                placement=wine_bottle_placement,
+                object_scale=0.8,
+                asset_name="Bottle054.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.cream_cheese,
+                obj_groups="cream_cheese",
+                graspable=True,
+                placement=cream_cheese_placement,
+                asset_name="CreamCheeseStick013.usd",
+            )
+        )
 
         return cfgs
 
@@ -677,52 +821,73 @@ class LGPushThePlateToTheFrontOfTheStove(LiberoGoalTasksBase):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.table,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
-            )
-
-        def add_cfg(name, obj_groups, graspable, placement, scale=1.0, mjcf_path=None):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        placement=placement,
-                    )
-                )
-
         # According to task.csv, need: akita_black_bowl, cream_cheese, plate, wine_bottle
-        plate_placement = get_placement((0.4, -0.3), (0.7, 0.5))
-        bowl_placement = get_placement((-0.8, -0.8), (0.2, 0.5))
-        wine_bottle_placement = get_placement((0.8, 0.8), (0.5, 0.5))
-        cream_cheese_placement = get_placement((0, -0.7), (0.7, 0.5))
+        plate_placement = dict(
+            fixture=self.table,
+            pos=(0.4, -0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.5),
+        )
+        bowl_placement = dict(
+            fixture=self.table,
+            pos=(-0.8, 0.20),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.6, 0.5),
+        )
+        wine_bottle_placement = dict(
+            fixture=self.table,
+            pos=(0.8, -0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.5),
+        )
+        cream_cheese_placement = dict(
+            fixture=self.table,
+            pos=(0, -0.70),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.5),
+        )
 
-        add_cfg(self.plate, "plate", False, plate_placement,
-                mjcf_path="/objects/lightwheel/plate/Plate012/model.xml")
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
-        add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
-                mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
-                mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
+        cfgs.append(
+            dict(
+                name=self.plate,
+                obj_groups="plate",
+                graspable=False,
+                placement=plate_placement,
+                asset_name="Plate012.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                asset_name="Bowl008.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.wine_bottle,
+                obj_groups="bottle",
+                graspable=True,
+                placement=wine_bottle_placement,
+                object_scale=0.8,
+                asset_name="Bottle054.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.cream_cheese,
+                obj_groups="cream_cheese",
+                graspable=True,
+                placement=cream_cheese_placement,
+                asset_name="CreamCheeseStick013.usd",
+            )
+        )
 
         return cfgs
 
@@ -757,52 +922,74 @@ class LGPutTheBowlOnTheStove(LiberoGoalTasksBase):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.table,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
+        wine_bottle_placement = dict(
+            fixture=self.table,
+            pos=(0.5, 0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.5),
+        )
+        cream_cheese_placement = dict(
+            fixture=self.table,
+            pos=(0.5, -0.70),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(1.0, 0.5),
+        )
+        plate_placement = dict(
+            fixture=self.table,
+            pos=(0.4, -0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.6, 0.6),
+        )
+        bowl_placement = dict(
+            fixture=self.table,
+            pos=(0.3, 0.50),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.6, 0.5),
+        )
+
+        cfgs.append(
+            dict(
+                name=self.plate,
+                obj_groups="plate",
+                graspable=False,
+                placement=plate_placement,
+                asset_name="Plate012.usd",
+                object_scale=0.8,
             )
-
-        def add_cfg(name, obj_groups, graspable, placement, scale=1.0, mjcf_path=None):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        placement=placement,
-                    )
-                )
-
-        # According to task.csv, need: akita_black_bowl, cream_cheese, plate, wine_bottle
-        wine_bottle_placement = get_placement((0.5, 0.5), (0.3, 0.5))
-        cream_cheese_placement = get_placement((0.5, 1.0), (0.5, 0.5))
-        plate_placement = get_placement((0.4, 0.0), (0.6, 0.6))
-        bowl_placement = get_placement((0.3, -0.5), (0.5, 0.5))
-
-        add_cfg(self.plate, "plate", False, plate_placement,
-                mjcf_path="/objects/lightwheel/plate/Plate012/model.xml", scale=0.8)
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml", scale=0.8)
-        add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
-                mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
-                mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
+        )
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                asset_name="Bowl008.usd",
+                object_scale=0.8,
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.wine_bottle,
+                obj_groups="bottle",
+                graspable=True,
+                placement=wine_bottle_placement,
+                object_scale=0.8,
+                asset_name="Bottle054.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.cream_cheese,
+                obj_groups="cream_cheese",
+                graspable=True,
+                placement=cream_cheese_placement,
+                asset_name="CreamCheeseStick013.usd",
+            )
+        )
 
         return cfgs
 
@@ -839,52 +1026,73 @@ class LGPutTheWineBottleOnTheRack(LiberoGoalTasksBase):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.table,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
-            )
-
-        def add_cfg(name, obj_groups, graspable, placement, scale=1.0, mjcf_path=None):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        placement=placement,
-                    )
-                )
-
         # According to task.csv, need: akita_black_bowl, cream_cheese, plate, wine_bottle
-        wine_bottle_placement = get_placement((0.0, -0.3), (0.5, 0.5))
-        cream_cheese_placement = get_placement((0.2, -0.7), (0.7, 0.7))
-        plate_placement = get_placement((0.4, -1.3), (0.7, 0.7))
-        bowl_placement = get_placement((0.6, -1.5), (0.5, 0.7))  # Bottom-right corner of table
+        wine_bottle_placement = dict(
+            fixture=self.table,
+            pos=(0.0, -0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.5),
+        )
+        cream_cheese_placement = dict(
+            fixture=self.table,
+            pos=(0.2, -0.70),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.7),
+        )
+        plate_placement = dict(
+            fixture=self.table,
+            pos=(0.4, -1.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.7),
+        )
+        bowl_placement = dict(
+            fixture=self.table,
+            pos=(0.6, -1.50),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.7),
+        )
 
-        add_cfg(self.plate, "plate", False, plate_placement,
-                mjcf_path="/objects/lightwheel/plate/Plate012/model.xml")
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
-        add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
-                mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
-                mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
+        cfgs.append(
+            dict(
+                name=self.plate,
+                obj_groups="plate",
+                graspable=False,
+                placement=plate_placement,
+                asset_name="Plate012.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                asset_name="Bowl008.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.wine_bottle,
+                obj_groups="bottle",
+                graspable=True,
+                placement=wine_bottle_placement,
+                object_scale=0.8,
+                asset_name="Bottle054.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.cream_cheese,
+                obj_groups="cream_cheese",
+                graspable=True,
+                placement=cream_cheese_placement,
+                asset_name="CreamCheeseStick013.usd",
+            )
+        )
 
         return cfgs
 
@@ -922,52 +1130,73 @@ class LGTurnOnTheStove(LiberoGoalTasksBase):
     def _get_obj_cfgs(self):
         cfgs = []
 
-        def get_placement(pos, size):
-            return dict(
-                fixture=self.table,
-                size=size,
-                pos=pos,
-                margin=0.02,
-                ensure_valid_placement=True,
-            )
-
-        def add_cfg(name, obj_groups, graspable, placement, scale=1.0, mjcf_path=None):
-            if mjcf_path is not None:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        info=dict(mjcf_path=mjcf_path),
-                        placement=placement,
-                    )
-                )
-            else:
-                cfgs.append(
-                    dict(
-                        name=name,
-                        obj_groups=obj_groups,
-                        graspable=graspable,
-                        object_scale=scale,
-                        placement=placement,
-                    )
-                )
-
         # According to task.csv, need: akita_black_bowl, cream_cheese, plate, wine_bottle
-        wine_bottle_placement = get_placement((0.0, -0.3), (0.5, 0.5))
-        cream_cheese_placement = get_placement((0.2, -0.7), (0.7, 0.7))
-        plate_placement = get_placement((0.4, -1.3), (0.7, 0.7))
-        bowl_placement = get_placement((0.6, 0.0), (0.5, 0.7))
+        wine_bottle_placement = dict(
+            fixture=self.table,
+            pos=(0.0, -0.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.5),
+        )
+        cream_cheese_placement = dict(
+            fixture=self.table,
+            pos=(0.2, -0.70),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.7),
+        )
+        plate_placement = dict(
+            fixture=self.table,
+            pos=(0.4, -1.30),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.7, 0.7),
+        )
+        bowl_placement = dict(
+            fixture=self.table,
+            pos=(0.6, 0.00),
+            margin=0.02,
+            ensure_valid_placement=True,
+            size=(0.5, 0.7),
+        )
 
-        add_cfg(self.plate, "plate", False, plate_placement,
-                mjcf_path="/objects/lightwheel/plate/Plate012/model.xml")
-        add_cfg(self.akita_black_bowl, "bowl", True, bowl_placement,
-                mjcf_path="/objects/lightwheel/bowl/Bowl008/model.xml")
-        add_cfg(self.wine_bottle, "bottle", True, wine_bottle_placement, scale=0.8,
-                mjcf_path="/objects/lightwheel/bottle/Bottle054/model.xml")
-        add_cfg(self.cream_cheese, "cream_cheese", True, cream_cheese_placement,
-                mjcf_path="/objects/lightwheel/cream_cheese_stick/CreamCheeseStick013/model.xml")
+        cfgs.append(
+            dict(
+                name=self.plate,
+                obj_groups="plate",
+                graspable=False,
+                placement=plate_placement,
+                asset_name="Plate012.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.akita_black_bowl,
+                obj_groups="bowl",
+                graspable=True,
+                placement=bowl_placement,
+                asset_name="Bowl008.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.wine_bottle,
+                obj_groups="bottle",
+                graspable=True,
+                placement=wine_bottle_placement,
+                object_scale=0.8,
+                asset_name="Bottle054.usd",
+            )
+        )
+        cfgs.append(
+            dict(
+                name=self.cream_cheese,
+                obj_groups="cream_cheese",
+                graspable=True,
+                placement=cream_cheese_placement,
+                asset_name="CreamCheeseStick013.usd",
+            )
+        )
 
         return cfgs
 
