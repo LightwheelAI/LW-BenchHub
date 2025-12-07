@@ -716,7 +716,8 @@ def main():
         if args_cli.enable_rendering_optimization:
             optimize_rendering(new_env, args_cli)
         if teleop_interface is not None:
-            teleop_interface.refresh_env(new_env)
+            if hasattr(teleop_interface, 'refresh_env'):
+                teleop_interface.refresh_env(new_env)
             teleop_interface.reset()
         if not args_cli.headless:
             viewports, overlay_window = setup_env_config_with_args(new_env, viewports)
@@ -931,8 +932,8 @@ def main():
                     env.cfg.isaaclab_arena_env.force_reset_env_enabled = False
                 elif should_remake_env_with_fixed_layout:
                     env.cfg.isaaclab_arena_env.force_reset_env_enabled = True
-                    if env.cfg.layout_id and env.cfg.style_id and env.cfg.scene_type:
-                        scene_name = f"{env.cfg.scene_type}-{env.cfg.layout_id}-{env.cfg.style_id}"
+                    if env.cfg.isaaclab_arena_env.scene.layout_id and env.cfg.isaaclab_arena_env.scene.style_id and env.cfg.isaaclab_arena_env.scene.scene_type:
+                        scene_name = f"{env.cfg.isaaclab_arena_env.scene.scene_type}-{env.cfg.isaaclab_arena_env.scene.layout_id}-{env.cfg.isaaclab_arena_env.scene.style_id}"
                     else:
                         scene_name = args_cli.layout
                     env, teleop_interface, viewports, overlay_window = remake_env(env, teleop_interface, viewports, scene_name)

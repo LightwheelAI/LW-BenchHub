@@ -54,6 +54,10 @@ class PrepMarinatingMeat(LwLabTaskBase):
         super()._reset_internal(env, env_ids)
         self.cab.set_door_state(min=0.90, max=1.0, env=env, env_ids=env_ids)
 
+    def _setup_scene(self, env, env_ids=None):
+        super()._setup_scene(env, env_ids)
+        self.cab.open_door(env=env, env_ids=env_ids)
+
     def _get_obj_cfgs(self):
         cfgs = []
         cfgs.append(

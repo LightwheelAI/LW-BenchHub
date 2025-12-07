@@ -26,7 +26,6 @@ class SteamVegetables(LwLabTaskBase):
 
     task_name: str = "SteamVegetables"
     knob_id = "random"
-    wrong_order = False
 
     def _setup_kitchen_references(self, scene):
         super()._setup_kitchen_references(scene)
@@ -58,6 +57,10 @@ class SteamVegetables(LwLabTaskBase):
 
     def _reset_internal(self, env, env_ids):
         super()._reset_internal(env, env_ids)
+        self.stove.set_knob_state(env=env, knob=self.knob, mode="on", env_ids=env_ids)
+
+    def _setup_scene(self, env, env_ids=None):
+        super()._setup_scene(env, env_ids)
         self.stove.set_knob_state(env=env, knob=self.knob, mode="on", env_ids=env_ids)
 
     def _get_obj_cfgs(self):
@@ -112,21 +115,16 @@ class SteamVegetables(LwLabTaskBase):
         return cfgs
 
     def _check_success(self, env):
-        task_failed = torch.zeros(env.num_envs, dtype=torch.bool, device=env.device)
-        if self.wrong_order:
-            return task_failed
-
         # Must place vegetables into pot in sequence
         hard_in_pot = OU.check_obj_in_receptacle(env, "vegetable_hard", "pot")
         easy_in_pot = OU.check_obj_in_receptacle(env, "vegetable_easy", "pot")
-        if easy_in_pot & ~hard_in_pot:
-            self.wrong_order = True
-            return task_failed
+        # Check wrong order for each environment individually
+        wrong_order_mask = easy_in_pot & ~hard_in_pot
         vegetables_in_pot = hard_in_pot & easy_in_pot
 
         knobs_state = self.stove.get_knobs_state(env=env)
         knob_value = knobs_state[self.knob]
-        knob_off = not (0.35 <= torch.abs(knob_value)) & (torch.abs(knob_value) <= 2 * torch.pi - 0.35)
+        knob_off = ~((0.35 <= torch.abs(knob_value)) & (torch.abs(knob_value) <= 2 * torch.pi - 0.35))
 
         gripper_far = (
             OU.gripper_obj_far(env, "vegetable_hard")
@@ -137,4 +135,7 @@ class SteamVegetables(LwLabTaskBase):
             env, "pot", self.stove
         )
 
-        return knob_off & gripper_far & pot_on_stove & vegetables_in_pot
+        success = knob_off & gripper_far & pot_on_stove & vegetables_in_pot
+        # Mark environments with wrong order as failed (check each environment individually)
+        success = success & ~wrong_order_mask
+        return success

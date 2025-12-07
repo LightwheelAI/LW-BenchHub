@@ -140,39 +140,27 @@ class Microwave(Fixture):
 
                 button_press_states["stop_button"] = button_pressed
                 stop_button_pressed |= button_pressed
-
         else:
-            for cube_name in [name for name in robot_articulation.body_names if "cube" in name]:
-                cube_name_index = body_names.index(cube_name.replace("_contact", ""))
-                cube_pos = robot_articulation.data.body_com_pos_w[:, cube_name_index, :]  # (env_num, 3)
+            gripper_site_pos = env.scene["ee_frame"].data.target_pos_w  # (num_envs, num_ee, 3)
+            start_button_pos_raw, _, _ = usd.get_prim_pos_rot_in_world(button_prims["start_button"][0])
+            stop_button_pos_raw, _, _ = usd.get_prim_pos_rot_in_world(button_prims["stop_button"][0])
+            start_button_pos = torch.tensor(start_button_pos_raw, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0)
+            stop_button_pos = torch.tensor(stop_button_pos_raw, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(0)
+            dist_start = torch.norm(gripper_site_pos - start_button_pos, dim=-1)  # (num_envs, num_ee)
+            dist_stop = torch.norm(gripper_site_pos - stop_button_pos, dim=-1)  # (num_envs, num_ee)
+            start_button_pressed = torch.any(dist_start < 0.1, dim=-1)  # (num_envs,)
+            stop_button_pressed = torch.any(dist_stop < 0.1, dim=-1)  # (num_envs,)
 
-                # ---- Start button ----
-                start_button_prims = button_prims["start_button"]
-                start_button_pos = []
-                for button_prim in start_button_prims:
-                    xform = UsdGeom.Xformable(button_prim)
-                    world_mat = xform.ComputeLocalToWorldTransform(Usd.TimeCode.Default())
-                    world_pos = world_mat.ExtractTranslation()
-                    start_button_pos.append(torch.tensor(world_pos, dtype=torch.float32, device=device))
-                start_button_pos = torch.stack(start_button_pos, dim=0).unsqueeze(0).repeat(num_envs, 1, 1)
+            # Check contact forces if sensors exist
+            def check_gripper_force(sensor_name, threshold=0.01):
+                if sensor_name in env.scene.sensors:
+                    force = env.scene.sensors[sensor_name]._data.net_forces_w[:, 0, :]  # (num_envs, 3)
+                    return torch.norm(force, dim=-1) > threshold  # (num_envs,)
+                return torch.zeros(num_envs, dtype=torch.bool, device=device)
 
-                dist_start = torch.norm(cube_pos.unsqueeze(1) - start_button_pos, dim=-1)
-                pressed_start = torch.any(dist_start < threshold, dim=-1)
-                start_button_pressed |= pressed_start
-
-                # ---- Stop button ----
-                stop_button_prims = button_prims["stop_button"]
-                stop_button_pos = []
-                for button_prim in stop_button_prims:
-                    xform = UsdGeom.Xformable(button_prim)
-                    world_mat = xform.ComputeLocalToWorldTransform(Usd.TimeCode.Default())
-                    world_pos = world_mat.ExtractTranslation()
-                    stop_button_pos.append(torch.tensor(world_pos, dtype=torch.float32, device=device))
-                stop_button_pos = torch.stack(stop_button_pos, dim=0).unsqueeze(0).repeat(num_envs, 1, 1)
-
-                dist_stop = torch.norm(cube_pos.unsqueeze(1) - stop_button_pos, dim=-1)
-                pressed_stop = torch.any(dist_stop < threshold, dim=-1)
-                stop_button_pressed |= pressed_stop
+            press_force = check_gripper_force("left_gripper_contact") | check_gripper_force("right_gripper_contact")
+            start_button_pressed &= press_force
+            stop_button_pressed &= press_force
 
         door_open = self.is_open(env)
         self._turned_on = ~door_open & (

@@ -52,7 +52,7 @@ class SeasoningSpiceSetup(LwLabTaskBase):
         Resets simulation internal configurations.
         """
         super()._setup_scene(env, env_ids)
-        self.cab.close_door(env=env, env_ids=env_ids)
+        self.cab.open_door(env=env, env_ids=env_ids)
 
     def _reset_internal(self, env, env_ids=None):
         return super()._reset_internal(env, env_ids)

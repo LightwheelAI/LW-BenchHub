@@ -144,5 +144,6 @@ class VeggieBoil(LwLabTaskBase):
         self.pot_filled = self.filled_time > 10
 
         vegetables_in_pot = OU.check_obj_in_receptacle(env, "food", "pot")
-        pot_on_stove = torch.tensor([loc is not None for loc in self.stove.check_obj_location_on_stove(env, "pot")], device=env.device)
+        pot_locs = self.stove.check_obj_location_on_stove(env, "pot", need_knob_on=True)
+        pot_on_stove = torch.tensor([(loc and len(loc) > 0 and loc[0] is not None) if loc else False for loc in pot_locs], device=env.device)
         return self.pot_filled & vegetables_in_pot & ~water_on & pot_on_stove

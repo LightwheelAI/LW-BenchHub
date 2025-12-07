@@ -26,7 +26,7 @@ class PnP(LwLabTaskBase):
         raise NotImplementedError
 
 
-class PnPCounterToCabinet(PnP):  # DONE
+class PnPCounterToCabinet(PnP):
     """
     Class encapsulating the atomic counter to cabinet pick and place task
 
@@ -140,7 +140,7 @@ class PnPCounterToCabinet(PnP):  # DONE
         return obj_inside_cab & gripper_obj_far
 
 
-class PnPCabinetToCounter(PnP):  # DONE
+class PnPCabinetToCounter(PnP):
     """
     Class encapsulating the atomic cabinet to counter pick and place task
 
@@ -252,7 +252,7 @@ class PnPCabinetToCounter(PnP):  # DONE
         return obj_on_counter & gripper_obj_far
 
 
-class PnPCounterToSink(PnP):  # DONE
+class PnPCounterToSink(PnP):
     """
     Class encapsulating the atomic counter to sink pick and place task
 
@@ -362,7 +362,7 @@ class PnPCounterToSink(PnP):  # DONE
         return obj_in_sink & gripper_obj_far
 
 
-class PnPSinkToCounter(PnP):  # DONE
+class PnPSinkToCounter(PnP):
     """
     Class encapsulating the atomic sink to counter pick and place task
 
@@ -473,7 +473,7 @@ class PnPSinkToCounter(PnP):  # DONE
         return obj_in_recep & recep_on_counter & gripper_obj_far
 
 
-class PnPCounterToMicrowave(PnP):  # DONE
+class PnPCounterToMicrowave(PnP):
     """
     Class encapsulating the atomic counter to microwave pick and place task
 
@@ -598,7 +598,7 @@ class PnPCounterToMicrowave(PnP):  # DONE
         return obj_container_contact & container_micro_contact & gripper_obj_far
 
 
-class PnPMicrowaveToCounter(PnP):  # DONE
+class PnPMicrowaveToCounter(PnP):
     """
     Class encapsulating the atomic microwave to counter pick and place task
 
@@ -719,7 +719,7 @@ class PnPMicrowaveToCounter(PnP):  # DONE
         return obj_container_contact & gripper_obj_far
 
 
-class PnPCounterToOven(PnP):  # DONE
+class PnPCounterToOven(PnP):
     """
     Class encapsulating the counter to oven pick and place atomic task
     """
@@ -804,7 +804,7 @@ class PnPCounterToOven(PnP):  # DONE
         return on_rack & obj_container_contact & gripper_far
 
 
-class PnPOvenToCounter(PnP):  # DONE
+class PnPOvenToCounter(PnP):
     """
     Class encapsulating the oven to counter pick and place atomic task
     """
@@ -817,7 +817,7 @@ class PnPOvenToCounter(PnP):  # DONE
         self._place_robot()
 
     def _place_robot(self):
-        x_ofs = (self.oven.width / 2) + 0.25
+        x_ofs = (self.oven.width / 2) + 0.27
         TEST_OFS = 0.23
         inits = []
 
@@ -1443,6 +1443,7 @@ class PnPCounterToStandMixer(PnP):  # DONE
             dict(
                 name="obj",
                 obj_groups=("cheese", "bread", "cake"),
+                init_robot_here=True,
                 graspable=True,
                 placement=dict(
                     fixture=self.counter,

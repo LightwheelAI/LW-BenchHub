@@ -394,13 +394,13 @@ def check_obj_in_receptacle(env: ManagerBasedEnv, obj_name: str, receptacle_name
         is_contact = torch.tensor([False], device=env.device).repeat(env.scene.num_envs)  # (env_num, )
 
     if obj_name in env.scene.articulations:
-        obj_pos = torch.mean(env.scene.articulations[obj_name].data.body_com_pos_w, dim=1)
+        obj_pos = env.scene.articulations[obj_name].data.body_com_pos_w[:, 0, :]
     elif obj_name in env.scene.rigid_objects:
-        obj_pos = torch.mean(env.scene.rigid_objects[obj_name].data.body_com_pos_w, dim=1)  # (env_num, 3)
+        obj_pos = env.scene.rigid_objects[obj_name].data.body_com_pos_w[:, 0, :]
     if receptacle_name in env.scene.articulations:
-        recep_pos = torch.mean(env.scene.articulations[receptacle_name].data.body_com_pos_w, dim=1)
+        recep_pos = env.scene.articulations[receptacle_name].data.body_com_pos_w[:, 0, :]
     elif receptacle_name in env.scene.rigid_objects:
-        recep_pos = torch.mean(env.scene.rigid_objects[receptacle_name].data.body_com_pos_w, dim=1)  # (env_num, 3)
+        recep_pos = env.scene.rigid_objects[receptacle_name].data.body_com_pos_w[:, 0, :]
 
     if th is None:
         th = recep.horizontal_radius
@@ -438,7 +438,7 @@ def check_obj_scrubbed(env, sponge_name, obj_name):
     """
     # Check if sponge is in contact with bowl
     in_contact = check_obj_in_receptacle(env, sponge_name, obj_name)
-    sponge_pos = torch.mean(env.scene.rigid_objects[sponge_name].data.body_com_pos_w, dim=1)
+    sponge_pos = env.scene.rigid_objects[sponge_name].data.body_com_pos_w[:, 0, :]
     prev_sponge_pos = getattr(env, "prev_sponge_pos", sponge_pos)
 
     movement_vector = sponge_pos - prev_sponge_pos
@@ -459,15 +459,14 @@ def check_obj_in_receptacle_no_contact(env: ManagerBasedEnv, obj_name: str, rece
     """
     check if object is in receptacle object based on threshold
     """
-    recep = env.cfg.isaaclab_arena_env.task.objects[receptacle_name]
     if obj_name in env.scene.articulations:
-        obj_pos = torch.mean(env.scene.articulations[obj_name].data.body_com_pos_w, dim=1)
+        obj_pos = env.scene.articulations[obj_name].data.body_com_pos_w[:, 0, :]
     elif obj_name in env.scene.rigid_objects:
-        obj_pos = torch.mean(env.scene.rigid_objects[obj_name].data.body_com_pos_w, dim=1)  # (env_num, 3)
+        obj_pos = env.scene.rigid_objects[obj_name].data.body_com_pos_w[:, 0, :]
     if receptacle_name in env.scene.articulations:
-        recep_pos = torch.mean(env.scene.articulations[receptacle_name].data.body_com_pos_w, dim=1)
+        recep_pos = env.scene.articulations[receptacle_name].data.body_com_pos_w[:, 0, :]
     elif receptacle_name in env.scene.rigid_objects:
-        recep_pos = torch.mean(env.scene.rigid_objects[receptacle_name].data.body_com_pos_w, dim=1)  # (env_num, 3)
+        recep_pos = env.scene.rigid_objects[receptacle_name].data.body_com_pos_w[:, 0, :]
     if th is None:
         th = env.cfg.isaaclab_arena_env.task.objects[receptacle_name].horizontal_radius * 0.7
     is_closed = torch.norm(obj_pos[:, :2] - recep_pos[:, :2], dim=-1) < th  # (env_num, )
@@ -1060,7 +1059,6 @@ def obj_fixture_bbox_min_dist(env: ManagerBasedEnv, obj_name: str, fixture: Fixt
             obj_quat = T.convert_quat(
                 env.scene.articulations[obj_name].data.body_com_quat_w[i, 0, :].cpu().numpy(), to="xyzw"
             )
-
         obj = env.cfg.isaaclab_arena_env.task.objects[obj_name]
         obj_pts = obj.get_bbox_points(trans=obj_pos, rot=obj_quat)
         obj_coords = np.array(obj_pts)

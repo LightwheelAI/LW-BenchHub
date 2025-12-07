@@ -89,16 +89,15 @@ class HeatMultipleWater(LwLabTaskBase):
             self.stove.set_knob_state(mode="off", knob=knob, env=env, env_ids=env_ids)
 
     def _check_success(self, env):
-
-        pan_locs = self.stove.check_obj_location_on_stove(env, "obj", threshold=0.15)
-        kettle_locs = self.stove.check_obj_location_on_stove(env, "obj2")
+        pan_locs = self.stove.check_obj_location_on_stove(env, "obj", threshold=0.15, need_knob_on=True)
+        kettle_locs = self.stove.check_obj_location_on_stove(env, "obj2", need_knob_on=True)
 
         # both objects placed on different parts of the stove
         successful_stove_placement = torch.tensor([
-            (pan_loc is not None)
-            and (kettle_loc is not None)
-            and (pan_loc != kettle_loc)
+            (pan_loc and len(pan_loc) > 0 and pan_loc[0] is not None)
+            and (kettle_loc and len(kettle_loc) > 0 and kettle_loc[0] is not None)
+            and (pan_loc[0] != kettle_loc[0])
             for pan_loc, kettle_loc in zip(pan_locs, kettle_locs)
         ], device=env.device)
 
-        return successful_stove_placement & OU.gripper_obj_far(env) & OU.gripper_obj_far(env, "obj2")
+        return successful_stove_placement & OU.gripper_obj_far(env)

@@ -47,7 +47,6 @@ class TurnOnToaster(LwLabTaskBase):
                 name="obj",
                 obj_groups=("sandwich_bread"),
                 rotate_upright=True,
-                object_scale=0.15,
                 placement=dict(
                     fixture=self.toaster,
                     rotation=(0, 0),

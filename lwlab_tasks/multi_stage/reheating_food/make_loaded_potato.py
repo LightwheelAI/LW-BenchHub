@@ -58,7 +58,7 @@ class MakeLoadedPotato(LwLabTaskBase):
                     fixture=self.microwave,
                     size=(0.05, 0.05),
                     ensure_object_boundary_in_range=False,
-                    try_to_place_in="bowl",
+                    try_to_place_in="plate",
                 ),
             )
         )

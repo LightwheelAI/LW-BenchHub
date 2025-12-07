@@ -44,10 +44,8 @@ class BreadSelection(LwLabTaskBase):
         return ep_meta
 
     def _setup_scene(self, env, env_ids=None):
-        """
-        Resets simulation internal configurations.
-        """
         super()._setup_scene(env, env_ids)
+        self.cab.open_door(env=env, env_ids=env_ids)
 
     def _reset_internal(self, env, env_ids):
         super()._reset_internal(env, env_ids)
@@ -104,7 +102,7 @@ class BreadSelection(LwLabTaskBase):
             dict(
                 name="jam",
                 obj_groups="jam",
-                placement=dict(fixture=self.cab, size=(1.0, 0.20), pos=(0, -1.0)),
+                placement=dict(fixture=self.cab, size=(1.0, 0.10), pos=(0, -1.0)),
             )
         )
 

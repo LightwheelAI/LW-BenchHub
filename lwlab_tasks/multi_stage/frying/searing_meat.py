@@ -98,6 +98,7 @@ class SearingMeat(LwLabTaskBase):
 
     def _check_success(self, env):
         gripper_obj_far = OU.gripper_obj_far(env, obj_name="meat")
-        pan_loc = torch.tensor([loc == self.knob for loc in self.stove.check_obj_location_on_stove(env, "pan", threshold=0.15)], device=env.device)
+        pan_locs = self.stove.check_obj_location_on_stove(env, "pan", threshold=0.15, need_knob_on=True)
+        pan_on_loc = torch.tensor([(loc and len(loc) > 0 and loc[0] == self.knob) if loc else False for loc in pan_locs], device=env.device)
         meat_in_pan = OU.check_obj_in_receptacle(env, "meat", "pan", th=0.07)
-        return gripper_obj_far & pan_loc & meat_in_pan
+        return gripper_obj_far & pan_on_loc & meat_in_pan

@@ -62,8 +62,13 @@ class BeverageSorting(LwLabTaskBase):
         Resets simulation internal configurations.
         """
         super()._reset_internal(env, env_ids)
-        self.cab1.open_door(min=0.85, max=0.9, env=env, env_ids=env_ids)
-        self.cab2.open_door(min=0.85, max=0.9, env=env, env_ids=env_ids)
+        self.cab1.open_door(env=env, env_ids=env_ids)
+        self.cab2.open_door(env=env, env_ids=env_ids)
+
+    def _setup_scene(self, env, env_ids=None):
+        super()._setup_scene(env, env_ids)
+        self.cab1.open_door(env=env, env_ids=env_ids)
+        self.cab2.open_door(env=env, env_ids=env_ids)
 
     def _get_obj_cfgs(self):
         cfgs = []

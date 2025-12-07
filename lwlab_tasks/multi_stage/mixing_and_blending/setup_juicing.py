@@ -38,7 +38,7 @@ class SetupJuicing(LwLabTaskBase):
         ep_meta = super().get_ep_meta()
         ep_meta[
             "lang"
-        ] = f"Open the cabinet, pick all {self.num_fruits} fruits from the cabinet and place them on the counter."
+        ] = f"Open the cabinet, pick all {self.num_fruits} fruits from the cabinet and place them on the counter close to the cabinet."
         return ep_meta
 
     def _setup_scene(self, env, env_ids=None):

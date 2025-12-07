@@ -54,7 +54,7 @@ class ArrangeTea(LwLabTaskBase):
                 graspable=True,
                 placement=dict(
                     fixture=self.cab,
-                    size=(0.50, 0.20),
+                    size=(0.50, 0.10),
                     pos=(0, -1.0),
                 ),
             )

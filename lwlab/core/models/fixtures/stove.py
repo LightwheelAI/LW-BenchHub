@@ -170,9 +170,9 @@ class Stove(Fixture):
 
         knobs_state = self.get_knobs_state(env=env)
         if obj_name in env.scene.articulations:
-            obj_pos = env.scene.articulations[obj_name].data.body_com_pos_w[..., 0, :]
+            obj_pos = env.scene.articulations[obj_name].data.body_link_pos_w[..., 0, :]
         else:
-            obj_pos = env.scene.rigid_objects[obj_name].data.body_com_pos_w[..., 0, :]
+            obj_pos = env.scene.rigid_objects[obj_name].data.body_link_pos_w[..., 0, :]
 
         obj_on_stove = OU.check_obj_fixture_contact(env, obj_name, self)
         stove_pos = torch.tensor(self.pos, device=self.device)
