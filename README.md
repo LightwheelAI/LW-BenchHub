@@ -21,16 +21,17 @@
 
 ## Overview
 
-**LW-BenchHub** is a cutting-edge robotics simulation framework developed by the **Lightwheel team**, specifically designed for training robots in kitchen manipulation and loco-manipulation tasks. Built on NVIDIA's **Isaac-Lab Arena**, LW-BenchHub provides a comprehensive platform that seamlessly integrates teleoperation data collection with reinforcement learning training workflows.
+**LW-BenchHub** is an end-to-end robotics simulation training framework developed by the **Lightwheel team**, specifically designed for training robots in kitchen manipulation and loco-manipulation tasks. Built on NVIDIA's **Isaac-Lab Arena**, LW-BenchHub provides a comprehensive platform that seamlessly integrates teleoperation data collection with reinforcement learning training workflows.
 
 ### Key Features
 
-- **Multi-Robot Support** - Compatible with diverse robots including Unitree G1, PandaOmron, and DoublePanda  
-- **Realistic Kitchen Environments** - Large-scale, high-quality kitchen scenarios for comprehensive training  
-- **Flexible Input Methods** - Support for keyboard, VR controllers, and other input devices  
-- **Complete Data Pipeline** - End-to-end workflow from teleoperation to policy deployment  
-- **Modular Configuration** - Highly customizable scene layouts and task specifications  
-- **Comprehensive APIs** - Specialized interfaces for success evaluation and reward design
+- **Multi-Robot Support** – Features 7 adapted robot types (Unitree G1, PandaOmron, DoublePanda, Agilex Piper, ARX X7s, Franka, and LeRobot SO100/101 Arm), comprising a total of 27 specific robot variants.
+- **Realistic Kitchen Environments** – Large-scale kitchen scenarios with 10 layouts and 10 style combinations, offering 100 unique configurations using high‑fidelity assets pulled via the [Lightwheel SDK](https://docs.lightwheel.net/sdk/).
+- **Flexible Input Devices** - Support for keyboard, VR(Vision Pro, PICO, Meta Quest), and Master-slave Arm.
+- **Rich Task Suite** – 268 ready-to-use tasks (130 Lightwheel-LIBERO-Tasks, 138 Lightwheel-Robocasa-Tasks), covering kitchen manipulation, loco-manipulation, table-top actions, atomic skills, navigation, and long-horizon compositional tasks.
+- **Complete Data Pipeline** - End-to-end workflow from teleoperation to policy deployment.
+- **Intuitive and reproducible RL configuration design** – Supports generic RL configuration for a class of robots and tasks through a decorator-based binding mechanism, enabling modular registration and effortless switching or reproduction of RL setups. Seamlessly integrates with open-source RL libraries such as rsl-rl and skrl.
+- **Large-scale Kitchen Manipulation Dataset** – Released a dataset with 219 unique tasks (89 from Lightwheel-Robocasa-Tasks, 130 from Lightwheel-LIBERO-Tasks) and 4 robots (LeRobot、ARX-X7s, Unitree G1, Agilex-Piper). The dataset contains 21,500 demonstration episodes (20,537,015 frames), with 50 episodes for each (robot, task) pair, captured in diverse, interactive kitchen environments. [👉 View and download the dataset on Hugging Face](https://huggingface.co/datasets/LightwheelAI/lightwheel_tasks/tree/main)
 
 ## Quick Start
 
