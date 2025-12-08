@@ -82,8 +82,8 @@ _isaac_sim?
 # Docker history
 docker/.isaac-lab-docker-history
 
-# lwlab_logs
-lwlab_logs/
+# lw_benchhub_logs
+lw_benchhub_logs/
 
 # third party
 #third_party/*

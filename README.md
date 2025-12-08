@@ -1,19 +1,19 @@
-# LwLab
+# LW-BenchHub
 
 <div align="center">
 
-![LwLab Kitchens](./images/lwlab-kitchens.png)
-**A large-scale simulation framework built on Isaac Lab for training robots to perform common daily life tasks**
+![LW-BenchHub Kitchens](./images/lw-benchhub-kitchens.png)
+**A large-scale simulation framework built on Isaac-Lab Arena for training robots to perform common daily life tasks**
 
 [![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
 [![CUDA](https://img.shields.io/badge/CUDA-12.8-green.svg)](https://developer.nvidia.com/cuda-toolkit)
 [![Isaac Lab](https://img.shields.io/badge/Isaac%20Lab-5.0.0-orange.svg)](https://isaac-sim.github.io/IsaacLab/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
-[![Documentation](https://img.shields.io/badge/docs-lwlab--docs.lightwheel.net-brightgreen.svg)](https://lwlab-docs.lightwheel.net/)
+[![Documentation](https://img.shields.io/badge/docs-lwlab--docs.lightwheel.net-brightgreen.svg)](https://docs.lightwheel.net/lw_benchhub)
 
 
 
-[Documentation](https://lwlab-docs.lightwheel.net/) • [Quick Start](#quick-start) • [Installation](#installation) • [Project Structure](#project-structure)
+[Documentation](https://docs.lightwheel.net/lw_benchhub) • [Quick Start](#quick-start) • [Installation](#installation) • [Project Structure](#project-structure)
 
 </div>
 
@@ -21,7 +21,7 @@
 
 ## Overview
 
-**LwLab** is a cutting-edge robotics simulation framework developed by the **Lightwheel team**, specifically designed for training robots in kitchen manipulation and loco-manipulation tasks. Built on NVIDIA's Isaac Lab, LwLab provides a comprehensive platform that seamlessly integrates teleoperation data collection with reinforcement learning training workflows.
+**LW-BenchHub** is a cutting-edge robotics simulation framework developed by the **Lightwheel team**, specifically designed for training robots in kitchen manipulation and loco-manipulation tasks. Built on NVIDIA's **Isaac-Lab Arena**, LW-BenchHub provides a comprehensive platform that seamlessly integrates teleoperation data collection with reinforcement learning training workflows.
 
 ### Key Features
 
@@ -46,14 +46,14 @@
 
 1. **Create Conda Environment**
 ```bash
-conda create -n lwlab python=3.11 -y
-conda activate lwlab
+conda create -n lw_benchhub python=3.11 -y
+conda activate lw_benchhub
 ```
 
 2. **Quick Install**
 ```bash
-git clone http://git.lightwheel.ai/robot/lwlab.git
-cd lwlab
+git clone https://github.com/LightwheelAI/lw_benchhub
+cd lw_benchhub
 bash ./install.sh # Refer to the Documentation for custom installation steps
 ```
 
@@ -68,10 +68,10 @@ Start collecting demonstration data with different robot configurations:
 
 ```bash
 # Use G1-Hand robot configuration
-python ./lwlab/scripts/teleop/teleop_main.py --task_config g1-hand
+python ./lw_benchhub/scripts/teleop/teleop_main.py --task_config g1-hand
 
 # Use Panda+Omron robot configuration  
-python ./lwlab/scripts/teleop/teleop_main.py --task_config pandaomron
+python ./lw_benchhub/scripts/teleop/teleop_main.py --task_config pandaomron
 ```
 
 ### Trajectory Replay
@@ -80,24 +80,24 @@ Replay collected demonstrations for analysis:
 
 ```bash
 # State-based replay
-python ./lwlab/scripts/teleop/replay_demos.py --dataset_file "/path/to/your/dataset.hdf5"
+python ./lw_benchhub/scripts/teleop/replay_demos.py --dataset_file "/path/to/your/dataset.hdf5" --enable_cameras
 
 # Action-based replay
-python ./lwlab/scripts/teleop/replay_action_demo.py \
+python ./lw_benchhub/scripts/teleop/replay_action_demo.py \
     --dataset_file /path/to/your/dataset.hdf5 \
     --replay_mode action # or joint_target mode
 ```
 
 ### Reinforcement Learning
 
-LwLab provides a complete RL pipeline:
+LW-BenchHub provides a complete RL pipeline:
 
 ```bash
 # Start training with default configuration
 bash train.sh # default preset uses LiftObj (state variant)
 
 # Custom training configuration
-python ./lwlab/scripts/rl/train.py \
+python ./lw_benchhub/scripts/rl/train.py \
     --task_config g1_liftobj \
     --headless \
 ```
@@ -111,7 +111,7 @@ Evaluate your trained policies:
 bash eval.sh
 
 # Custom evaluation
-python ./lwlab/scripts/rl/play.py \
+python ./lw_benchhub/scripts/rl/play.py \
     --task_config g1_liftobj \
     # --enable_camera \
     # --headless
@@ -128,11 +128,11 @@ python ./lwlab/scripts/rl/play.py \
 | Component | Description |
 |-----------|-------------|
 | **configs** | This directory contains configuration files related to data collection, as well as the training and evaluation of reinforcement learning tasks. |
-| **lwlab** | This module provides `core` functionalities, including simulation scene generation, asset logic control, robot control, entry-point scripts, and utility functions. The core submodule offers standardized interfaces for common tasks, such as success criteria evaluation (`check_success_api`) and reward function design (`reward_design_api`). |
+| **lw_benchhub** | This module provides `core` functionalities, including simulation scene generation, asset logic control, robot control, entry-point scripts, and utility functions. |
 | **policy** | This directory focuses on the implementation of policy algorithms, covering both imitation learning (IL) and reinforcement learning (RL) strategies. The codebase is designed for modular experimentation and systematic benchmarking of various policy architectures. |
-| **third_party** | This folder contains third-party environment dependencies, such as IsaacLab, Robocasa, and Robosuite. To ensure reproducibility and maintainability, these environments are preserved in their original form as much as possible. |
-| **tasks** | This directory defines task specifications. Each task, such as `OpenOven`, includes its own success criteria, task-related asset control and item placement, as well as a detailed task description. |
-
+| **third_party** | This folder contains **Isaac-Lab Arena** dependency. To ensure reproducibility and maintainability, these environments are preserved in their original form as much as possible. |
+| **lw_benchhub_tasks** | This directory defines task specifications. Each task, such as `OpenOven`, includes its own success criteria, task-related asset control and item placement, as well as a detailed task description. |
+| **lw_benchhub_rl** | This module implements reinforcement learning (RL) pipelines, algorithms, and training/evaluation scripts. It includes preset configurations for common RL tasks, wrappers for integrating with `lw_benchhub.core`, and utilities for distributed experiment management. Use this module to launch RL experiments, customize RL agents, and evaluate learning performance. |
 
 ### Launch Scripts
 
@@ -143,7 +143,7 @@ python ./lwlab/scripts/rl/play.py \
 
 ## Documentation
 
-For comprehensive guides, API references, and advanced usage examples, visit our [Official Documentation](https://lwlab-docs.lightwheel.net/).
+For comprehensive guides, API references, and advanced usage examples, visit our [Official Documentation](https://docs.lightwheel.net/lw_benchhub).
 
 ## License
 

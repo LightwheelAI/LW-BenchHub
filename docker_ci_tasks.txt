@@ -1,17 +1,17 @@
-python3  /workspace/lwlab/ci_run/teleop_ci.py --task PreSoakPan --reset_num 8
-python3  /workspace/lwlab/ci_run/teleop_ci.py --task OpenCabinet --reset_num 8
-python3  /workspace/lwlab/ci_run/teleop_ci.py --task CloseCabinet --reset_num 8
-python3  /workspace/lwlab/ci_run/teleop_ci.py --task OpenMicrowave --reset_num 8
-python3  /workspace/lwlab/ci_run/teleop_ci.py --task CloseMicrowave --reset_num 8
-python3  /workspace/lwlab/ci_run/teleop_ci.py --task OpenFridge --reset_num 8
-python3  /workspace/lwlab/ci_run/teleop_ci.py --task CloseFridge --reset_num 8
-python3  /workspace/lwlab/ci_run/teleop_ci.py --task OpenOven --reset_num 8
-python3  /workspace/lwlab/ci_run/teleop_ci.py --task CloseOven --reset_num 8
-python3  /workspace/lwlab/ci_run/teleop_ci.py --task OpenDishwasher --reset_num 8
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/ci_task_0917/G1_Controller/OpenDrawer/dataset.hdf5 joint_target
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/ci_task_0917/G1_Controller/OpenToasterOvenDoor/dataset.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/ci_task_0917/G1_Controller/BreadAndCheese/dataset.hdf5 joint_target
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/ci_task_0917/G1_Controller/BreadAndCheese/dataset.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/ci_task_0917/X7s/OpenToasterOvenDoor/dataset.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/ci_task_0917/X7s/OpenToasterOvenDoor/dataset.hdf5 joint_target
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/ci_task_0917/G1_Controller/OpenToasterOvenDoor/dataset.hdf5 action
+python3  /workspace/lw_benchhub/ci_run/teleop_ci.py --task PreSoakPan --reset_num 8
+python3  /workspace/lw_benchhub/ci_run/teleop_ci.py --task OpenCabinet --reset_num 8
+python3  /workspace/lw_benchhub/ci_run/teleop_ci.py --task CloseCabinet --reset_num 8
+python3  /workspace/lw_benchhub/ci_run/teleop_ci.py --task OpenMicrowave --reset_num 8
+python3  /workspace/lw_benchhub/ci_run/teleop_ci.py --task CloseMicrowave --reset_num 8
+python3  /workspace/lw_benchhub/ci_run/teleop_ci.py --task OpenFridge --reset_num 8
+python3  /workspace/lw_benchhub/ci_run/teleop_ci.py --task CloseFridge --reset_num 8
+python3  /workspace/lw_benchhub/ci_run/teleop_ci.py --task OpenOven --reset_num 8
+python3  /workspace/lw_benchhub/ci_run/teleop_ci.py --task CloseOven --reset_num 8
+python3  /workspace/lw_benchhub/ci_run/teleop_ci.py --task OpenDishwasher --reset_num 8
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/ci_task_0917/G1_Controller/OpenDrawer/dataset.hdf5 joint_target
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/ci_task_0917/G1_Controller/OpenToasterOvenDoor/dataset.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/ci_task_0917/G1_Controller/BreadAndCheese/dataset.hdf5 joint_target
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/ci_task_0917/G1_Controller/BreadAndCheese/dataset.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/ci_task_0917/X7s/OpenToasterOvenDoor/dataset.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/ci_task_0917/X7s/OpenToasterOvenDoor/dataset.hdf5 joint_target
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/ci_task_0917/G1_Controller/OpenToasterOvenDoor/dataset.hdf5 action

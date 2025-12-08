@@ -1,16 +1,16 @@
 #!/bin/bash
-# Combined build script for lwlab Docker images
+# Combined build script for lw_benchhub Docker images
 
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
 # --- Configuration ---
 # Base Image
-BASE_IMAGE_NAME="lwlab"
+BASE_IMAGE_NAME="lw_benchhub"
 BASE_TAG="base"
 
 # Application Image
-APP_IMAGE_NAME="lwlab"
+APP_IMAGE_NAME="lw_benchhub"
 APP_TAG="1.0"
 
 # Build Arguments
@@ -47,10 +47,10 @@ build_app_image() {
         --build-arg PROXY_PORT=${PROXY_PORT} \
         -t ${APP_IMAGE_NAME}:${APP_TAG} \
         .
-    docker rm -f lwlab_warmup || true
-    docker run -it --name lwlab_warmup --gpus all ${APP_IMAGE_NAME}:${APP_TAG} -c -i "https_proxy=http://10.10.11.36:7897 http_proxy=http://10.10.11.36:7897 all_proxy=socks5://10.10.11.36:7897 python /workspace/lwlab/lwlab/scripts/teleop/warmup_isaac.py"
-    docker commit lwlab_warmup ${APP_IMAGE_NAME}:${APP_TAG}
-    docker rm -f lwlab_warmup || true
+    docker rm -f lw_benchhub_warmup || true
+    docker run -it --name lw_benchhub_warmup --gpus all ${APP_IMAGE_NAME}:${APP_TAG} -c -i "https_proxy=http://10.10.11.36:7897 http_proxy=http://10.10.11.36:7897 all_proxy=socks5://10.10.11.36:7897 python /workspace/lw_benchhub/lw_benchhub/scripts/teleop/warmup_isaac.py"
+    docker commit lw_benchhub_warmup ${APP_IMAGE_NAME}:${APP_TAG}
+    docker rm -f lw_benchhub_warmup || true
         
     echo "✅ Application image build complete: ${APP_IMAGE_NAME}:${APP_TAG}"
 }

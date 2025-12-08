@@ -15,20 +15,21 @@
 """Script to run a keyboard teleoperation with Isaac Lab manipulation environments."""
 
 """Launch Isaac Sim Simulator first."""
-import random
-import argparse
-import os
-from isaaclab.app import AppLauncher
-from dataclasses import dataclass, field
-import json
-from tqdm import tqdm
-from lwlab.utils.config_loader import config_loader
 
+import argparse
+import json
+import os
+from dataclasses import dataclass, field
+
+from tqdm import tqdm
+
+from isaaclab.app import AppLauncher
+
+from lw_benchhub.utils.config_loader import config_loader
 
 # add argparse arguments
 parser = argparse.ArgumentParser(description="Keyboard teleoperation for Isaac Lab environments.")
 parser.add_argument("--task_config", type=str, default="default", help="task config")
-
 
 # append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
@@ -43,7 +44,6 @@ app_launcher = AppLauncher(app_launcher_args)
 
 simulation_app = app_launcher.app
 
-
 args_cli.device = f"cuda:0"
 
 
@@ -56,8 +56,8 @@ def main(args):
     import numpy as np
     from isaaclab.envs import ViewerCfg, ManagerBasedRLEnv
     from isaaclab_tasks.utils import parse_env_cfg
-    from lwlab.utils.place_utils.env_utils import set_seed
-    from lwlab.utils.render_utils import optimize_rendering
+    from lw_benchhub.utils.place_utils.env_utils import set_seed
+    from lw_benchhub.utils.render_utils import optimize_rendering
 
     if "-" in args_cli.task:
         env_cfg = parse_env_cfg(
@@ -66,7 +66,7 @@ def main(args):
         task_name = args_cli.task
 
     else:  # robocasa
-        from lwlab.utils.env import parse_env_cfg, ExecuteMode
+        from lw_benchhub.utils.env import parse_env_cfg, ExecuteMode
 
         env_cfg = parse_env_cfg(
             scene_backend=args_cli.scene_backend,
@@ -90,7 +90,7 @@ def main(args):
 
         gym.register(
             id=task_name,
-            entry_point="isaaclab.envs:ManagerBasedRLEnv",  # lwlab.enhance.envs:ManagerBasedRLDigitalTwinEnv
+            entry_point="isaaclab.envs:ManagerBasedRLEnv",  # lw_benchhub.enhance.envs:ManagerBasedRLDigitalTwinEnv
             kwargs={
             },
             disable_env_checker=True,

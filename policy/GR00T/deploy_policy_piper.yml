@@ -1,7 +1,7 @@
 # Basic experiment configuration (keep unchanged)
 policy_name: 'GR00TPolicy'
 # ckpt_setting: '/home/zsy/workspace/output/gr00t_result_piper_lift_cube/checkpoint-6000' # 'nvidia/GR00T-N1.5-3B' # To be provided by the user
-ckpt_setting: '/home/yu.zhuang/Workspace/lwlab-private/evaluation/groot/from_zhenju/checkpoint-5000' # 'nvidia/GR00T-N1.5-3B' # To be provided by the user
+ckpt_setting: '/home/yu.zhuang/Workspace/lw_benchhub-private/evaluation/groot/from_zhenju/checkpoint-5000' # 'nvidia/GR00T-N1.5-3B' # To be provided by the user
 # ckpt_setting: '/workspace/checkpoint-5000' # 'nvidia/GR00T-N1.5-3B' # To be provided by the user
 seed: 0
 

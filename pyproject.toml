@@ -6,7 +6,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "lwlab"
+name = "lw_benchhub"
 version = "0.1.0"
 description = "Isaac Lab based Benchmark for Robotics"
 dependencies = [
@@ -32,8 +32,8 @@ lerobot = [
     "feetech-servo-sdk>=1.0.0"
 ]
 
-[project.entry-points.lwlab_modules]
-lwlab_scences = "lwlab.core.scenes"
-lwlab_robots = "lwlab.core.robots"
-lwlab_tasks = "lwlab_tasks"
-lwlab_rl = "lwlab_rl"
+[project.entry-points.lw_benchhub_modules]
+lw_benchhub_scences = "lw_benchhub.core.scenes"
+lw_benchhub_robots = "lw_benchhub.core.robots"
+lw_benchhub_tasks = "lw_benchhub_tasks"
+lw_benchhub_rl = "lw_benchhub_rl"

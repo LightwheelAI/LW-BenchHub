@@ -11,6 +11,11 @@ OUTPUT_JSON="${DATASET_DIR}/result.json"
 PYTHON_LOG="${DATASET_DIR}/python_run.log"
 STACK_TRACE=""
 
+if [ -n "$CONDA_DIR" ] && [ -n "$ENV_NAME" ]; then
+    source "$CONDA_DIR/etc/profile.d/conda.sh"
+    conda activate "$ENV_NAME"
+fi
+
 check_for_stack_trace() {
     local file_path="$1"
     STACK_TRACE=""
@@ -36,7 +41,7 @@ check_for_stack_trace() {
 
 echo "Start run replay_action_demo.py."
 # run the Python script and capture both stdout and stderr
-python3 /workspace/lwlab/lwlab/scripts/teleop/replay_action_demo.py \
+python3 /workspace/lw_benchhub/lw_benchhub/scripts/teleop/replay_action_demo.py \
     --dataset_file=${DATASET_FILE} \
     --num_envs=1 \
     --width=480 \

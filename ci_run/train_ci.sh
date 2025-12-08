@@ -2,6 +2,10 @@
 
 task_config=$1
 
+if [ -n "$CONDA_DIR" ] && [ -n "$ENV_NAME" ]; then
+    source "$CONDA_DIR/etc/profile.d/conda.sh"
+    conda activate "$ENV_NAME"
+fi
 
 DATASET_DIR=/output
 OUTPUT_JSON="${DATASET_DIR}/result.json"
@@ -9,14 +13,14 @@ pt_found=0
 success=True
 success_rate=0
 if [ "$task_config" == "ci_lerobot_liftobj_state" ] || [ "$task_config" == "ci_g1_liftobj_state" ] || [ "$task_config" == "ci_daily_lerobot_liftobj_state" ]; then
-    rm -rf /workspace/lwlab/policy/maniskill_ppo/logs/*
-    python3 /workspace/lwlab/policy/maniskill_ppo/train.py \
+    rm -rf /workspace/lw_benchhub/policy/maniskill_ppo/logs/*
+    python3 /workspace/lw_benchhub/policy/maniskill_ppo/train.py \
         --task_config="$task_config" \
         --headless 2>&1
 
-    pt_file=$(find /workspace/lwlab/policy/maniskill_ppo/logs/ -type f -path "*/*.pt" | head -n 1)
+    pt_file=$(find /workspace/lw_benchhub/policy/maniskill_ppo/logs/ -type f -path "*/*.pt" | head -n 1)
     if [ "$task_config" == "ci_daily_lerobot_liftobj_state" ]; then
-        json_file=$(find /workspace/lwlab/policy/maniskill_ppo/logs/ -type f -path "*/result.json")
+        json_file=$(find /workspace/lw_benchhub/policy/maniskill_ppo/logs/ -type f -path "*/result.json")
         if [ -n "$json_file" ]; then
             success_rate=$(python3 -c "import json; print(json.load(open('$json_file')).get('success_rate', ''))")
             success=$(python3 -c "import json; print(json.load(open('$json_file')).get('ci_success', ''))")
@@ -26,12 +30,12 @@ if [ "$task_config" == "ci_lerobot_liftobj_state" ] || [ "$task_config" == "ci_g
     fi
     
 elif [ "$task_config" == "ci_open_draw" ]; then
-    rm -rf /workspace/lwlab/policy/skrl/logs/*
-    python3 /workspace/lwlab/lwlab/scripts/rl/train.py \
+    rm -rf /workspace/lw_benchhub/policy/skrl/logs/*
+    python3 /workspace/lw_benchhub/lw_benchhub/scripts/rl/train.py \
         --task_config="$task_config" \
         --headless 2>&1
 
-    pt_file=$(find /workspace/lwlab/policy/skrl/logs/ -type f -path "*/checkpoints/*.pt" | head -n 1)
+    pt_file=$(find /workspace/lw_benchhub/policy/skrl/logs/ -type f -path "*/checkpoints/*.pt" | head -n 1)
 fi
 
 PYTHON_EXIT_CODE=$?

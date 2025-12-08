@@ -1,1 +1,1 @@
-harbor.lightwheel.net/robot/lwlab:lwlab_open_ci_5c03dbcf_20251203
+harbor.lightwheel.net/robot/lwlab:lwlab_open_ci_642a9c5e_20251204

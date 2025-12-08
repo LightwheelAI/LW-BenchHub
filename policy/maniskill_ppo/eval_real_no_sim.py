@@ -15,12 +15,13 @@
 """Script to run a keyboard teleoperation with Isaac Lab manipulation environments."""
 
 """Launch Isaac Sim Simulator first."""
-import random
 
-from tqdm import tqdm
-import tyro
-from dataclasses import dataclass, field
+import random
+from dataclasses import dataclass
 from typing import Optional
+
+import tyro
+from tqdm import tqdm
 
 
 @dataclass
@@ -37,10 +38,10 @@ def main(args_cli):
 
     """Rest everything follows."""
     import gymnasium as gym
-    import torch
     import numpy as np
-    from lwlab.sim2real.lerobot_follower.so100_follower import SO100Follower
-    from lwlab.sim2real.lerobot_follower.so101_follower import SO101Follower
+    import torch
+    from lw_benchhub.sim2real.lerobot_follower.so100_follower import SO100Follower
+    from lw_benchhub.sim2real.lerobot_follower.so101_follower import SO101Follower
     from policy.maniskill_ppo.agent import PPOArgs, PPO, observation
 
     def set_seed(seed, torch_deterministic):

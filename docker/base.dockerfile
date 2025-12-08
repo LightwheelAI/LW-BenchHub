@@ -10,7 +10,7 @@ ENV NVIDIA_VISIBLE_DEVICES=all \
     DEBIAN_FRONTEND=noninteractive \
     OMNI_KIT_ALLOW_ROOT=1 \
     CONDA_DIR=/opt/conda \
-    ENV_NAME=lwlab \
+    ENV_NAME=lw_benchhub \
     PATH="$CONDA_DIR/bin:$CONDA_DIR/envs/$ENV_NAME/bin:$PATH" \
     VK_DRIVER_FILES=/etc/vulkan/icd.d/nvidia_icd.json
 
@@ -47,7 +47,7 @@ EXPOSE 47998/udp 49100/tcp
 
 # Download and install Miniconda, create environment, and install packages
 WORKDIR /workspace
-RUN mkdir -p /workspace/lwlab/docker && \
+RUN mkdir -p /workspace/lw_benchhub/docker && \
     wget -O miniconda.sh https://artifactory.lightwheel.net/data/miniconda/miniconda.sh && \
     bash miniconda.sh -b -p $CONDA_DIR && \
     # Initialize conda and accept terms
@@ -59,8 +59,8 @@ RUN mkdir -p /workspace/lwlab/docker && \
     rm miniconda.sh
 
 # Copy environment file and create conda environment
-COPY ./docker/environment.yml /workspace/lwlab/docker/environment.yml
-WORKDIR /workspace/lwlab/docker
+COPY ./docker/environment.yml /workspace/lw_benchhub/docker/environment.yml
+WORKDIR /workspace/lw_benchhub/docker
 RUN $CONDA_DIR/bin/conda env create -f environment.yml && \
     $CONDA_DIR/bin/conda clean -afy && \
     echo "source activate $ENV_NAME" > ~/.bashrc
@@ -80,17 +80,17 @@ RUN source $CONDA_DIR/etc/profile.d/conda.sh && \
 
 # Copy and install IsaacLab
 WORKDIR /workspace
-RUN mkdir -p /workspace/lwlab/third_party/IsaacLab-Arena/submodules
-COPY ./third_party/IsaacLab-Arena/submodules/IsaacLab /workspace/lwlab/third_party/IsaacLab-Arena/submodules/IsaacLab
-COPY ./third_party/IsaacLab-Arena/submodules/Isaac-GR00T /workspace/lwlab/third_party/IsaacLab-Arena/submodules/Isaac-GR00T
+RUN mkdir -p /workspace/lw_benchhub/third_party/IsaacLab-Arena/submodules
+COPY ./third_party/IsaacLab-Arena/submodules/IsaacLab /workspace/lw_benchhub/third_party/IsaacLab-Arena/submodules/IsaacLab
+COPY ./third_party/IsaacLab-Arena/submodules/Isaac-GR00T /workspace/lw_benchhub/third_party/IsaacLab-Arena/submodules/Isaac-GR00T
 
 # set git config
 RUN git config --global http.postBuffer 524288000
 RUN git config --global https.postBuffer 524288000
 
-WORKDIR /workspace/lwlab/third_party/IsaacLab-Arena/submodules/IsaacLab
+WORKDIR /workspace/lw_benchhub/third_party/IsaacLab-Arena/submodules/IsaacLab
 RUN source /opt/conda/etc/profile.d/conda.sh && \
-    conda activate lwlab && \
+    conda activate lw_benchhub && \
     git config --global http.proxy http://127.0.0.1:7897 && \
     # pip config set global.extra-index-url https://mirrors.aliyun.com/pypi/simple/ && \
     # Retry logic for Isaac Lab installation
@@ -119,7 +119,7 @@ RUN source /opt/conda/etc/profile.d/conda.sh && \
 
 
 RUN source /opt/conda/etc/profile.d/conda.sh && \
-    conda activate lwlab && \
+    conda activate lw_benchhub && \
     git config --global http.proxy http://127.0.0.1:7897 && \
     # pip config set global.extra-index-url https://mirrors.aliyun.com/pypi/simple/ && \
     pip install lerobot==0.3.3  && \

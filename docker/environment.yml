@@ -1,4 +1,4 @@
-name: lwlab
+name: lw_benchhub
 channels:
   - conda-forge
   - defaults

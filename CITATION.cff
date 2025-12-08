@@ -1,0 +1,7 @@
+cff-version: 1.2.0
+title: "LW-BenchHub: Lightwheel's End-to-End Simulation Training Platform"
+message: "Please cite this repository as follows:"
+authors:
+  - name: "Lightwheel Team"
+abstract: "LW-BenchHub is a cutting-edge robotics simulation framework developed by the Lightwheel team, specifically designed for training robots in kitchen manipulation and loco-manipulation tasks. Built on NVIDIA's Isaac-Lab Arena, LW-BenchHub provides a comprehensive platform that seamlessly integrates teleoperation data collection with reinforcement learning training workflows."
+repository-code: "https://github.com/lightwheel-ai/lw_benchhub"

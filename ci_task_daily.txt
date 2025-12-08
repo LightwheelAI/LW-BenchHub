@@ -1,72 +1,72 @@
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/CloseDrawer-2/CloseDrawer/CloseDrawer.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/CloseDrawer-2/CloseDrawer/CloseDrawer.hdf5 joint_target
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/BreadSetupSlicing/BreadSetupSlicing.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/OpenOven/OpenOven.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/CloseOven/CloseOven.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/CloseToasterOvenDoor/CloseToasterOvenDoor.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/DefrostByCategory/DefrostByCategory.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/OpenDishwasher/OpenDishwasher.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/PnPCounterToStove/PnPCounterToStove.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/CloseFridge/CloseFridge.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/PnPCounterToSink/PnPCounterToSink.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/BreadAndCheese/BreadAndCheese.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/PastryDisplay/PastryDisplay.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/CloseMicrowave/CloseMicrowave.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/CupcakeCleanup/CupcakeCleanup.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/OrganizeBakingIngredients/OrganizeBakingIngredients.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/OpenFridge01/OpenFridge01.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/NavigateKitchen/NavigateKitchen.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/CloseDrawer/CloseDrawer.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/OpenToasterOvenDoor/OpenToasterOvenDoor.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250911/ThawInSink/ThawInSink.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/PnPCounterToCabinet/PnPCounterToCabinet.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/CleanMicrowave/CleanMicrowave.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/PnPStoveToCounter/PnPStoveToCounter.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/PnPToasterToCounter/PnPToasterToCounter.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/PnPCabinetToCounter/PnPCabinetToCounter.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/DessertUpgrade/DessertUpgrade.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/CloseCabinet/CloseCabinet.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/CloseElectricKettleLid/CloseElectricKettleLid.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/NavigateKitchen/NavigateKitchen.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/OpenElectricKettleLid/OpenElectricKettleLid.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/TurnOffSinkFaucet/TurnOffSinkFaucet.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/TurnSinkSpout/TurnSinkSpout.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250915/SetBowlsForSoup/SetBowlsForSoup.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250916/AdjustToasterOvenTemperature/AdjustToasterOvenTemperature.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250916/PreheatOven/PreheatOven.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250916/SlideToasterOvenRack/SlideToasterOvenRack.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250916/TurnOnStove/TurnOnStove.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250917/CondimentCollection/CondimentCollection.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250917/DessertAssembly/DessertAssembly.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250917/KettleBoiling/KettleBoiling.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250917/OrganizeVegetables/OrganizeVegetables.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250917/FryingPanAdjustment/FryingPanAdjustment.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250917/PrepMarinatingMeat/PrepMarinatingMeat.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250917/FoodCleanup/FoodCleanup.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250917/ClearingTheCuttingBoard/ClearingTheCuttingBoard.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250918/CoffeeSetupMug/CoffeeSetupMug.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250918/TurnOnToasterOven/TurnOnToasterOven.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250918/TurnOnSinkFaucet/TurnOnSinkFaucet.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250918/PnPToasterOvenToCounter/PnPToasterOvenToCounter.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250918/VeggieDipPrep/VeggieDipPrep.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250918/PnPOvenToCounter/PnPOvenToCounter.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250918/MakeFruitBowl/MakeFruitBowl.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250918/SlideOvenRack/SlideOvenRack.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250919/TurnOffMicrowave/TurnOffMicrowave.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250919/CloseStandMixerHead/CloseStandMixerHead.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250919/OpenStandMixerHead/OpenStandMixerHead.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250919/TurnOnMicrowave/TurnOnMicrowave.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250919/PanTransfer/PanTransfer.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250922/SortingCleanup/SortingCleanup.hdf5 action
-bash -i /workspace/lwlab/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250922/StartElectricKettle/StartElectricKettle.hdf5 action
-[timeout_secs=9000] bash -i /workspace/lwlab/ci_run/train_ci.sh ci_daily_lerobot_liftobj_state
-python3  /workspace/lwlab/ci_run/teleop_ci.py --task OpenDrawer
-python3  /workspace/lwlab/ci_run/teleop_ci.py --task CloseDrawer
-python3  /workspace/lwlab/ci_run/teleop_ci.py --task CloseElectricKettleLid
-python3  /workspace/lwlab/ci_run/teleop_ci.py --task OpenElectricKettleLid
-python3  /workspace/lwlab/ci_run/teleop_ci.py --task OpenOven
-python3  /workspace/lwlab/ci_run/teleop_ci.py --task CloseOven
-python3  /workspace/lwlab/ci_run/teleop_ci.py --task OpenToasterOvenDoor
-python3  /workspace/lwlab/ci_run/teleop_ci.py --task CloseToasterOvenDoor
-python3  /workspace/lwlab/ci_run/teleop_ci.py --task OpenDishwasher
-python3  /workspace/lwlab/ci_run/teleop_ci.py --task CloseDishwasher
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/CloseDrawer-2/CloseDrawer/CloseDrawer.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/CloseDrawer-2/CloseDrawer/CloseDrawer.hdf5 joint_target
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/BreadSetupSlicing/BreadSetupSlicing.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/OpenOven/OpenOven.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/CloseOven/CloseOven.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/CloseToasterOvenDoor/CloseToasterOvenDoor.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/DefrostByCategory/DefrostByCategory.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/OpenDishwasher/OpenDishwasher.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/PnPCounterToStove/PnPCounterToStove.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/CloseFridge/CloseFridge.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/PnPCounterToSink/PnPCounterToSink.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/BreadAndCheese/BreadAndCheese.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/PastryDisplay/PastryDisplay.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/CloseMicrowave/CloseMicrowave.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/CupcakeCleanup/CupcakeCleanup.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/OrganizeBakingIngredients/OrganizeBakingIngredients.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/OpenFridge01/OpenFridge01.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/NavigateKitchen/NavigateKitchen.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/CloseDrawer/CloseDrawer.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250910/OpenToasterOvenDoor/OpenToasterOvenDoor.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250911/ThawInSink/ThawInSink.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/PnPCounterToCabinet/PnPCounterToCabinet.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/CleanMicrowave/CleanMicrowave.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/PnPStoveToCounter/PnPStoveToCounter.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/PnPToasterToCounter/PnPToasterToCounter.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/PnPCabinetToCounter/PnPCabinetToCounter.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/DessertUpgrade/DessertUpgrade.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/CloseCabinet/CloseCabinet.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/CloseElectricKettleLid/CloseElectricKettleLid.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/NavigateKitchen/NavigateKitchen.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/OpenElectricKettleLid/OpenElectricKettleLid.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/TurnOffSinkFaucet/TurnOffSinkFaucet.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250912/TurnSinkSpout/TurnSinkSpout.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250915/SetBowlsForSoup/SetBowlsForSoup.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250916/AdjustToasterOvenTemperature/AdjustToasterOvenTemperature.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250916/PreheatOven/PreheatOven.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250916/SlideToasterOvenRack/SlideToasterOvenRack.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250916/TurnOnStove/TurnOnStove.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250917/CondimentCollection/CondimentCollection.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250917/DessertAssembly/DessertAssembly.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250917/KettleBoiling/KettleBoiling.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250917/OrganizeVegetables/OrganizeVegetables.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250917/FryingPanAdjustment/FryingPanAdjustment.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250917/PrepMarinatingMeat/PrepMarinatingMeat.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250917/FoodCleanup/FoodCleanup.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250917/ClearingTheCuttingBoard/ClearingTheCuttingBoard.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250918/CoffeeSetupMug/CoffeeSetupMug.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250918/TurnOnToasterOven/TurnOnToasterOven.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250918/TurnOnSinkFaucet/TurnOnSinkFaucet.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250918/PnPToasterOvenToCounter/PnPToasterOvenToCounter.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250918/VeggieDipPrep/VeggieDipPrep.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250918/PnPOvenToCounter/PnPOvenToCounter.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250918/MakeFruitBowl/MakeFruitBowl.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250918/SlideOvenRack/SlideOvenRack.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250919/TurnOffMicrowave/TurnOffMicrowave.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250919/CloseStandMixerHead/CloseStandMixerHead.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250919/OpenStandMixerHead/OpenStandMixerHead.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250919/TurnOnMicrowave/TurnOnMicrowave.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250919/PanTransfer/PanTransfer.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250922/SortingCleanup/SortingCleanup.hdf5 action
+bash -i /workspace/lw_benchhub/ci_run/replay.sh /data/ceph_hdd/main/artifactory/isaac_robocasa_assets/robocasa/new/hdf5/teleop_data_main_remus/250922/StartElectricKettle/StartElectricKettle.hdf5 action
+[timeout_secs=9000] bash -i /workspace/lw_benchhub/ci_run/train_ci.sh ci_daily_lerobot_liftobj_state
+python3  /workspace/lw_benchhub/ci_run/teleop_ci.py --task OpenDrawer
+python3  /workspace/lw_benchhub/ci_run/teleop_ci.py --task CloseDrawer
+python3  /workspace/lw_benchhub/ci_run/teleop_ci.py --task CloseElectricKettleLid
+python3  /workspace/lw_benchhub/ci_run/teleop_ci.py --task OpenElectricKettleLid
+python3  /workspace/lw_benchhub/ci_run/teleop_ci.py --task OpenOven
+python3  /workspace/lw_benchhub/ci_run/teleop_ci.py --task CloseOven
+python3  /workspace/lw_benchhub/ci_run/teleop_ci.py --task OpenToasterOvenDoor
+python3  /workspace/lw_benchhub/ci_run/teleop_ci.py --task CloseToasterOvenDoor
+python3  /workspace/lw_benchhub/ci_run/teleop_ci.py --task OpenDishwasher
+python3  /workspace/lw_benchhub/ci_run/teleop_ci.py --task CloseDishwasher

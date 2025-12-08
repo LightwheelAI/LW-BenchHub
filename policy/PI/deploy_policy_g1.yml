@@ -2,7 +2,7 @@
 policy_name: PIPolicy
 
 train_config_name: pi05_lora_g1_coffee_setup_mug
-checkpoint: /home/zsy/pi05_checkpoints/pi05_lora_g1_coffee_setup_mug/lwlab_pi05_lora_g1_coffee_setup_mug/29999
+checkpoint: /home/zsy/pi05_checkpoints/pi05_lora_g1_coffee_setup_mug/lw_benchhub_pi05_lora_g1_coffee_setup_mug/29999
 instruction: "CoffeeSetupMug"
 
 observation_config:

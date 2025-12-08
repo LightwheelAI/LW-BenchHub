@@ -1,0 +1,129 @@
+# Copyright 2025 Lightwheel Team
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import numpy as np
+
+import lw_benchhub.utils.object_utils as OU
+from lw_benchhub.core.models.fixtures import FixtureType
+from lw_benchhub.core.tasks.base import LwTaskBase
+
+
+class L90L3PickUpTheAlphabetSoupAndPutItInTheTray(LwTaskBase):
+    task_name: str = "L90L3PickUpTheAlphabetSoupAndPutItInTheTray"
+
+    def _setup_kitchen_references(self, scene):
+        super()._setup_kitchen_references(scene)
+        self.dining_table = self.register_fixture_ref(
+            "dining_table",
+            dict(id=FixtureType.TABLE, size=(1.0, 0.35)),
+        )
+        self.init_robot_base_ref = self.dining_table
+
+    def get_ep_meta(self):
+        ep_meta = super().get_ep_meta()
+        ep_meta[
+            "lang"
+        ] = f"put the black bowl on the plate."
+        return ep_meta
+
+    def _get_obj_cfgs(self):
+        cfgs = []
+        cfgs.append(
+            dict(
+                name=f"alphabet_soup",
+                obj_groups=["alphabet_soup"],
+                graspable=True,
+                washable=True,
+                object_scale=0.8,
+                asset_name="AlphabetSoup001.usd",
+                init_robot_here=True,
+                placement=dict(
+                    fixture=self.dining_table,
+                    size=(0.50, 0.35),
+                    margin=0.02,
+                    pos=(0.1, -0.7),
+                ),
+            )
+        )
+
+        cfgs.append(
+            dict(
+                name=f"butter",
+                obj_groups=["butter"],
+                graspable=True,
+                washable=True,
+                asset_name="Butter001.usd",
+                placement=dict(
+                    fixture=self.dining_table,
+                    size=(0.4, 0.35),
+                    margin=0.02,
+                    pos=(0.1, -0.1)
+                ),
+            )
+        )
+        cfgs.append(
+            dict(
+                name="cream_cheese",
+                obj_groups="cream_cheese_stick",
+                init_robot_here=True,
+                graspable=True,
+                asset_name="CreamCheeseStick013.usd",
+                placement=dict(
+                    fixture=self.dining_table,
+                    size=(0.4, 0.35),
+                    margin=0.02,
+                    pos=(0.3, -0.2)
+                ),
+            )
+        )
+        cfgs.append(
+            dict(
+                name=f"tomato_sauce",
+                obj_groups=["ketchup"],
+                graspable=True,
+                washable=True,
+                object_scale=0.8,
+                asset_name="Ketchup003.usd",
+                placement=dict(
+                    fixture=self.dining_table,
+                    size=(0.4, 0.35),
+                    margin=0.02,
+                    pos=(-0.1, -0.2)
+                ),
+            )
+        )
+        cfgs.append(
+            dict(
+                name=f"wooden_tray",
+                obj_groups=["tray"],
+                graspable=True,
+                washable=True,
+                object_scale=0.6,
+                asset_name="Tray016.usd",
+                placement=dict(
+                    fixture=self.dining_table,
+                    size=(0.6, 0.5),
+                    rotation=np.pi / 2,
+                    ensure_object_boundary_in_range=False,
+                    margin=0.02,
+                    pos=(-0.15, -0.3)
+                ),
+            )
+        )
+        return cfgs
+
+    def _check_success(self, env):
+        th = env.cfg.isaaclab_arena_env.task.objects["wooden_tray"].horizontal_radius
+        soup_in_tray = OU.check_obj_in_receptacle(env, "alphabet_soup", "wooden_tray", th)
+        return soup_in_tray & OU.gripper_obj_far(env, "alphabet_soup")

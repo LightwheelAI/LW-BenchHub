@@ -15,7 +15,7 @@ from isaaclab.app import AppLauncher
 
 # local imports
 import cli_args  # isort: skip
-from lwlab.utils.config_loader import config_loader
+from lw_benchhub.utils.config_loader import config_loader
 
 # add argparse arguments
 parser = argparse.ArgumentParser(description="Keyboard teleoperation for Isaac Lab environments.")
@@ -88,7 +88,7 @@ from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper
 
 from isaaclab_tasks.utils import get_checkpoint_path
 from isaaclab_tasks.utils.hydra import hydra_task_config
-from lwlab.utils.place_utils.env_utils import set_seed
+from lw_benchhub.utils.place_utils.env_utils import set_seed
 
 # PLACEHOLDER: Extension template (do not remove this comment)
 
@@ -111,7 +111,7 @@ def main():
     from isaaclab_tasks.manager_based.manipulation.lift import mdp
     from isaaclab_tasks.utils import parse_env_cfg
     from multiprocessing import Process, shared_memory
-    from lwlab.utils.render_utils import optimize_rendering
+    from lw_benchhub.utils.render_utils import optimize_rendering
 
     if "-" in args_cli.task:
         env_cfg = parse_env_cfg(
@@ -119,7 +119,7 @@ def main():
         )
         task_name = args_cli.task
     else:  # robocasa
-        from lwlab.utils.env import parse_env_cfg, ExecuteMode
+        from lw_benchhub.utils.env import parse_env_cfg, ExecuteMode
 
         env_cfg = parse_env_cfg(
             scene_backend=args_cli.scene_backend,
@@ -148,7 +148,7 @@ def main():
             disable_env_checker=True,
         )
 
-        from lwlab.utils.env import load_cfg_cls_from_registry
+        from lw_benchhub.utils.env import load_cfg_cls_from_registry
         agent_cfg = None
         if agent_cfg_entry_point:
             if args_cli.variant:

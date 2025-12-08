@@ -2,7 +2,7 @@
 
 FLOOR_PLAN_IMAGE_TAG=$1
 floorplanImage="harbor.lightwheel.net/floorplan2usd/scene_gen:${FLOOR_PLAN_IMAGE_TAG}"
-floorplanCodeFile="./lwlab/core/scenes/kitchen/kitchen_arena.py"
+floorplanCodeFile="./lw_benchhub/core/scenes/kitchen/kitchen_arena.py"
 
 pip install lightwheel_sdk==0.21
 

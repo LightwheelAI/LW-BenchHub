@@ -1,7 +1,7 @@
 # Basic experiment configuration (keep unchanged)
 policy_name: 'GR00T'
 task_name: 'LiftObj'
-task_config: lwlab
+task_config: lw_benchhub
 ckpt_setting: null
 seed: 0
 instruction_type: unseen

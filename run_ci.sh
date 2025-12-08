@@ -5,8 +5,6 @@
 
 set -e  # Exit on any error
 
-unset LW_SDK_HEADERS_X_FROM_LIGHTWHEEL_CLOUD
-
 # Check if both arguments are provided
 if [ $# -lt 2 ]; then
     echo "Usage: $0 <commit_id> <command>"
@@ -23,15 +21,15 @@ echo "Commit ID: $COMMIT_ID"
 echo "Command: $COMMAND"
 echo "Current directory: $(pwd)"
 
-# Navigate to the lwlab workspace
-cd /workspace/lwlab
+# Navigate to the workspace based on $ENV_NAME
+cd /workspace/"$ENV_NAME"
 
 if [[ $COMMIT_ID =~ ^[0-9a-f]{7,40}$ ]]; then
     echo "=== Updating to commit $COMMIT_ID ==="
 
     # Check if we're in a git repository
     if [ ! -d ".git" ]; then
-        echo "Error: /workspace/lwlab is not a git repository"
+        echo "Error: /workspace/$ENV_NAME is not a git repository"
         exit 1
     fi
 
@@ -57,8 +55,8 @@ if [[ $COMMIT_ID =~ ^[0-9a-f]{7,40}$ ]]; then
     echo "Cleaning untracked files..."
     git clean -fd
 
-    # lwlab install
-    echo "Install lwlab files..."
+    # lw_benchhub install
+    echo "Install $ENV_NAME files..."
     pip install -e .  --extra-index-url https://mirrors.aliyun.com/pypi/simple/
 
     # IsaacLab-Arena install
@@ -72,11 +70,5 @@ fi
 
 echo "=== Running command: $COMMAND ==="
 
-# Run the provided command
-eval "$COMMAND"
-
-EXIT_CODE=$?
-
-echo "=== Command completed with exit code: $EXIT_CODE ==="
-
-exit $EXIT_CODE
+# Delegate the actual command run to run_ci_post.sh for unified post-logic
+bash /workspace/$ENV_NAME/run_ci_post.sh "$COMMAND"

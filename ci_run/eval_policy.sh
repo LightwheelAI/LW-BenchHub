@@ -58,7 +58,7 @@ if [[ "$docker_run" == "on" ]]; then
     fi
 fi
 
-${run_python} lwlab/scripts/policy/eval_policy.py \
+${run_python} lw_benchhub/scripts/policy/eval_policy.py \
     --config ${config} \
     --overrides \
     --env_cfg:task ${task} \

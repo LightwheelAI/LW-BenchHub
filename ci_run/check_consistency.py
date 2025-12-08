@@ -13,8 +13,8 @@ import shutil
 import h5py
 import numpy as np
 
-LWLAB_ROOT = Path(__file__).parent.parent.absolute()
-DATASET_PATH = f"{LWLAB_ROOT}/datasets"
+LW_BENCHHUB_ROOT = Path(__file__).parent.parent.absolute()
+DATASET_PATH = f"{LW_BENCHHUB_ROOT}/datasets"
 
 
 def cleanup_process(process):
@@ -54,7 +54,7 @@ def update_config_task(task_name, layout):
     """Update the task field in check_consistency.yml"""
     try:
         # Read the original check_consistency.yml
-        config_path = f"{LWLAB_ROOT}/configs/data_collection/teleop/check_consistency.yml"
+        config_path = f"{LW_BENCHHUB_ROOT}/configs/data_collection/teleop/check_consistency.yml"
         with open(config_path, 'r', encoding='utf-8') as f:
             config = yaml.safe_load(f)
 
@@ -129,7 +129,7 @@ def run_teleop(rerun_count):
             print(f"\n[RUN] Start teleop:")
 
             process = subprocess.Popen(
-                ["python3", "-u", f"{LWLAB_ROOT}/lwlab/scripts/teleop/teleop_main.py", "--task_config=check_consistency", "--headless"],
+                ["python3", "-u", f"{LW_BENCHHUB_ROOT}/lw_benchhub/scripts/teleop/teleop_main.py", "--task_config=check_consistency", "--headless"],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
@@ -320,7 +320,7 @@ def run_teleop(rerun_count):
         else:
             print(f"\n[RUN] Start replay:")
             process = subprocess.Popen(
-                ["python3", "-u", f"{LWLAB_ROOT}/lwlab/scripts/teleop/replay_action_demo.py", f"--dataset_file={DATASET_PATH}/dataset.hdf5", "--replay_mode=action", "--device=cpu", "--record", "--headless", "--select_episodes", "0", "1", "2"],
+                ["python3", "-u", f"{LW_BENCHHUB_ROOT}/lw_benchhub/scripts/teleop/replay_action_demo.py", f"--dataset_file={DATASET_PATH}/dataset.hdf5", "--replay_mode=action", "--device=cpu", "--record", "--headless", "--select_episodes", "0", "1", "2"],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,

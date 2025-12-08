@@ -109,7 +109,7 @@ policy/skrl/task_config/default.yml
 
 
 # lerobot calibration cache
-lwlab/core/devices/lerobot/.cache
+lw_benchhub/core/devices/lerobot/.cache
 
 log/
 

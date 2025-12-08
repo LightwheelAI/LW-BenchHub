@@ -15,7 +15,7 @@ restore_dockerignore() {
 # Configuration: Set the expected commit hash here
 IsaacLab_commit="0f00ca2b4b2d54d5f90006a92abb1b00a72b2f20"
 DOCKER_TAG=$1
-lwlab_commit=$2
+lw_benchhub_commit=$2
 
 echo "🔍 Checking if IsaacLab is at the specified commit: $IsaacLab_commit"
 
@@ -79,11 +79,11 @@ popd
 echo "🎯 IsaacLab is ready for Docker build"
 echo ""
 
-echo "🔍 Checking if lwlab is at the specified commit: $lwlab_commit"
+echo "🔍 Checking if lw_benchhub is at the specified commit: $lw_benchhub_commit"
 
 # Check if it's a Git repository
 if [ ! -d ".git" ]; then
-    echo "❌ Error: lwlab is not a Git repository"
+    echo "❌ Error: lw_benchhub is not a Git repository"
     exit 1
 fi
 
@@ -94,19 +94,19 @@ CURRENT_SHORT_COMMIT=$(git rev-parse --short HEAD)
 echo "�� Current commit: $CURRENT_SHORT_COMMIT"
 
 # Check if commit matches
-if [ "$CURRENT_COMMIT" != "$lwlab_commit" ]; then
-    echo "❌ Error: lwlab is not at the expected commit"
+if [ "$CURRENT_COMMIT" != "$lw_benchhub_commit" ]; then
+    echo "❌ Error: lw_benchhub is not at the expected commit"
     echo "   Current: $CURRENT_COMMIT"
-    echo "   Expected: $lwlab_commit"
+    echo "   Expected: $lw_benchhub_commit"
     echo ""
     echo "Please execute the following command to switch to the specified commit:"
-    echo "git checkout $lwlab_commit"
+    echo "git checkout $lw_benchhub_commit"
     exit 1
 fi
 
 # Check if there are uncommitted changes (excluding untracked files)
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-    echo "❌ Error: lwlab has uncommitted changes:"
+    echo "❌ Error: lw_benchhub has uncommitted changes:"
     git status --porcelain --untracked-files=no
     exit 1
 fi
@@ -114,16 +114,16 @@ fi
 # Check if there are untracked files
 untracked=$(git ls-files --others --exclude-standard)
 if [ -n "$untracked" ]; then
-    echo "⚠️  Warning: lwlab has untracked files:"
+    echo "⚠️  Warning: lw_benchhub has untracked files:"
     echo "$untracked"
     echo "   These files won't affect the build, but it's recommended to manage them"
     # Don't exit, continue execution
 else
-    echo "✅ lwlab has no untracked files"
+    echo "✅ lw_benchhub has no untracked files"
 fi
 
-echo "✅ lwlab check passed!"
-echo "�� lwlab is ready for Docker build"
+echo "✅ lw_benchhub check passed!"
+echo "�� lw_benchhub is ready for Docker build"
 echo ""
 
 #! /bin/bash
@@ -167,7 +167,7 @@ else
     echo "Using release dockerignore: $DOCKERIGNORE"
 fi
 
-DOCKER_TAG="${DOCKER_TAG}_${lwlab_commit:0:8}"
+DOCKER_TAG="${DOCKER_TAG}_${lw_benchhub_commit:0:8}"
 echo "Combined DOCKER_TAG: ${DOCKER_TAG}"
 
 if [[ -z $DOCKER_TAG ]]
@@ -179,17 +179,17 @@ fi
 pushd "${DIR}"
 echo "Docker building..."
 
-docker build --network=host -t harbor.lightwheel.net/robot/lwlab:${DOCKER_TAG} -f ${DOCKERFILE} .
+docker build --network=host -t harbor.lightwheel.net/robot/lw_benchhub:${DOCKER_TAG} -f ${DOCKERFILE} .
 if [ "$DOCKFILE_CI" = true ]; then
     restore_dockerignore
 fi
-docker tag harbor.lightwheel.net/robot/lwlab:${DOCKER_TAG} lw-ali-harbor-registry.cn-shanghai.cr.aliyuncs.com/robot/lwlab:${DOCKER_TAG}
+docker tag harbor.lightwheel.net/robot/lw_benchhub:${DOCKER_TAG} lw-ali-harbor-registry.cn-shanghai.cr.aliyuncs.com/robot/lw_benchhub:${DOCKER_TAG}
 popd
 
-docker push harbor.lightwheel.net/robot/lwlab:${DOCKER_TAG}
-echo "Pushed to harbor.lightwheel.net/robot/lwlab:${DOCKER_TAG}"
-docker push lw-ali-harbor-registry.cn-shanghai.cr.aliyuncs.com/robot/lwlab:${DOCKER_TAG}
-echo "Pushed to lw-ali-harbor-registry.cn-shanghai.cr.aliyuncs.com/robot/lwlab:${DOCKER_TAG}"
-echo "docker download url for cloud: lw-ali-harbor-registry-vpc.cn-shanghai.cr.aliyuncs.com/robot/lwlab:${DOCKER_TAG}"
+docker push harbor.lightwheel.net/robot/lw_benchhub:${DOCKER_TAG}
+echo "Pushed to harbor.lightwheel.net/robot/lw_benchhub:${DOCKER_TAG}"
+docker push lw-ali-harbor-registry.cn-shanghai.cr.aliyuncs.com/robot/lw_benchhub:${DOCKER_TAG}
+echo "Pushed to lw-ali-harbor-registry.cn-shanghai.cr.aliyuncs.com/robot/lw_benchhub:${DOCKER_TAG}"
+echo "docker download url for cloud: lw-ali-harbor-registry-vpc.cn-shanghai.cr.aliyuncs.com/robot/lw_benchhub:${DOCKER_TAG}"
 
 echo "=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=* $(date +%Y-%m-%d\ %H:%M:%S) All process finished =*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*"

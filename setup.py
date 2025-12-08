@@ -2,14 +2,14 @@ from setuptools import setup
 
 setup(
     packages=[
-        "lwlab",
+        "lw_benchhub",
         "policy",
-        "lwlab_tasks",
-        "lwlab_rl"
+        "lw_benchhub_tasks",
+        "lw_benchhub_rl"
     ],
     package_dir={
-        "lwlab": "lwlab",
-        "lwlab_policy": "lwlab_policy",
-        "lwlab_tasks": "lwlab_tasks",
+        "lw_benchhub": "lw_benchhub",
+        "lw_benchhub_policy": "lw_benchhub_policy",
+        "lw_benchhub_tasks": "lw_benchhub_tasks",
     }
 )

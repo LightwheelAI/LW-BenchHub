@@ -10,7 +10,7 @@ import argparse
 import yaml
 from pathlib import Path
 
-LWLAB_ROOT = Path(__file__).parent.parent.absolute()
+LW_BENCHHUB_ROOT = Path(__file__).parent.parent.absolute()
 
 
 def cleanup_process(process):
@@ -50,7 +50,7 @@ def update_config_task(task_name, layout):
     """Update the task field in teleop_ci.yml"""
     try:
         # Read the original teleop_ci.yml
-        config_path = f"{LWLAB_ROOT}/configs/data_collection/teleop/teleop_ci.yml"
+        config_path = f"{LW_BENCHHUB_ROOT}/configs/data_collection/teleop/teleop_ci.yml"
         with open(config_path, 'r', encoding='utf-8') as f:
             config = yaml.safe_load(f)
 
@@ -123,7 +123,7 @@ def main():
             return False
 
         process = subprocess.Popen(
-            ["python3", "-u", f"{LWLAB_ROOT}/lwlab/scripts/teleop/teleop_main.py", "--task_config=teleop_ci", "--headless"],
+            ["python3", "-u", f"{LW_BENCHHUB_ROOT}/lw_benchhub/scripts/teleop/teleop_main.py", "--task_config=teleop_ci", "--headless"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -314,7 +314,7 @@ def main():
 
 
 def update_result_json_from_metrics(test_result):
-    metrics_result_file = f"{LWLAB_ROOT}/datasets/metrics.json"
+    metrics_result_file = f"{LW_BENCHHUB_ROOT}/datasets/metrics.json"
     try:
         if os.path.exists(metrics_result_file):
             with open(metrics_result_file, "r") as f:

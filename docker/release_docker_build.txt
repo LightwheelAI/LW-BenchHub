@@ -1,4 +1,4 @@
-LWLab Docker Image Build Guide
+LW-BenchHub Docker Image Build Guide
 
 1) Prerequisites
 - Docker installed (GPU runtime if needed)
@@ -14,13 +14,13 @@ LWLab Docker Image Build Guide
 - Ensure third_party/robocasa exists and is the right submodule repository
 
 3) Build Command (run at repo root)
-./docker/release_build.sh <DOCKER_TAG> <FULL_LWLAB_COMMIT>
+./docker/release_build.sh <DOCKER_TAG> <FULL_LW_BENCHHUB_COMMIT>
 
 Example:
 ./docker/release_build.sh v1.2.3 $(git rev-parse HEAD)
 
 This produces an image:
-harbor.lightwheel.net/robot/lwlab:v1.2.3_<8-char-commit>
+harbor.lightwheel.net/robot/lw_benchhub:v1.2.3_<8-char-commit>
 
 4) Troubleshooting
 - IsaacLab commit mismatch: checkout the commit specified in release_build.sh (IsaacLab_commit) or update that variable if intentionally using another commit.

@@ -17,14 +17,25 @@
 """Launch Isaac Sim Simulator first."""
 
 import argparse
-from isaaclab.app import AppLauncher
-from lwlab.utils.config_loader import config_loader
+import math
 
+import cv2
+import numpy as np
+import torch
+from scipy.spatial.transform import Rotation as R
+
+from isaaclab.app import AppLauncher
+
+from lw_benchhub.sim2real.lerobot_follower.so100_follower import SO100Follower
+from lw_benchhub.sim2real.lerobot_follower.so101_follower import SO101Follower
+from lw_benchhub.utils.config_loader import config_loader
+from lw_benchhub.utils.place_utils.env_utils import set_seed
+
+EPS = np.finfo(float).eps * 4.0
 
 # add argparse arguments
 parser = argparse.ArgumentParser(description="Keyboard teleoperation for Isaac Lab environments.")
 parser.add_argument("--task_config", type=str, default="default", help="task config")
-
 
 # append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
@@ -41,18 +52,6 @@ app_launcher = AppLauncher(app_launcher_args)
 simulation_app = app_launcher.app
 
 args_cli.device = f"cuda:0"
-
-import cv2
-import numpy as np
-from scipy.spatial.transform import Rotation as R
-
-from datetime import datetime
-import math
-EPS = np.finfo(float).eps * 4.0
-import torch
-from lwlab.sim2real.lerobot_follower.so100_follower import SO100Follower
-from lwlab.sim2real.lerobot_follower.so101_follower import SO101Follower
-from lwlab.utils.place_utils.env_utils import set_seed
 
 
 def find_available_camera(max_cams=5):
@@ -147,7 +146,7 @@ def main():
         task_name = args_cli.task
 
     else:  # robocasa
-        from lwlab.utils.env import parse_env_cfg, ExecuteMode
+        from lw_benchhub.utils.env import parse_env_cfg, ExecuteMode
 
         env_cfg = parse_env_cfg(
             scene_backend=args_cli.scene_backend,
@@ -173,7 +172,7 @@ def main():
 
         gym.register(
             id=task_name,
-            entry_point="isaaclab.envs:ManagerBasedRLEnv",  # lwlab.enhance.envs:ManagerBasedRLDigitalTwinEnv
+            entry_point="isaaclab.envs:ManagerBasedRLEnv",  # lw_benchhub.enhance.envs:ManagerBasedRLDigitalTwinEnv
             kwargs={
             },
             disable_env_checker=True,
