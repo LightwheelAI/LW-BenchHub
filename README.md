@@ -27,7 +27,7 @@
 
 - **Multi-Robot Support** – Features 7 adapted robot types (Unitree G1, PandaOmron, DoublePanda, Agilex Piper, ARX X7s, Franka, and LeRobot SO100/101 Arm), comprising a total of 27 specific robot variants.
 - **Realistic Kitchen Environments** – Large-scale kitchen scenarios with 10 layouts and 10 style combinations, offering 100 unique configurations using high‑fidelity assets pulled via the [Lightwheel SDK](https://docs.lightwheel.net/sdk/).
-- **Flexible Input Devices** - Support for keyboard, VR(Vision Pro, PICO, Meta Quest), and Master-slave Arm.
+- **Flexible Input Devices** - Support for keyboard, VR(Vision Pro, PICO, Meta Quest), and Leader-Follower Arm.
 - **Rich Task Suite** – 268 ready-to-use tasks (130 Lightwheel-LIBERO-Tasks, 138 Lightwheel-Robocasa-Tasks), covering kitchen manipulation, loco-manipulation, table-top actions, atomic skills, navigation, and long-horizon compositional tasks.
 - **Complete Data Pipeline** - End-to-end workflow from teleoperation to policy deployment.
 - **Intuitive and reproducible RL configuration design** – Supports generic RL configuration for a class of robots and tasks through a decorator-based binding mechanism, enabling modular registration and effortless switching or reproduction of RL setups. Seamlessly integrates with open-source RL libraries such as rsl-rl and skrl.
@@ -99,7 +99,7 @@ python ./lw_benchhub/scripts/teleop/replay_action_demo.py \
 ### Reinforcement Learning
 
 LW-BenchHub provides a complete RL pipeline:
-
+#### Train
 ```bash
 # Start training with default configuration
 bash train.sh # default preset uses LiftObj (state variant)
@@ -109,10 +109,7 @@ python ./lw_benchhub/scripts/rl/train.py \
     --task_config lerobot_liftobj_state \
     --headless
 ```
-
-### Policy Evaluation
-
-Evaluate your trained policies:
+#### Evaluation
 
 ```bash
 # Evaluate with default settings
