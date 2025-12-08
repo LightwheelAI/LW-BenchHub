@@ -1,0 +1,40 @@
+# =========================
+# Basic Settings
+# =========================
+disable_fabric: false
+num_envs: 1
+device: cuda:0
+sensitivity: 1.0
+step_hz: 50
+enable_cameras: true
+
+# =========================
+# Robot Settings
+# =========================
+robot: PandaOmron-Rel
+robot_scale: 1.0
+
+# =========================
+# Task & Scene Settings
+# =========================
+task: OpenDishwasher
+scene_backend: robocasa
+task_backend: robocasa
+debug_assets: null
+layout: robocasakitchen-4-2
+sources:
+  - objaverse
+  - lightwheel
+  - aigen_objs
+object_projects: []
+usd_simplify: false
+seed: 42
+
+# =========================
+# Object Placement Retry Settings
+# =========================
+max_scene_retry: 4
+max_object_placement_retry: 3
+
+resample_objects_placement_on_reset: true
+resample_robot_placement_on_reset: true
