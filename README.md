@@ -13,7 +13,7 @@
 
 
 
-[Documentation](https://docs.lightwheel.net/lw_benchhub) • [Quick Start](#quick-start) • [Installation](#installation) • [Project Structure](#project-structure)
+[Documentation](https://docs.lightwheel.net/lw_benchhub) • [Dataset](https://huggingface.co/datasets/LightwheelAI/lightwheel_tasks/tree/main) • [Quick Start](#quick-start) • [Installation](#installation) • [Project Structure](#project-structure)
 
 </div>
 
