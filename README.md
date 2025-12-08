@@ -67,10 +67,10 @@ bash ./install.sh # Refer to the Documentation for custom installation steps
 Start collecting demonstration data with different robot configurations:
 
 ```bash
-# Use G1-Hand robot configuration
-python ./lw_benchhub/scripts/teleop/teleop_main.py --task_config g1-hand
+# Use G1-Controller robot configuration
+python ./lw_benchhub/scripts/teleop/teleop_main.py --task_config g1-controller
 
-# Use Panda+Omron robot configuration  
+# Use PandaOmron robot configuration  
 python ./lw_benchhub/scripts/teleop/teleop_main.py --task_config pandaomron
 ```
 
@@ -85,7 +85,14 @@ python ./lw_benchhub/scripts/teleop/replay_demos.py --dataset_file "/path/to/you
 # Action-based replay
 python ./lw_benchhub/scripts/teleop/replay_action_demo.py \
     --dataset_file /path/to/your/dataset.hdf5 \
-    --replay_mode action # or joint_target mode
+    --replay_mode action \
+    --enable_cameras
+
+# JointTarget-based replay
+python ./lw_benchhub/scripts/teleop/replay_action_demo.py \
+    --dataset_file /path/to/your/dataset.hdf5 \
+    --replay_mode joint_target \
+    --enable_cameras
 ```
 
 ### Reinforcement Learning
@@ -98,8 +105,8 @@ bash train.sh # default preset uses LiftObj (state variant)
 
 # Custom training configuration
 python ./lw_benchhub/scripts/rl/train.py \
-    --task_config g1_liftobj \
-    --headless \
+    --task_config lerobot_liftobj_state \
+    --headless
 ```
 
 ### Policy Evaluation
@@ -112,9 +119,7 @@ bash eval.sh
 
 # Custom evaluation
 python ./lw_benchhub/scripts/rl/play.py \
-    --task_config g1_liftobj \
-    # --enable_camera \
-    # --headless
+    --task_config lerobot_liftobj_state_play
 ```
 
 
