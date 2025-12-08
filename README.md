@@ -150,6 +150,19 @@ python ./lw_benchhub/scripts/rl/play.py \
 
 For comprehensive guides, API references, and advanced usage examples, visit our [Official Documentation](https://docs.lightwheel.net/lw_benchhub).
 
+## Citation
+
+If you use LW-BenchHub in your research or projects, please cite us:
+
+```
+@software{Lightwheel_Team_LW-BenchHub_Lightwheel_s_End-to-End,
+  author = {{Lightwheel Team}},
+  title = {{LW-BenchHub: Lightwheel's End-to-End Simulation Training Platform}},
+  url = {https://github.com/lightwheel-ai/lw_benchhub}
+}
+```
+
+
 ## License
 
 This project is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
