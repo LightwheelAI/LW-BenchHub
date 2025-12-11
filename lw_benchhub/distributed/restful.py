@@ -173,13 +173,7 @@ class RestfulEnvWrapper(BaseDistributedEnv):
                 raise APIError("environment is not attached", 500)
             lang = ""
             try:
-                # Try calling the get_task_description method (executed in the worker process)
-                if hasattr(self._env, "get_task_description"):
-                    lang = self._env.get_task_description()
-                # If the method does not exist, try to access directly (may fail)
-                elif hasattr(self._env, "cfg") and hasattr(self._env.cfg, "get_ep_meta"):
-                    meta = self._env.cfg.get_ep_meta()
-                    lang = meta.get("lang", "")
+                lang = self.get_task_description()
             except Exception as e:
                 print(f"[Warning] Could not get task description: {e}")
                 lang = ""
@@ -202,13 +196,7 @@ class RestfulEnvWrapper(BaseDistributedEnv):
             images_b64 = self._extract_images(obs)
             lang = ""
             try:
-                # Try calling the get_task_description method (executed in the worker process)
-                if hasattr(self._env, "get_task_description"):
-                    lang = self._env.get_task_description()
-                # If the method does not exist, try to access directly (may fail)
-                elif hasattr(self._env, "cfg") and hasattr(self._env.cfg, "get_ep_meta"):
-                    meta = self._env.cfg.get_ep_meta()
-                    lang = meta.get("lang", "")
+                lang = self.get_task_description()
             except Exception as e:
                 print(f"[Warning] Could not get task description: {e}")
                 lang = ""
@@ -403,9 +391,6 @@ class RestfulEnvWrapper(BaseDistributedEnv):
     # ---- Tensor Translation ----
 
     def _tensor_to_jsonable(self, obs: Any):
-        import torch
-        import numpy as np
-
         if isinstance(obs, (torch.Tensor, torch.nn.Parameter)):
             return obs.detach().cpu().numpy().tolist()
         elif isinstance(obs, np.ndarray):
@@ -424,3 +409,16 @@ class RestfulEnvWrapper(BaseDistributedEnv):
         else:
             # Fallback: convert to string
             return str(obs)
+
+    def get_task_description(self):
+        """Get task description, handling both EnvRouter and ManagerBasedEnv cases."""
+        if self._env is None:
+            return ""
+        if hasattr(self._env, 'get_task_description') and callable(getattr(self._env, 'get_task_description', None)):
+            try:
+                return self._env.get_task_description()
+            except Exception as e:
+                print(f"[Warning] Could not get task description from _env: {e}")
+                return ""
+        # use the base class method (for ManagerBasedEnv)
+        return super().get_task_description()

@@ -164,13 +164,12 @@ class BaseDistributedEnv(abc.ABC):
         if self._env is None:
             return ""
         try:
-            if hasattr(self._env, "cfg") and hasattr(self._env.cfg, "get_ep_meta"):
-                meta = self._env.cfg.get_ep_meta()
-                return meta.get("lang", "")
+            meta = self._env.cfg.isaaclab_arena_env.task.get_ep_meta()
+            lang = meta["lang"]
+            return lang
         except Exception as e:
             print(f"[Warning] Could not get task description: {e}")
             return ""
-        return ""
 
     @abc.abstractmethod
     def signal_handler(self, signum: int, frame):
