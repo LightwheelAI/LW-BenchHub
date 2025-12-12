@@ -19,6 +19,7 @@
 import argparse
 import os
 import random
+from datetime import datetime
 
 from isaaclab.app import AppLauncher
 
@@ -66,14 +67,10 @@ from isaaclab.envs import (
     ManagerBasedRLEnvCfg,
     multi_agent_to_single_agent,
 )
-
 from isaaclab.utils.assets import retrieve_file_path
-
-from datetime import datetime
 from isaaclab.utils.dict import print_dict
 from lw_benchhub.utils.place_utils.env_utils import set_seed
-
-from policy.skrl.env_wrapper import SkrlVecEnvWrapper
+from .env_wrapper import SkrlVecEnvWrapper
 
 
 def main():
@@ -81,14 +78,8 @@ def main():
 
     """Rest everything follows."""
     import gymnasium as gym
-    import torch
-    import numpy as np
-    from isaaclab.envs import ViewerCfg, ManagerBasedRLEnv
-    from isaaclab.envs.ui import ViewportCameraController
-    from isaaclab.managers import TerminationTermCfg as DoneTerm
-    from isaaclab_tasks.manager_based.manipulation.lift import mdp
+    from isaaclab.envs import ManagerBasedRLEnv
     from isaaclab_tasks.utils import parse_env_cfg
-    from multiprocessing import Process, shared_memory
     from lw_benchhub.utils.render_utils import optimize_rendering
 
     if "-" in args_cli.task:

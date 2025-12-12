@@ -63,12 +63,12 @@ from isaaclab.utils.dict import print_dict
 from isaaclab.utils.pretrained_checkpoint import get_published_pretrained_checkpoint
 from isaaclab.utils.assets import retrieve_file_path
 
-from policy.skrl.env_wrapper import SkrlVecEnvWrapper
-
 import isaaclab_tasks  # noqa: F401
-from isaaclab_tasks.utils import get_checkpoint_path, load_cfg_from_registry, parse_env_cfg
+from isaaclab_tasks.utils import get_checkpoint_path
 from lw_benchhub.utils.place_utils.env_utils import set_seed
 from lw_benchhub.utils.render_utils import optimize_rendering
+
+from .env_wrapper import SkrlVecEnvWrapper
 
 # config shortcuts
 algorithm = args_cli.algorithm.lower()

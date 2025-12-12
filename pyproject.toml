@@ -21,6 +21,8 @@ dependencies = [
     "onnxruntime",
     "zmq",
     "lazy-import",
+    "flask",
+    "tyro",
 ]
 
 [project.optional-dependencies]
