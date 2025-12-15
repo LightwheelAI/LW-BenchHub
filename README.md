@@ -156,7 +156,7 @@ If you use LW-BenchHub in your research or projects, please cite us:
 ```
 @software{Lightwheel_Team_LW-BenchHub_Lightwheel_s_End-to-End,
   author = {{Lightwheel Team}},
-  title = {{LW-BenchHub: Lightwheel's End-to-End Simulation Training Platform}},
+  title = {{LW-BenchHub: Lightwheel's End-to-End Embodied AI Simulation Platform}},
   url = {https://github.com/lightwheel-ai/lw_benchhub}
 }
 ```
