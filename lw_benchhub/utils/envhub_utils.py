@@ -118,7 +118,7 @@ def export_env_for_envhub(config_path: str):
     cfg = _parse_config(config_path)
 
     from isaaclab.app import AppLauncher
-    app_launcher = AppLauncher(enable_cameras=cfg.enable_cameras)
+    app_launcher = AppLauncher(headless=cfg.headless, enable_cameras=cfg.enable_cameras)
 
     environment = f"{cfg.task}-{cfg.robot}"
     task = cfg.task
