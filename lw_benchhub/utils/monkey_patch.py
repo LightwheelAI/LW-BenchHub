@@ -519,10 +519,15 @@ def patch_reward_manager():
 
 
 def patch_create_teleop_device():
+    try:
+        from isaaclab.devices.teleop_device_factory import DEVICE_MAP, RETARGETER_MAP  # noqa: F401
+    except ImportError:
+        # Local IsaacLab uses class_type-based factory (no DEVICE_MAP dict).
+        # The existing create_teleop_device is already compatible — skip patch.
+        return
     import isaaclab.devices.teleop_device_factory as teleop_device_factory
     from isaaclab.devices import DeviceBase, DeviceCfg
     from collections.abc import Callable
-    from isaaclab.devices.teleop_device_factory import DEVICE_MAP, RETARGETER_MAP
     import inspect
     import omni
 
@@ -645,6 +650,41 @@ def patch_isaaclab_tasks_mdp():
         sys._lw_benchhub_mdp_patcher_registered = True
 
 
+def patch_xform_prim_view():
+    """Skip xform-op validation for prims that can't be standardized.
+
+    Robocasa kitchen USDs store transforms with non-standard op stacks
+    (e.g. rotateXYZ, transform matrix, or scale ops with wrong precision).
+    IsaacLab's XformPrimView validates the stack and raises ValueError on
+    mismatch.  For scene-fixture group prims (used as reference markers, not
+    moved at runtime) strict validation is unnecessary.  This patch silently
+    skips validation when the prim doesn't pass the standard check rather than
+    crashing the entire env creation.
+    """
+    try:
+        from isaaclab.sim.views.xform_prim_view import XformPrimView
+        import isaaclab.sim.utils as sim_utils
+    except ImportError:
+        return
+
+    _original_init = XformPrimView.__init__
+
+    def _patched_init(self, prim_path, device="cpu", stage=None, validate_xform_ops=True):
+        if validate_xform_ops:
+            _stage = sim_utils.get_current_stage() if stage is None else stage
+            # If any matching prim fails the standard-ops check, disable
+            # validation for this view (Robocasa group prims have non-standard
+            # xform stacks that can't always be fixed in-place).
+            for prim in sim_utils.find_matching_prims(prim_path, stage=_stage):
+                if not sim_utils.validate_standard_xform_ops(prim):
+                    validate_xform_ops = False
+                    break
+        _original_init(self, prim_path, device=device, stage=stage,
+                       validate_xform_ops=validate_xform_ops)
+
+    XformPrimView.__init__ = _patched_init
+
+
 patch_reset()
 patch_configclass()
 patch_recorder_manager_ep_meta()
@@ -653,4 +693,5 @@ patch_step()
 patch_yaml_load()
 patch_reward_manager()
 patch_create_teleop_device()
+patch_xform_prim_view()
 patch_isaaclab_tasks_mdp()
