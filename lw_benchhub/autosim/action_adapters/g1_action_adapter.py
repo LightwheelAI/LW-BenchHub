@@ -91,9 +91,6 @@ class G1ActionAdapter(ActionAdapterBase):
         action[3] = 1.0  # mode=1: squat/stance — keep legs fixed during arm motion
         action[4:11]  = target_joint_pos[r_arm_ids]
         action[11:18] = target_joint_pos[l_arm_ids]
-        # Keep fingers open during reach
-        finger_angles = torch.tensor(self.cfg.finger_open_angles, dtype=torch.float32, device=env.device)
-        action[18:32] = finger_angles
 
         return action
 
