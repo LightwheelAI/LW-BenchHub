@@ -124,7 +124,8 @@ class G1ActionAdapter(ActionAdapterBase):
         return action
 
     def _get_skill_finger_angles(self, skill_name: str) -> tuple[float, ...] | None:
-        """Get skill-specific finger angles for the active hand, or None if not configured."""
+        """Get skill-specific finger angles for the active hand, or None if not configured.
+        Applies same angles to both hands (matching historical behavior)."""
         if self.cfg.skill_finger_configs is None or self._active_hand is None:
             return None
 
@@ -134,12 +135,8 @@ class G1ActionAdapter(ActionAdapterBase):
         if hand_7_angles is None:
             return None
 
-        # Construct 14-joint tuple: (right_hand_7, left_hand_7)
-        zeros = (0.0,) * 7
-        if self._active_hand == "right_hand":
-            return hand_7_angles + zeros
-        else:  # left_hand
-            return zeros + hand_7_angles
+        # Apply same angles to both hands
+        return hand_7_angles + hand_7_angles
 
     def _get_grasp_finger_angles(self) -> tuple[float, ...] | None:
         """Get grasp finger angles, applied to both hands (same as historical behavior)."""
