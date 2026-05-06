@@ -115,15 +115,6 @@ class OpenFridgePipeline(AutoSimPipeline):
         )
         super().__init__(cfg)
 
-    def _execute_single_skill(self, skill, goal):
-        success, steps = super()._execute_single_skill(skill, goal)
-        if skill.cfg.name == "moveto":
-            robot = self._env.scene["robot"]
-            pos = robot.data.root_pos_w[0].cpu().numpy()
-            quat = robot.data.root_quat_w[0].cpu().numpy()
-            print(f"[DEBUG] Robot position after moveto: pos={pos.round(3)}, quat={quat.round(3)}")
-        return success, steps
-
     def load_env(self) -> ManagerBasedEnv:
         import gymnasium as gym
         from lw_benchhub.utils.env import ExecuteMode, parse_env_cfg

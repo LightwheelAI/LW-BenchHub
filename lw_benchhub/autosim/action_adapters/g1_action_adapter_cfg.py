@@ -11,10 +11,6 @@ class G1ActionAdapterCfg(ActionAdapterCfg):
 
     class_type: type = G1ActionAdapter
 
-    base_x_joint_name: str = "base_x_joint"
-    base_y_joint_name: str = "base_y_joint"
-    base_yaw_joint_name: str = "base_yaw_joint"
-
     ee_link_name: str = ""
     """End-effector link name, used to determine active hand (left/right)."""
 
