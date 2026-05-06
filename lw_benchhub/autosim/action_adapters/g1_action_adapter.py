@@ -138,20 +138,6 @@ class G1ActionAdapter(ActionAdapterBase):
         # Apply same angles to both hands
         return hand_7_angles + hand_7_angles
 
-    def _get_grasp_finger_angles(self) -> tuple[float, ...] | None:
-        """Get grasp finger angles, applied to both hands (same as historical behavior)."""
-        if self.cfg.skill_finger_configs is None or self._active_hand is None:
-            return None
-
-        hand_configs = self.cfg.skill_finger_configs.get(self._active_hand, {})
-        hand_7_angles = hand_configs.get("grasp")
-
-        if hand_7_angles is None:
-            return None
-
-        # Apply same angles to both hands
-        return hand_7_angles + hand_7_angles
-
     # ------------------------------------------------------------------
     # Gripper (three-finger open / close)
     # ------------------------------------------------------------------
@@ -161,8 +147,8 @@ class G1ActionAdapter(ActionAdapterBase):
         gripper_signal = skill_output.action[0].item()
 
         if gripper_signal < 0:
-            # Grasp: check skill_finger_configs first, apply to both hands
-            skill_angles = self._get_grasp_finger_angles()
+            # Grasp: check skill_finger_configs first, then fall back to default
+            skill_angles = self._get_skill_finger_angles("grasp")
             angles = skill_angles if skill_angles is not None else self.cfg.finger_close_angles
         else:
             # Ungrasp: use open angles
