@@ -97,27 +97,6 @@ class G1ActionAdapter(ActionAdapterBase):
 
         return action
 
-    def _apply_reach_keep_gripper(self, skill_output: SkillOutput, env: ManagerBasedEnv) -> torch.Tensor:
-        """Write cuRobo joint positions into the arm action terms, keep gripper state unchanged."""
-        target_joint_pos = skill_output.action
-
-        last_action = env.action_manager.action
-        action = last_action[0, :].clone()
-
-        robot = env.scene["robot"]
-        r_arm_ids, _ = robot.find_joints(env.action_manager.get_term("right_arm_action").cfg.joint_names)
-        l_arm_ids, _ = robot.find_joints(env.action_manager.get_term("left_arm_action").cfg.joint_names)
-
-        action[0] = 0.0
-        action[1] = 0.0
-        action[2] = 0.0
-        action[3] = 1.0  # mode=1: squat/stance — keep legs fixed during arm motion
-        action[4:11]  = target_joint_pos[r_arm_ids]
-        action[11:18] = target_joint_pos[l_arm_ids]
-        # Keep finger state unchanged (don't modify action[18:32])
-
-        return action
-
     def _apply_reach_with_skill_fingers(self, skill_output: SkillOutput, env: ManagerBasedEnv, skill_name: str) -> torch.Tensor:
         """Write cuRobo joint positions and apply skill-specific finger configuration."""
         target_joint_pos = skill_output.action
