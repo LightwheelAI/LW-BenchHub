@@ -1,0 +1,122 @@
+robot_cfg:
+
+  kinematics:
+    use_usd_kinematics: False
+    usd_robot_root: "/g1_autosim"
+    urdf_path: "urdf/G1.urdf"
+    asset_root_path: "."                   # meshes are resolved from the urdf file dir
+
+    base_link: "world_link"
+    ee_link: "left_hand_palm_link"
+    # Extra tracked links
+    link_names: ["left_hand_palm_link"]
+
+    collision_link_names:
+      [
+        "pelvis",
+        "torso_link",
+        "left_shoulder_pitch_link",  "left_shoulder_roll_link",  "left_shoulder_yaw_link",
+        "left_elbow_link",
+        "left_wrist_roll_link",      "left_wrist_pitch_link",    "left_wrist_yaw_link",
+        "left_hand_palm_link",
+        "right_shoulder_pitch_link", "right_shoulder_roll_link", "right_shoulder_yaw_link",
+        "right_elbow_link",
+        "right_wrist_roll_link",     "right_wrist_pitch_link",   "right_wrist_yaw_link",
+      ]
+
+    collision_spheres: "spheres/collision_g1.yml"
+    collision_sphere_buffer: 0.002
+    extra_collision_spheres: {"left_hand_palm_link": 20}
+    use_global_cumul: True
+
+    self_collision_ignore:
+      {
+        "pelvis":     ["torso_link", "left_shoulder_pitch_link", "right_shoulder_pitch_link"],
+        "torso_link": ["left_shoulder_pitch_link", "right_shoulder_pitch_link"],
+        "left_shoulder_pitch_link":  ["left_shoulder_roll_link"],
+        "left_shoulder_roll_link":   ["left_shoulder_yaw_link"],
+        "left_shoulder_yaw_link":    ["left_elbow_link"],
+        "left_elbow_link":           ["left_wrist_roll_link"],
+        "left_wrist_roll_link":      ["left_wrist_pitch_link"],
+        "left_wrist_pitch_link":     ["left_wrist_yaw_link"],
+        "left_wrist_yaw_link":       ["left_hand_palm_link"],
+        "right_shoulder_pitch_link": ["right_shoulder_roll_link"],
+        "right_shoulder_roll_link":  ["right_shoulder_yaw_link"],
+        "right_shoulder_yaw_link":   ["right_elbow_link"],
+        "right_elbow_link":          ["right_wrist_roll_link"],
+        "right_wrist_roll_link":     ["right_wrist_pitch_link"],
+        "right_wrist_pitch_link":    ["right_wrist_yaw_link"],
+      }
+
+    self_collision_buffer: {}
+
+    mesh_link_names:
+      [
+        "pelvis",
+        "torso_link",
+        "left_shoulder_pitch_link",  "left_shoulder_roll_link",  "left_shoulder_yaw_link",
+        "left_elbow_link",
+        "left_wrist_roll_link",      "left_wrist_pitch_link",    "left_wrist_yaw_link",
+        "left_hand_palm_link",
+        "right_shoulder_pitch_link", "right_shoulder_roll_link", "right_shoulder_yaw_link",
+        "right_elbow_link",
+        "right_wrist_roll_link",     "right_wrist_pitch_link",   "right_wrist_yaw_link",
+      ]
+
+    # Joints that are fixed during planning.
+    # Right arm is locked; left arm is planned.
+    lock_joints:
+      {
+        # Virtual base joints
+        "base_x_joint":   0.0,
+        "base_y_joint":   0.0,
+        "base_yaw_joint": 0.0,
+        # Waist
+        "waist_yaw_joint":   0.0,
+        "waist_roll_joint":  0.0,
+        "waist_pitch_joint": 0.0,
+        # Right arm (locked; left arm is planned)
+        "right_shoulder_pitch_joint": 0.0,
+        "right_shoulder_roll_joint":  -0.3,
+        "right_shoulder_yaw_joint":   0.0,
+        "right_elbow_joint":          0.0,
+        "right_wrist_roll_joint":     0.0,
+        "right_wrist_pitch_joint":    0.0,
+        "right_wrist_yaw_joint":      0.0,
+      }
+
+    extra_links: null
+
+    cspace:
+      joint_names:
+        [
+          # Left arm (7 DoF) — virtual base joints locked, not in cspace
+          "left_shoulder_pitch_joint",
+          "left_shoulder_roll_joint",
+          "left_shoulder_yaw_joint",
+          "left_elbow_joint",
+          "left_wrist_roll_joint",
+          "left_wrist_pitch_joint",
+          "left_wrist_yaw_joint",
+        ]
+
+      retract_config:
+        [
+          0.0, 0.3, 0.0, 0.0, 0.0, 0.0, 0.0,  # left arm
+        ]
+
+      null_space_weight:
+        [
+          1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+        ]
+
+      cspace_distance_weight:
+        [
+          1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+        ]
+
+      max_jerk: 500.0
+      max_acceleration: 500.0
+
+planner:
+  frame_bias: [0.0, 0.0, 0.0]

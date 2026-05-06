@@ -1,19 +1,43 @@
+import numpy as np
+import torch
 from autosim.core.pipeline import AutoSimPipeline, AutoSimPipelineCfg
+from autosim.decomposers import LLMDecomposerCfg
 from isaaclab.envs import ManagerBasedEnv
 from isaaclab.utils import configclass
-
-import torch
-import numpy as np
-
-from autosim.decomposers import LLMDecomposerCfg
 
 from ..prompt_utils import render_additional_prompt
 from ..robot_profiles import (
     TaskRobotOverride,
+    apply_robot_env_cfg,
     build_env_extra_info,
     configure_robot_runtime_settings,
     resolve_robot_settings,
 )
+
+
+def _x7s_skill_cfg(cfg) -> None:
+    cfg.skills.moveto.extra_cfg.local_planner.max_linear_velocity  = 0.4
+    cfg.skills.moveto.extra_cfg.local_planner.max_angular_velocity = 0.8
+    cfg.skills.moveto.extra_cfg.local_planner.predict_time         = 0.4
+    cfg.skills.moveto.extra_cfg.global_planner.safety_distance     = 0.8
+    cfg.skills.moveto.extra_cfg.global_planner.proximity_weight    = 3.0
+    cfg.skills.moveto.extra_cfg.waypoint_tolerance                 = 0.2
+    cfg.skills.moveto.extra_cfg.goal_tolerance                     = 0.07
+    cfg.skills.moveto.extra_cfg.yaw_tolerance                      = 0.008
+    cfg.skills.moveto.extra_cfg.uws_dwa                            = False
+
+
+def _g1_skill_cfg(cfg) -> None:
+    cfg.skills.moveto.extra_cfg.local_planner.max_linear_velocity  = 1.0
+    cfg.skills.moveto.extra_cfg.local_planner.max_angular_velocity = 0.4
+    cfg.skills.moveto.extra_cfg.local_planner.predict_time         = 0.4
+    cfg.skills.moveto.extra_cfg.global_planner.safety_distance     = 0.5
+    cfg.skills.moveto.extra_cfg.global_planner.proximity_weight    = 3.0
+    cfg.skills.moveto.extra_cfg.waypoint_tolerance                 = 0.25
+    cfg.skills.moveto.extra_cfg.goal_tolerance                     = 0.30
+    cfg.skills.moveto.extra_cfg.yaw_tolerance                      = 0.01
+    cfg.skills.moveto.extra_cfg.use_dwa                            = False
+
 
 TASK_ROBOT_OVERRIDES: dict[str, TaskRobotOverride] = {
     "x7s_joint_left": TaskRobotOverride(
@@ -27,6 +51,21 @@ TASK_ROBOT_OVERRIDES: dict[str, TaskRobotOverride] = {
                 torch.tensor([0.0, -0.12, -0.03, 0.707, 0.0, 0.0, 0.707]),
             ],
         },
+        init_state_pos_delta=(0.0, -0.8, 0.3),
+        init_state_rot=(0.707, 0.0, 0.0, -0.707),
+        skill_cfg_fn=_x7s_skill_cfg,
+    ),
+    "g1_loco_left": TaskRobotOverride(
+        object_reach_target_poses={
+            "obj": [
+                torch.tensor([-0.02, 0.0, 0.01, 1.0, 0.0, 0.0, 0.0]),
+            ],
+            "coffee_machine_main_group": [
+                torch.tensor([0.0, -0.12, -0.03, 0.707, 0.0, 0.0, 0.707]),
+            ],
+        },
+        init_state_pos_delta=(0.0, -0.8, 0.01),
+        skill_cfg_fn=_g1_skill_cfg,
     ),
 }
 
@@ -35,9 +74,9 @@ def get_task_robot_override(robot_profile: str) -> TaskRobotOverride:
     try:
         return TASK_ROBOT_OVERRIDES[robot_profile]
     except KeyError as exc:
-        supported = ", ".join(tuple(TASK_ROBOT_OVERRIDES))
+        supported = ", ".join(TASK_ROBOT_OVERRIDES)
         raise ValueError(
-            f"CoffeeSetupMugPipeline does not support robot profile '{robot_profile}'. Supported profiles: {supported}"
+            f"CoffeeSetupMugPipeline does not support robot profile '{robot_profile}'. Supported: {supported}"
         ) from exc
 
 
@@ -46,27 +85,16 @@ class CoffeeSetupMugPipelineCfg(AutoSimPipelineCfg):
     """Configuration for the CoffeeSetupMugPipeline."""
 
     robot_profile: str = "x7s_joint_left"
-
     decomposer: LLMDecomposerCfg = LLMDecomposerCfg()
 
     def __post_init__(self):
-        resolved_robot = resolve_robot_settings(
-            self.robot_profile,
-            override=get_task_robot_override(self.robot_profile),
-        )
+        resolved_robot = resolve_robot_settings(self.robot_profile, override=get_task_robot_override(self.robot_profile))
         configure_robot_runtime_settings(self, resolved_robot)
 
-        self.skills.moveto.extra_cfg.local_planner.max_linear_velocity = 0.4
-        self.skills.moveto.extra_cfg.local_planner.max_angular_velocity = 0.8
-        self.skills.moveto.extra_cfg.local_planner.predict_time = 0.4
-        self.skills.moveto.extra_cfg.global_planner.safety_distance = 0.8
-        self.skills.moveto.extra_cfg.global_planner.proximity_weight = 3.0
-        self.skills.moveto.extra_cfg.waypoint_tolerance = 0.2
-        self.skills.moveto.extra_cfg.goal_tolerance = 0.07
-        self.skills.moveto.extra_cfg.yaw_tolerance = 0.008
-        self.skills.moveto.extra_cfg.uws_dwa = False
-        self.max_steps = 1000
+        if resolved_robot.override.skill_cfg_fn:
+            resolved_robot.override.skill_cfg_fn(self)
 
+        self.max_steps = 1000
         self.skills.lift.extra_cfg.lift_offset = 0.20
 
         self.occupancy_map.floor_prim_suffix = "Scene/floor_room"
@@ -78,21 +106,25 @@ class CoffeeSetupMugPipelineCfg(AutoSimPipelineCfg):
         ]
 
 
+@configclass
+class G1CoffeeSetupMugPipelineCfg(CoffeeSetupMugPipelineCfg):
+    robot_profile: str = "g1_loco_left"
+
+
 class CoffeeSetupMugPipeline(AutoSimPipeline):
     def __init__(self, cfg: AutoSimPipelineCfg):
-        super().__init__(cfg)
-        robot_profile = cfg.robot_profile
         self._resolved_robot = resolve_robot_settings(
-            robot_profile,
-            override=get_task_robot_override(robot_profile),
+            cfg.robot_profile, override=get_task_robot_override(cfg.robot_profile)
         )
+        super().__init__(cfg)
 
     def load_env(self) -> ManagerBasedEnv:
         import gymnasium as gym
         import lw_benchhub_tasks.lightwheel_robocasa_tasks.single_stage.kitchen_coffee as kc
         from lw_benchhub.utils.env import ExecuteMode, parse_env_cfg
 
-        kc.CoffeeSetupMug._get_obj_cfgs = patch_get_obj_cfgs
+        kc.CoffeeSetupMug._get_obj_cfgs = _get_obj_cfgs
+
         env_cfg = parse_env_cfg(
             scene_backend="robocasa",
             task_backend="robocasa",
@@ -115,11 +147,8 @@ class CoffeeSetupMugPipeline(AutoSimPipeline):
             replay_cfgs={"add_camera_to_observation": True, "render_resolution": (640, 480)},
         )
 
+        apply_robot_env_cfg(env_cfg, self._resolved_robot)
         env_cfg.terminations.time_out = None
-
-        env_cfg.scene.robot.init_state.pos[1] -= 0.8
-        env_cfg.scene.robot.init_state.pos[2] += 0.3
-        env_cfg.scene.robot.init_state.rot = (0.707, 0.0, 0.0, -0.707)
 
         env_id = f"Robocasa-CoffeeSetupMug-{self._resolved_robot.profile.robot_name}-v0"
         gym.register(
@@ -129,9 +158,7 @@ class CoffeeSetupMugPipeline(AutoSimPipeline):
             disable_env_checker=True,
         )
 
-        env = gym.make(env_id, cfg=env_cfg, render_mode="rgb_array").unwrapped
-
-        return env
+        return gym.make(env_id, cfg=env_cfg, render_mode="rgb_array").unwrapped
 
     def get_env_extra_info(self):
         return build_env_extra_info(
@@ -142,21 +169,16 @@ class CoffeeSetupMugPipeline(AutoSimPipeline):
         )
 
 
-def patch_get_obj_cfgs(self):
-    cfgs = []
-    cfgs.append(
-        dict(
-            name="obj",
-            obj_groups="mug",
-            asset_name="Mug028.usd",
-            placement=dict(
-                fixture=self.counter,
-                sample_region_kwargs={},
-                size=(0.8, 0.15),
-                pos=(0.0, -1.0),
-                rotation=(np.pi / 2, np.pi / 2),
-            ),
-        )
-    )
-
-    return cfgs
+def _get_obj_cfgs(self):
+    return [dict(
+        name="obj",
+        obj_groups="mug",
+        asset_name="Mug028.usd",
+        placement=dict(
+            fixture=self.counter,
+            sample_region_kwargs={},
+            size=(0.8, 0.15),
+            pos=(0.0, -1.0),
+            rotation=(np.pi / 2, np.pi / 2),
+        ),
+    )]

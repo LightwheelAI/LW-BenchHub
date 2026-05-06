@@ -1,0 +1,141 @@
+# cuRobo collision spheres for G1 (autosim variant, right-arm planning)
+#
+# Coordinate convention: each center is in the link's LOCAL frame.
+# Radii are conservative estimates based on G1 link geometry.
+# Only links in or near the planning chain are listed; locked/leg links
+# that are far from the workspace are omitted for performance.
+#
+# Planning chain: world_link → base_x/y/yaw (virtual) → pelvis → torso_link
+#                 → right_shoulder_pitch → ... → right_hand_palm_link
+#
+# Left arm spheres are included (locked but physically present) to avoid
+# body-world and body-self collisions during navigation.
+
+collision_spheres:
+
+  # ── Pelvis ────────────────────────────────────────────────────────────────
+  # Roughly box-shaped, ~0.28 m wide × 0.18 m deep × 0.18 m tall.
+  # Inertia origin: [0, 0, -0.076]
+  pelvis:
+    - "center": [0.0,  0.0,  0.0]
+      "radius": 0.12
+    - "center": [0.0,  0.0, -0.12]
+      "radius": 0.10
+
+  # ── Torso ─────────────────────────────────────────────────────────────────
+  # Tall chest link; inertia origin: [0.003, 0, 0.154]
+  # Spans roughly z = 0 … 0.40 m in the torso_link frame.
+  torso_link:
+    - "center": [0.0,  0.0, 0.0]
+      "radius": 0.13
+    - "center": [0.02, 0.0, 0.10]
+      "radius": 0.13
+    - "center": [0.02, 0.0, 0.20]
+      "radius": 0.12
+    - "center": [0.02, 0.0, 0.32]
+      "radius": 0.11
+    # Shoulder-width bloat (left/right) to protect shoulder joints
+    - "center": [0.0,  0.12, 0.30]
+      "radius": 0.07
+    - "center": [0.0, -0.12, 0.30]
+      "radius": 0.07
+
+  # ── Right arm ─────────────────────────────────────────────────────────────
+
+  # shoulder_pitch: small link bridging torso→roll joint
+  # Joint to next: [0, -0.038, -0.014]; inertia: [0, -0.036, -0.012]
+  right_shoulder_pitch_link:
+    - "center": [0.0, -0.025, -0.012]
+      "radius": 0.045
+
+  # shoulder_roll: ~10 cm link dropping toward shoulder_yaw
+  # Joint to next: [0, -0.006, -0.103]; inertia: [-0.000, -0.007, -0.063]
+  right_shoulder_roll_link:
+    - "center": [0.0, -0.007, -0.025]
+      "radius": 0.042
+    - "center": [0.0, -0.007, -0.075]
+      "radius": 0.038
+
+  # shoulder_yaw: ~8 cm link bridging toward elbow
+  # Joint to next: [0.016, 0, -0.081]; inertia: [0.011, 0.003, -0.072]
+  right_shoulder_yaw_link:
+    - "center": [0.010, -0.003, -0.030]
+      "radius": 0.038
+    - "center": [0.013, -0.002, -0.072]
+      "radius": 0.035
+
+  # elbow: forearm link, ~10 cm in x direction
+  # Joint to next: [0.100, -0.002, -0.010]; inertia: [0.065, -0.004, -0.010]
+  right_elbow_link:
+    - "center": [0.025, -0.004, -0.010]
+      "radius": 0.035
+    - "center": [0.065, -0.004, -0.010]
+      "radius": 0.030
+
+  # wrist_roll: small link, ~3.8 cm to next joint
+  # inertia: [0.017, -0.001, 0.000]
+  right_wrist_roll_link:
+    - "center": [0.017, -0.001, 0.0]
+      "radius": 0.025
+
+  # wrist_pitch: ~4.6 cm to next joint
+  # inertia: [0.023, 0.001, -0.001]
+  right_wrist_pitch_link:
+    - "center": [0.023, 0.001, 0.0]
+      "radius": 0.025
+
+  # wrist_yaw: ~4.15 cm to palm joint
+  # inertia: [0.022, 0.000, 0.001]
+  right_wrist_yaw_link:
+    - "center": [0.022, 0.0, 0.0]
+      "radius": 0.025
+
+  # hand_palm: end-effector link; extends ~0.06 m in x
+  # inertia: [0.062, 0.001, -0.001]
+  right_hand_palm_link:
+    - "center": [0.025, 0.0, 0.0]
+      "radius": 0.025
+    - "center": [0.060, 0.001, 0.0]
+      "radius": 0.020
+
+  # ── Left arm (locked joints — spheres protect against body/world hits) ────
+
+  left_shoulder_pitch_link:
+    - "center": [0.0, 0.025, -0.012]
+      "radius": 0.045
+
+  left_shoulder_roll_link:
+    - "center": [0.0,  0.007, -0.025]
+      "radius": 0.042
+    - "center": [0.0,  0.007, -0.075]
+      "radius": 0.038
+
+  left_shoulder_yaw_link:
+    - "center": [0.010, 0.003, -0.030]
+      "radius": 0.038
+    - "center": [0.013, 0.002, -0.072]
+      "radius": 0.035
+
+  left_elbow_link:
+    - "center": [0.025, 0.004, -0.010]
+      "radius": 0.035
+    - "center": [0.065, 0.004, -0.010]
+      "radius": 0.030
+
+  left_wrist_roll_link:
+    - "center": [0.017, 0.001, 0.0]
+      "radius": 0.025
+
+  left_wrist_pitch_link:
+    - "center": [0.023, -0.001, 0.0]
+      "radius": 0.025
+
+  left_wrist_yaw_link:
+    - "center": [0.022, 0.0, 0.0]
+      "radius": 0.025
+
+  left_hand_palm_link:
+    - "center": [0.025, 0.0, 0.0]
+      "radius": 0.025
+    - "center": [0.060, -0.001, 0.0]
+      "radius": 0.020

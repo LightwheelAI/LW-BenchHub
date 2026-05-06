@@ -1,18 +1,36 @@
+import torch
 from autosim.core.pipeline import AutoSimPipeline, AutoSimPipelineCfg
+from autosim.decomposers import LLMDecomposerCfg
 from isaaclab.envs import ManagerBasedEnv
 from isaaclab.utils import configclass
 
-import torch
-
-from autosim.decomposers import LLMDecomposerCfg
-
-from ..prompt_utils import render_additional_prompt
-from ..robot_profiles import (
+from lw_benchhub.autosim.prompt_utils import render_additional_prompt
+from lw_benchhub.autosim.robot_profiles import (
     TaskRobotOverride,
+    apply_robot_env_cfg,
     build_env_extra_info,
     configure_robot_runtime_settings,
     resolve_robot_settings,
 )
+
+
+def _x7s_skill_cfg(cfg) -> None:
+    cfg.skills.moveto.extra_cfg.local_planner.max_linear_velocity  = 0.1
+    cfg.skills.moveto.extra_cfg.local_planner.max_angular_velocity = 0.4
+    cfg.skills.moveto.extra_cfg.local_planner.predict_time         = 0.4
+    cfg.skills.moveto.extra_cfg.global_planner.safety_distance     = 0.8
+    cfg.skills.moveto.extra_cfg.global_planner.proximity_weight    = 3.0
+    cfg.skills.moveto.extra_cfg.waypoint_tolerance                 = 0.2
+    cfg.skills.moveto.extra_cfg.goal_tolerance                     = 0.1
+    cfg.skills.moveto.extra_cfg.yaw_tolerance                      = 0.008
+    cfg.skills.moveto.extra_cfg.uws_dwa                            = False
+    cfg.skills.moveto.extra_cfg.sampling_radius                    = 1.6
+    cfg.skills.push.extra_cfg.move_offset = 0.36
+    cfg.skills.push.extra_cfg.move_axis   = "+x"
+    cfg.skills.lift.extra_cfg.move_offset = 0.15
+    cfg.skills.lift.extra_cfg.move_axis   = "+z"
+    cfg.max_steps = 1000
+
 
 TASK_ROBOT_OVERRIDES: dict[str, TaskRobotOverride] = {
     "x7s_joint_left": TaskRobotOverride(
@@ -23,6 +41,8 @@ TASK_ROBOT_OVERRIDES: dict[str, TaskRobotOverride] = {
                 torch.tensor([-0.176, -0.739, -0.180, 0.707, -0.00, -0.00, 0.707]),
             ],
         },
+        init_state_pos_delta=(-0.6, -1.2, 0.0),
+        skill_cfg_fn=_x7s_skill_cfg,
     ),
 }
 
@@ -31,49 +51,27 @@ def get_task_robot_override(robot_profile: str) -> TaskRobotOverride:
     try:
         return TASK_ROBOT_OVERRIDES[robot_profile]
     except KeyError as exc:
-        supported = ", ".join(tuple(TASK_ROBOT_OVERRIDES))
+        supported = ", ".join(TASK_ROBOT_OVERRIDES)
         raise ValueError(
-            f"CloseOvenPipeline does not support robot profile '{robot_profile}'. Supported profiles: {supported}"
+            f"CloseOvenPipeline does not support robot profile '{robot_profile}'. Supported: {supported}"
         ) from exc
 
 
 @configclass
 class CloseOvenPipelineCfg(AutoSimPipelineCfg):
-    """Configuration for the CloseOvenPipeline."""
-
     robot_profile: str = "x7s_joint_left"
-
     decomposer: LLMDecomposerCfg = LLMDecomposerCfg()
 
     def __post_init__(self):
-        resolved_robot = resolve_robot_settings(
-            self.robot_profile,
-            override=get_task_robot_override(self.robot_profile),
-        )
+        resolved_robot = resolve_robot_settings(self.robot_profile, override=get_task_robot_override(self.robot_profile))
         configure_robot_runtime_settings(self, resolved_robot)
 
-        self.skills.moveto.extra_cfg.local_planner.max_linear_velocity = 0.1
-        self.skills.moveto.extra_cfg.local_planner.max_angular_velocity = 0.4
-        self.skills.moveto.extra_cfg.local_planner.predict_time = 0.4
-        self.skills.moveto.extra_cfg.global_planner.safety_distance = 0.8
-        self.skills.moveto.extra_cfg.global_planner.proximity_weight = 3.0
-        self.skills.moveto.extra_cfg.waypoint_tolerance = 0.2
-        self.skills.moveto.extra_cfg.goal_tolerance = 0.1
-        self.skills.moveto.extra_cfg.yaw_tolerance = 0.008
-        self.skills.moveto.extra_cfg.uws_dwa = False
-        self.max_steps = 1000
-
-        self.skills.moveto.extra_cfg.sampling_radius = 1.6
-
-        self.skills.push.extra_cfg.move_offset = 0.36
-        self.skills.push.extra_cfg.move_axis = "+x"
-
-        self.skills.lift.extra_cfg.move_offset = 0.15
-        self.skills.lift.extra_cfg.move_axis = "+z"
+        if resolved_robot.override.skill_cfg_fn:
+            resolved_robot.override.skill_cfg_fn(self)
 
         self.occupancy_map.floor_prim_suffix = "Scene/floor_room"
-        self.motion_planner.world_ignore_subffixes = ["Scene/floor_room"]
-        self.motion_planner.world_only_subffixes = [
+        self.motion_planner.world_ignore_subffixes = ["Scene/floor_room", "Scene/oven_main_group/Oven032_door"]
+        self.motion_planner.world_only_subffixes   = [
             "Scene/island_island_group",
             "Scene/island_panel_cab_right_island_group_1",
             "Scene/counter_main_main_group",
@@ -83,19 +81,14 @@ class CloseOvenPipelineCfg(AutoSimPipelineCfg):
 
 class CloseOvenPipeline(AutoSimPipeline):
     def __init__(self, cfg: AutoSimPipelineCfg):
-        super().__init__(cfg)
-        robot_profile = cfg.robot_profile
         self._resolved_robot = resolve_robot_settings(
-            robot_profile,
-            override=get_task_robot_override(robot_profile),
+            cfg.robot_profile, override=get_task_robot_override(cfg.robot_profile)
         )
-
-    def reset_env(self):
-        super().reset_env()
+        super().__init__(cfg)
 
     def load_env(self) -> ManagerBasedEnv:
         import gymnasium as gym
-        from lw_benchhub.utils.env import ExecuteMode, parse_env_cfg
+        from lw_benchhub.utils.env import parse_env_cfg, ExecuteMode
 
         env_cfg = parse_env_cfg(
             scene_backend="robocasa",
@@ -120,10 +113,8 @@ class CloseOvenPipeline(AutoSimPipeline):
             resample_robot_placement_on_reset=False,
         )
 
+        apply_robot_env_cfg(env_cfg, self._resolved_robot)
         env_cfg.terminations.time_out = None
-
-        env_cfg.scene.robot.init_state.pos[0] -= 0.6
-        env_cfg.scene.robot.init_state.pos[1] -= 1.2
 
         env_id = f"Robocasa-CloseOven-{self._resolved_robot.profile.robot_name}-v0"
         gym.register(
@@ -142,7 +133,7 @@ class CloseOvenPipeline(AutoSimPipeline):
             task_name="Robocasa-Task-CloseOven",
             objects=["oven_main_group"],
             additional_prompt_contents=(
-                f"{render_additional_prompt()}\n\n When you close the oven, you should lift and then push the oven door to close it."
+                f"{render_additional_prompt()}\n\nWhen you close the oven, you should lift and then push the oven door to close it."
             ),
             resolved_robot=self._resolved_robot,
         )

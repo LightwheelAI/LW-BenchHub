@@ -44,6 +44,7 @@ from autosim.calibration.pose_sampler import OffsetSampler
 
 def main() -> None:
     pipeline = make_pipeline(args_cli.pipeline_id)
+    pipeline.cfg.motion_planner.use_cuda_graph = False
     reach_plan_sweep(
         pipeline,
         ReachPlanSweepCfg(
