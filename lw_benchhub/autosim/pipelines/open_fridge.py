@@ -65,7 +65,6 @@ TASK_ROBOT_OVERRIDES: dict[str, TaskRobotOverride] = {
             "right_hand": {
                 "grasp": (1.0, 1.0, 1.0, 1.0, 0.8, 0.8, 0.8),
                 "push": (1.0, 1.0, 1.0, 1.0, 0.8, 0.8, 0.8),
-                "pull": (1.0, 1.0, 1.0, 1.0, 0.8, 0.8, 0.8),
             }
         },
     ),

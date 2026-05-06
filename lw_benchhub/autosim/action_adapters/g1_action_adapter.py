@@ -37,7 +37,6 @@ class G1ActionAdapter(ActionAdapterBase):
         self.register_apply_method("moveto",  self._apply_moveto)
         self.register_apply_method("reach",   self._apply_reach)
         self.register_apply_method("lift",    lambda so, env: self._apply_reach_with_skill_fingers(so, env, "lift"))
-        self.register_apply_method("pull",    lambda so, env: self._apply_reach_with_skill_fingers(so, env, "pull"))
         self.register_apply_method("push",    lambda so, env: self._apply_reach_with_skill_fingers(so, env, "push"))
         self.register_apply_method("grasp",   self._apply_gripper)
         self.register_apply_method("ungrasp", self._apply_gripper)

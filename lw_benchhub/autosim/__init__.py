@@ -67,9 +67,3 @@ register_pipeline(
     entry_point=f"{__name__}.pipelines.kettle_boiling:KettleBoilingPipeline",
     cfg_entry_point=f"{__name__}.pipelines.kettle_boiling:G1KettleBoilingPipelineCfg",
 )
-
-register_pipeline(
-    id="LWBenchhub-Autosim-G1CloseOvenPipeline-v0",
-    entry_point=f"{__name__}.pipelines.close_oven:CloseOvenPipeline",
-    cfg_entry_point=f"{__name__}.pipelines.close_oven:G1CloseOvenPipelineCfg",
-)
