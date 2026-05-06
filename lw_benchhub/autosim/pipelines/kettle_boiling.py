@@ -144,6 +144,7 @@ TASK_ROBOT_OVERRIDES: dict[str, TaskRobotOverride] = {
         after_env_created_fn=_g1_after_env_created,
         skill_finger_configs={
             "left_hand": {
+                "grasp": (-1.2, -1.2, -1.2, -1.2, -1.0, -1.0, -1.0),
                 "lift": (-1.2, -1.2, -1.2, -1.2, -1.0, -1.0, -1.0),
             }
         },

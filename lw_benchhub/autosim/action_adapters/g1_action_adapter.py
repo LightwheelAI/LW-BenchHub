@@ -170,7 +170,14 @@ class G1ActionAdapter(ActionAdapterBase):
         """Set all finger joints to the closed (grasp) or open (ungrasp) position."""
         gripper_signal = skill_output.action[0].item()
 
-        angles = self.cfg.finger_close_angles if gripper_signal < 0 else self.cfg.finger_open_angles
+        if gripper_signal < 0:
+            # Grasp: check skill_finger_configs first, then fall back to default
+            skill_angles = self._get_skill_finger_angles("grasp")
+            angles = skill_angles if skill_angles is not None else self.cfg.finger_close_angles
+        else:
+            # Ungrasp: use open angles
+            angles = self.cfg.finger_open_angles
+
         finger_angles = torch.tensor(angles, dtype=torch.float32, device=env.device)
 
         last_action = env.action_manager.action

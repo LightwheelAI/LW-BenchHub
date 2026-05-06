@@ -63,6 +63,7 @@ TASK_ROBOT_OVERRIDES: dict[str, TaskRobotOverride] = {
         skill_cfg_fn=_g1_skill_cfg,
         skill_finger_configs={
             "right_hand": {
+                "grasp": (1.0, 1.0, 1.0, 1.0, 0.8, 0.8, 0.8),
                 "push": (1.0, 1.0, 1.0, 1.0, 0.8, 0.8, 0.8),
                 "pull": (1.0, 1.0, 1.0, 1.0, 0.8, 0.8, 0.8),
             }
