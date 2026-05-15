@@ -645,6 +645,39 @@ def patch_isaaclab_tasks_mdp():
         sys._lw_benchhub_mdp_patcher_registered = True
 
 
+def patch_termination_manager():
+    """
+    Temporary fix for TerminationManager.compute() method to correctly store each termination condition's result
+    in _term_dones when computing termination signals.
+    In the current implementation, once self._term_dones is set to True, it cannot be modified back to False.
+    """
+    import torch
+    from isaaclab.managers import TerminationManager
+
+    def compute(self) -> torch.Tensor:
+        # reset computation
+        self._truncated_buf[:] = False
+        self._terminated_buf[:] = False
+        # iterate over all the termination terms
+        for i, term_cfg in enumerate(self._term_cfgs):
+            value = term_cfg.func(self._env, **term_cfg.params)
+            # store timeout signal separately
+            if term_cfg.time_out:
+                self._truncated_buf |= value
+            else:
+                self._terminated_buf |= value
+            # add to episode dones
+            self._term_dones[:, i] = value  # [core fix]
+            rows = value.nonzero(as_tuple=True)[0]  # indexing is cheaper than boolean advance indexing
+            if rows.numel() > 0:
+                self._term_dones[rows] = False
+                self._term_dones[rows, i] = True
+        # return combined termination signal
+        return self._truncated_buf | self._terminated_buf
+
+    TerminationManager.compute = compute
+
+
 patch_reset()
 patch_configclass()
 patch_recorder_manager_ep_meta()
@@ -654,3 +687,4 @@ patch_yaml_load()
 patch_reward_manager()
 patch_create_teleop_device()
 patch_isaaclab_tasks_mdp()
+patch_termination_manager()

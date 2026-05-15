@@ -52,6 +52,11 @@ parser.add_argument("--replay_all_clips", action="store_true", help="replay all 
 parser.add_argument("--scene_backend", type=str, default=None, help="Override scene backend for replay (e.g. local/robocasa).")
 parser.add_argument("--task_backend", type=str, default=None, help="Override task backend for replay (e.g. local/robocasa).")
 parser.add_argument("--layout", type=str, default=None, help="Override scene name/layout. Supports local USD absolute path.")
+parser.add_argument(
+    "--save_individual_videos",
+    action="store_true",
+    help="Save each camera view as an individual video in addition to the combined replay video.",
+)
 
 # append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
@@ -263,6 +268,7 @@ def main():
             product_video_height = 0
             product_video_width = 0
 
+        individual_video_dir = save_dir / "individual_videos" if args_cli.save_individual_videos else None
         video_processor = VideoProcessor(
             replay_mp4_path,
             video_height,
@@ -271,7 +277,8 @@ def main():
             product_mp4_path=product_mp4_path,
             product_camera_names=product_camera_names,
             product_video_height=product_video_height,
-            product_video_width=product_video_width
+            product_video_width=product_video_width,
+            individual_video_dir=individual_video_dir,
         )
     else:
         video_processor = None

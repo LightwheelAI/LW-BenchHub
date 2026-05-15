@@ -1,0 +1,102 @@
+robot_type: X7S-Abs
+hdf5_mapping:
+  observation.state: obs/joint_pos
+  action: actions
+video_mapping:
+  observation.images.front: eye_in_hand_camera_rgb.mp4
+  observation.images.left_hand: left_hand_camera_rgb.mp4
+  observation.images.right_hand: right_hand_camera_rgb.mp4
+features:
+  observation.images.front:
+    dtype: video
+    shape: null
+    names: ["height", "width", "channel"]
+    video_info:
+      video.height: null
+      video.width: null
+      video.codec: av1
+      video.pix_fmt: yuv420p
+      video.is_depth_map: false
+      video.fps: null
+      video.channels: null
+      has_audio: false
+  observation.images.left_hand:
+    dtype: video
+    shape: null
+    names: ["height", "width", "channel"]
+    video_info:
+      video.height: null
+      video.width: null
+      video.codec: av1
+      video.pix_fmt: yuv420p
+      video.is_depth_map: false
+      video.fps: null
+      video.channels: null
+      has_audio: false
+  observation.images.right_hand:
+    dtype: video
+    shape: null
+    names: ["height", "width", "channel"]
+    video_info:
+      video.height: null
+      video.width: null
+      video.codec: av1
+      video.pix_fmt: yuv420p
+      video.is_depth_map: false
+      video.fps: null
+      video.channels: null
+      has_audio: false
+  observation.state:
+    dtype: float32
+    shape: (25,)
+    names:
+      - base_x_joint
+      - base_y_joint
+      - base_yaw_link
+      - body_z_joint
+      - body_y_joint
+      - right_shoulder_y
+      - head_z_joint
+      - left_shoulder_y
+      - right_shoulder_x
+      - head_y_joint
+      - left_shoulder_x
+      - right_shoulder_z
+      - left_shoulder_z
+      - right_elbow_y
+      - left_elbow_y
+      - right_elbow_x
+      - left_elbow_x
+      - right_wrist_y
+      - left_wrist_y
+      - right_wrist_z
+      - left_wrist_z
+      - right_gripper1
+      - right_gripper2
+      - left_gripper1
+      - left_gripper2
+  action:
+    dtype: float32
+    shape: (21,)
+    names:
+      - base_action.dim0
+      - base_action.dim1
+      - base_action.dim2
+      - body_action.dim0
+      - body_action.dim1
+      - left_arm_action.dim0
+      - left_arm_action.dim1
+      - left_arm_action.dim2
+      - left_arm_action.dim3
+      - left_arm_action.dim4
+      - left_arm_action.dim5
+      - left_arm_action.dim6
+      - right_arm_action.dim0
+      - right_arm_action.dim1
+      - right_arm_action.dim2
+      - right_arm_action.dim3
+      - right_arm_action.dim4
+      - right_arm_action.dim5
+      - right_arm_action.dim6
+      - left_gripper_action.dim0
+      - right_gripper_action.dim0

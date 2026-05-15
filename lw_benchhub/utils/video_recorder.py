@@ -187,7 +187,18 @@ def _combine_camera_images(camera_data, camera_names):
 class VideoProcessor:
     """Independent video processing thread for ordered frame handling"""
 
-    def __init__(self, replay_mp4_path, video_height, video_width, args_cli, product_mp4_path=None, product_camera_names=None, product_video_height=0, product_video_width=0):
+    def __init__(
+        self,
+        replay_mp4_path,
+        video_height,
+        video_width,
+        args_cli,
+        product_mp4_path=None,
+        product_camera_names=None,
+        product_video_height=0,
+        product_video_width=0,
+        individual_video_dir=None,
+    ):
         self.replay_mp4_path = replay_mp4_path
         self.video_height = video_height
         self.video_width = video_width
@@ -196,6 +207,8 @@ class VideoProcessor:
         self.product_camera_names = product_camera_names or []
         self.product_video_height = product_video_height
         self.product_video_width = product_video_width
+        self.individual_video_dir = Path(individual_video_dir) if individual_video_dir else None
+        self.individual_video_writers = {}
         self.frame_queue = queue.Queue(maxsize=100)
         self.running = True
         self.v = None
@@ -214,7 +227,8 @@ class VideoProcessor:
         self.v = media.VideoWriter(path=self.replay_mp4_path, shape=(self.video_height, self.video_width), fps=30)
         self.v.__enter__()
 
-        # Initialize product video writer if product cameras are configured
+        if self.individual_video_dir is not None:
+            self.individual_video_dir.mkdir(parents=True, exist_ok=True)
         if self.product_mp4_path and self.product_camera_names and self.product_video_height > 0 and self.product_video_width > 0:
             self.product_v = media.VideoWriter(path=self.product_mp4_path, shape=(self.product_video_height, self.product_video_width), fps=30)
             self.product_v.__enter__()
@@ -252,6 +266,9 @@ class VideoProcessor:
                 print(f"Product video processing completed, {product_frame_count} frames")
             elif self.product_v:
                 print("Product video skipped - no valid frames")
+            for camera_name, writer in self.individual_video_writers.items():
+                writer.__exit__(None, None, None)
+                print(f"Individual video processing completed for {camera_name}")
 
     def _process_single_frame(self, obs, camera_names):
         """Process a single frame"""
@@ -262,6 +279,9 @@ class VideoProcessor:
         # Process regular cameras
         full_image = self._arrange_camera_images(camera_images)
         self.v.add_image(full_image)
+
+        if self.individual_video_dir is not None:
+            self._write_individual_camera_images(camera_images, camera_names)
 
         # Process product cameras (subset of regular cameras)
         product_frames = 0
@@ -281,6 +301,17 @@ class VideoProcessor:
             cv2.waitKey(1)
 
         return product_frames
+
+    def _write_individual_camera_images(self, camera_images, camera_names):
+        """Write each camera image to its own video."""
+        for camera_name, image in zip(camera_names, camera_images):
+            image = image.squeeze(0)
+            if camera_name not in self.individual_video_writers:
+                video_path = self.individual_video_dir / f"{camera_name}.mp4"
+                writer = media.VideoWriter(path=video_path, shape=image.shape[:2], fps=30)
+                writer.__enter__()
+                self.individual_video_writers[camera_name] = writer
+            self.individual_video_writers[camera_name].add_image(image)
 
     def _arrange_camera_images(self, camera_images):
         """Arrange camera images in a grid layout with balanced distribution"""
