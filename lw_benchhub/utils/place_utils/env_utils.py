@@ -1001,7 +1001,7 @@ def create_obj(task: LwTaskBase, cfg: Dict[str, Any], version=None, ignore_cache
 
     object_cfgs = {}
 
-    if "info" in cfg:
+    if "info" in cfg and "obj_path" in cfg["info"]:
         """
         if cfg has "info" key in it, that means it is storing meta data already
         that indicates which object we should be using.

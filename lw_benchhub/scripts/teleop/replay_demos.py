@@ -123,6 +123,8 @@ def main():
     env_args = json.loads(dataset_file_handler._hdf5_data_group.attrs["env_args"])
     if "LW_API_ENDPOINT" in env_args.keys():
         os.environ["LW_API_ENDPOINT"] = env_args["LW_API_ENDPOINT"]
+        from lightwheel_sdk.loader import lw_client
+        lw_client.host = env_args["LW_API_ENDPOINT"]
     usd_simplify = env_args["usd_simplify"] if 'usd_simplify' in env_args else False
     if "-" in env_args["env_name"] and not env_args["env_name"].startswith("Robocasa"):
         env_cfg = parse_env_cfg(

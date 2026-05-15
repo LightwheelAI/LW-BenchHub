@@ -407,7 +407,8 @@ class LwTaskBase(TaskBase, NoDeepcopyMixin):
                         if obj_cfg["name"] in obj_version:
                             object_version = obj_version[obj_cfg["name"]]
                             break
-                obj_cfg["ep_meta_scale"] = obj_cfg["info"]["scale"]
+                if "scale" in obj_cfg.get("info", {}):
+                    obj_cfg["ep_meta_scale"] = obj_cfg["info"]["scale"]
                 model, info = EnvUtils.create_obj(self, obj_cfg, version=object_version)
                 obj_cfg["info"] = {**obj_cfg.get("info", {}), **info}
                 self.objects[model.task_name] = model
