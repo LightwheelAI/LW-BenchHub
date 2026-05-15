@@ -36,3 +36,9 @@ register_pipeline(
     entry_point=f"{__name__}.pipelines.dessert_upgrade:DessertUpgradePipeline",
     cfg_entry_point=f"{__name__}.pipelines.dessert_upgrade:DessertUpgradePipelineCfg",
 )
+
+register_pipeline(
+    id="LWBenchhub-Autosim-OpenToasterOvenDoorPipeline-v0",
+    entry_point=f"{__name__}.pipelines.open_toaster_oven_door:OpenToasterOvenDoorPipeline",
+    cfg_entry_point=f"{__name__}.pipelines.open_toaster_oven_door:OpenToasterOvenDoorPipelineCfg",
+)
