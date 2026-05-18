@@ -42,3 +42,15 @@ register_pipeline(
     entry_point=f"{__name__}.pipelines.open_toaster_oven_door:OpenToasterOvenDoorPipeline",
     cfg_entry_point=f"{__name__}.pipelines.open_toaster_oven_door:OpenToasterOvenDoorPipelineCfg",
 )
+
+register_pipeline(
+    id="LWBenchhub-Autosim-CloseDrawerPipeline-v0",
+    entry_point=f"{__name__}.pipelines.close_drawer:CloseDrawerPipeline",
+    cfg_entry_point=f"{__name__}.pipelines.close_drawer:CloseDrawerPipelineCfg",
+)
+
+register_pipeline(
+    id="LWBenchhub-Autosim-PnPCounterToStovePipeline-v0",
+    entry_point=f"{__name__}.pipelines.pnp_counter_to_stove:PnPCounterToStovePipeline",
+    cfg_entry_point=f"{__name__}.pipelines.pnp_counter_to_stove:PnPCounterToStovePipelineCfg",
+)
