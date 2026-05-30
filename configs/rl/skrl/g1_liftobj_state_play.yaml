@@ -1,0 +1,5 @@
+_base_:
+  - g1_liftobj_state
+num_envs: 1
+real_time: true
+checkpoint: /your/path/to/checkpoints/best_agent.pt

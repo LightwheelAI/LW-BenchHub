@@ -111,9 +111,16 @@ omni_cache/
 lw_benchhub/core/devices/lerobot/.cache
 
 log/
+lw_benchhub_logs/
 
 run.sh
 docker/.ssh/*
 output/
 
 isaac-cache/
+
+# Claude Code
+.claude/
+
+# uv lock file
+uv.lock
