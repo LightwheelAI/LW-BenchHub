@@ -32,6 +32,8 @@ def _parse_config(config_path: str):
         "object_projects": None,
         "execute_mode": "eval",
         "replay_cfgs": {"add_camera_to_observation": True},
+        "headless": True,
+        "enable_cameras": False,
     }
     for key, value in defaults.items():
         if key not in config:
@@ -118,7 +120,7 @@ def export_env_for_envhub(config_path: str):
     cfg = _parse_config(config_path)
 
     from isaaclab.app import AppLauncher
-    app_launcher = AppLauncher(enable_cameras=cfg.enable_cameras)
+    app_launcher = AppLauncher(headless=cfg.headless, enable_cameras=cfg.enable_cameras)
 
     environment = f"{cfg.task}-{cfg.robot}"
     task = cfg.task
